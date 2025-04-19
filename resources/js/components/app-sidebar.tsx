@@ -19,6 +19,18 @@ const mainNavItems: NavItem[] = [
         href: '/books',
         icon: LayoutGrid,
     },
+
+    {
+        title: 'Section',
+        href: '/section',
+        icon: LayoutGrid,
+    },
+
+    {
+        title: 'Dewey',
+        href: '/deweys',
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

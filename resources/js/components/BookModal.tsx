@@ -1,38 +1,56 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
-import {Toaster, toast} from "sonner";
+import { Toaster, toast } from "sonner";
 
-interface Book {
+type Book = {
   id?: number;
   title: string;
   author: string;
   isbn: string;
   publisher: string;
   book_copies: number;
+  accession_number?: string;
   call_number: string;
+  year?: string;
+  publication_place?: string;
   book_cover?: string;
-}
+  section_id?: number;
+  dewey_id?: number;
+};
 
 interface Props {
   isOpen: boolean;
   closeModal: () => void;
-  book?: Book | null;
+  book: Book | null;
+  sections: { id: number; section_name: string }[];
+  deweys: { id: number; dewey_classification: string }[];
 }
 
-export default function BookFormModal({ isOpen, closeModal, book }: Props) {
+export default function BookModal({
+  isOpen,
+  closeModal,
+  book,
+  sections = [],
+  deweys = [],
+}: Props) {
   const [formData, setFormData] = useState<Book>({
     title: "",
     author: "",
     isbn: "",
     publisher: "",
-    book_copies: 0,
+    book_copies: 1,
+    accession_number: "",
     call_number: "",
+    year: "",
+    publication_place: "",
     book_cover: "",
+    section_id: undefined,
+    dewey_id: undefined,
   });
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
 
-  // Set initial form data and preview when the book is passed
   useEffect(() => {
     if (isOpen) {
       if (book) {
@@ -42,8 +60,13 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
           isbn: book.isbn,
           publisher: book.publisher,
           book_copies: book.book_copies,
+          accession_number: book.accession_number || "",
           call_number: book.call_number,
+          year: book.year || "",
+          publication_place: book.publication_place || "",
           book_cover: book.book_cover || "",
+          section_id: book.section_id,
+          dewey_id: book.dewey_id,
         });
         setPreview(book.book_cover || "");
         setSelectedFile(null);
@@ -54,8 +77,13 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
           isbn: "",
           publisher: "",
           book_copies: 1,
+          accession_number: "",
           call_number: "",
+          year: "",
+          publication_place: "",
           book_cover: "",
+          section_id: undefined,
+          dewey_id: undefined,
         });
         setPreview("");
         setSelectedFile(null);
@@ -63,8 +91,20 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
     }
   }, [isOpen, book]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value
+        ? name === "section_id" || name === "dewey_id"
+          ? parseInt(value, 10)
+          : name === "book_copies"
+          ? Number(value)
+          : value
+        : undefined,
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,39 +124,41 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
     data.append("isbn", formData.isbn);
     data.append("publisher", formData.publisher);
     data.append("book_copies", String(formData.book_copies));
+    data.append("accession_number", formData.accession_number || "");
     data.append("call_number", formData.call_number);
+    data.append("year", formData.year || "");
+    data.append("publication_place", formData.publication_place || "");
+    data.append("section_id", String(formData.section_id || ""));
+    data.append("dewey_id", String(formData.dewey_id || ""));
 
     if (selectedFile) {
       data.append("book_cover", selectedFile);
     }
 
-    //Toast Notifications
-    const succesMessage = book?.id ? "Book updated successfully." : "Book Added successfully.";
+    const successMessage = book?.id ? "Book updated successfully." : "Book added successfully.";
     const errorMessage = book?.id ? "Failed to update book." : "Failed to add book.";
 
     if (book?.id) {
-      data.append("_method", "PUT"); // Method override for update
+      data.append("_method", "PUT");
       router.post(`/books/${book.id}`, data, {
         onSuccess: () => {
-            toast.success(succesMessage);
-            closeModal();
-            router.reload();
+          toast.success(successMessage);
+          closeModal();
+          router.reload();
         },
-        onError: (errors) => {
-            toast.error(errorMessage);
-            console.error(errors.message || "Failed to submit book.");
+        onError: () => {
+          toast.error(errorMessage);
         },
       });
     } else {
       router.post("/books", data, {
         onSuccess: () => {
-            toast.success(succesMessage);
-            closeModal();
-            router.reload();
+          toast.success(successMessage);
+          closeModal();
+          router.reload();
         },
-        onError: (errors) => {
-            toast.error(errorMessage);
-            console.error(errors.message || "Failed to submit book.");
+        onError: () => {
+          toast.error(errorMessage);
         },
       });
     }
@@ -129,59 +171,28 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
         <h2 className="text-lg font-semibold mb-4">{book ? "Edit Book" : "Add Book"}</h2>
         <form onSubmit={handleSubmit} encType="multipart/form-data">
-          {/* Book Title */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Title</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              required
-            />
-          </div>
-          
-          {/* Book Author */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Author</label>
-            <input
-              type="text"
-              name="author"
-              value={formData.author}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              required
-            />
-          </div>
+          {[
+            { label: "Title", name: "title" },
+            { label: "Author", name: "author" },
+            { label: "ISBN", name: "isbn" },
+            { label: "Publisher", name: "publisher" },
+            { label: "Accession Number", name: "accession_number" },
+            { label: "Call Number", name: "call_number" },
+            { label: "Publication Place", name: "publication_place" },
+          ].map(({ label, name }) => (
+            <div className="mb-3" key={name}>
+              <label className="block text-sm font-medium">{label}</label>
+              <input
+                type="text"
+                name={name}
+                value={(formData as any)[name] || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
+              />
+            </div>
+          ))}
 
-          {/* Book ISBN */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">ISBN</label>
-            <input
-              type="text"
-              name="isbn"
-              value={formData.isbn}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              required
-            />
-          </div>
-
-          {/* Publisher */}
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Publisher</label>
-            <input
-              type="text"
-              name="publisher"
-              value={formData.publisher}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              required
-            />
-          </div>
-
-          {/* Book Copies */}
           <div className="mb-3">
             <label className="block text-sm font-medium">Book Copies</label>
             <input
@@ -191,60 +202,101 @@ export default function BookFormModal({ isOpen, closeModal, book }: Props) {
               onChange={handleChange}
               className="w-full border rounded p-2"
               required
+              min={1}
             />
           </div>
 
-          {/* Call Number */}
           <div className="mb-3">
-            <label className="block text-sm font-medium">Call Number</label>
+            <label className="block text-sm font-medium">Year</label>
             <input
-              type="text"
-              name="call_number"
-              value={formData.call_number}
+              type="date"
+              name="year"
+              value={formData.year || ""}
               onChange={handleChange}
               className="w-full border rounded p-2"
-              required
             />
           </div>
 
-          {/* Book Cover Image */}
           <div className="mb-3">
-            <label className="block text-sm font-medium">Book Cover (optional)</label>
+            <label className="block text-sm font-medium">Book Cover</label>
             <input
               type="file"
               name="book_cover"
               onChange={handleFileChange}
-              className="w-full"
               accept="image/*"
+              className="w-full border rounded p-2"
             />
+            {preview && (
+              <img
+                src={preview}
+                alt="Book cover preview"
+                className="mt-2 w-20 h-28 object-cover"
+              />
+            )}
           </div>
 
-          {/* Image Preview */}
-          {preview && (
-            <div className="mb-3">
-              <p className="text-sm mb-1">Image Preview:</p>
-              <img src={preview} alt="Preview" className="w-32 h-32 object-cover rounded" />
-            </div>
-          )}
+          <div className="mb-3">
+            <label className="block text-sm font-medium">Section</label>
+            <select
+              name="section_id"
+              value={formData.section_id || ""}
+              onChange={handleChange}
+              className="w-full border rounded p-2"
+            >
+              <option value="">Select Section</option>
+              {sections.length > 0 ? (
+                sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.section_name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No sections available</option>
+              )}
+            </select>
+          </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-2">
+          <div className="mb-3">
+            <label className="block text-sm font-medium">Dewey ID</label>
+            <select
+              name="dewey_id"
+              value={formData.dewey_id || ""}
+              onChange={handleChange}
+              className="w-full border rounded p-2"
+            >
+              <option value="">Select Dewey</option>
+              {deweys.length > 0 ? (
+                deweys.map((dewey) => (
+                  <option key={dewey.id} value={dewey.id}>
+                    {dewey.dewey_classification}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No Dewey classifications available</option>
+              )}
+            </select>
+          </div>
+
+          <div className="flex justify-between">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 bg-gray-500 text-white rounded"
+              className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
+              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              {book ? "Update" : "Create"}
+              {book ? "Update" : "Add"} Book
             </button>
           </div>
         </form>
       </div>
+      <Toaster />
     </div>
   );
 }
+
+//original code 2

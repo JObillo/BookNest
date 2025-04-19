@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\DeweyController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\BooksController;
+use App\Http\Controllers\SectionController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -15,6 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::resource('books', BooksController::class);
+
+Route::resource('section', SectionController::class);
+
+Route::resource('deweys', DeweyController::class);
 
 
 require __DIR__.'/settings.php';

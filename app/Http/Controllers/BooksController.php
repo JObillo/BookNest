@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\Books;
+use App\Models\Book;
+use App\Models\Section;
+use App\Models\Dewey;
 
 class BooksController extends Controller
 {
@@ -14,17 +16,11 @@ class BooksController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('books',[
-            'books' => Books::all()
+        return Inertia::render('Books', [
+            'books' => Book::with(['section', 'dewey'])->get(),
+            'sections' => Section::select('id', 'section_name')->get(),
+            'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -32,112 +28,111 @@ class BooksController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|max:255|unique:books',
             'publisher' => 'required|string|max:255',
             'book_copies' => 'required|integer',
-            'call_number' => 'required|integer',
-            'book_cover' => 'nullable|image|max:2048'
+            'accession_number' => 'nullable|string|max:255',
+            'call_number' => 'required|string|max:255',
+            'year' => 'nullable|string|max:255',
+            'publication_place' => 'nullable|string|max:255',
+            'section_id' => 'nullable|integer|exists:sections,id',
+            'dewey_id' => 'nullable|integer|exists:deweys,id',
+            'book_cover' => 'nullable|image|max:2048',
         ]);
-
-        $data = $request->only([
-            'title',
-            'author',
-            'isbn',
-            'publisher',
-            'book_copies',
-            'call_number'
-        ]);
-        if ($request->hasFile('book_cover')) 
-        {
+    
+        if ($request->hasFile('book_cover')) {
             $file = $request->file('book_cover');
-            $filename = time() . '_' . $file->getClientOriginalExtension();
+            $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
-            $data['book_cover'] = '/storage/'.$path;
+            $validated['book_cover'] = '/storage/' . $path;
         }
-
-        Books::create($data);
+    
+        $book = Book::create($validated);
+    
+        // 🔍 Add this log to confirm
+        \Log::info('Book saved:', $book->toArray());
+    
         return redirect()->route('books.index')->with('success', 'Book Added successfully.');
     }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+    
+    
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
     {
-        // Fetch the book by ID
-        $book = Books::findOrFail($id);
-
-        // Validation rules
+        // Find the book to update
+        $book = Book::findOrFail($id);
+    
+        // Validate the input
         $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id, // Exclude current book from unique validation
+            'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id,  // Skip current book's ISBN for uniqueness
             'publisher' => 'required|string|max:255',
-            'book_copies' => 'required|integer',
-            'call_number' => 'required|integer',
-            'book_cover' => 'nullable|image|max:2048'
+            'book_copies' => 'required|integer|min:1',
+            'accession_number' => 'required|string|max:255',
+            'call_number' => 'required|string|max:255',
+            'year' => 'nullable|string|max:255',  // Allow null or string year
+            'publication_place' => 'required|string|max:255',
+            'section_id' => 'required|exists:sections,id',
+            'dewey_id' => 'required|exists:deweys,id',
+            'book_cover' => 'nullable|image|max:2048',
         ]);
-
-        // Prepare the data for updating
+    
+        // Only pick fields that should be updated
         $data = $request->only([
             'title',
             'author',
             'isbn',
             'publisher',
             'book_copies',
-            'call_number'
+            'accession_number',
+            'call_number',
+            'year',
+            'publication_place',
+            'section_id',
+            'dewey_id',
         ]);
-
-        // Check if the user uploaded a new book cover image
+    
+        // Handle the book cover if a new one is uploaded
         if ($request->hasFile('book_cover')) {
-            // Delete the old image from storage if necessary
-            if ($book->book_cover) {
-                $oldCover = public_path($book->book_cover);
-                if (file_exists($oldCover)) {
-                    unlink($oldCover);
-                }
+            // Delete the old cover if it exists
+            if ($book->book_cover && file_exists(public_path($book->book_cover))) {
+                unlink(public_path($book->book_cover));
             }
-
-            // Save the new cover image
+    
+            // Store the new cover image
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
-            $data['book_cover'] = '/storage/'.$path;
+            $data['book_cover'] = '/storage/' . $path;
         }
-
-        // Update the book with the new data
-        $book->update($data);
-
-        return redirect()->route('books.index')->with('success', 'Book Updated successfully.');
+    
+        // Update the book
+        if ($book->update($data)) {
+            // Log successful update for debugging
+            \Log::info('Book updated:', $book->toArray());
+        } else {
+            // Log failure to update
+            \Log::error('Failed to update book:', $book->toArray());
+        }
+    
+        // Redirect back with a success message
+        return redirect()->route('books.index')->with('success', 'Book updated successfully.');
     }
-
+    
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Books $book)
+    public function destroy(Book $book)
     {
         $book->delete();
-        return redirect()->route('books.index')->with('success', 'Book Deleted successfully.');
+        return redirect()->route('books.index')->with('success', 'Book deleted successfully.');
     }
-
 }
