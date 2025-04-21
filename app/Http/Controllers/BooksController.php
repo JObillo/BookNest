@@ -131,7 +131,25 @@ class BooksController extends Controller
         // Redirect back with a success message
         return redirect()->route('books.index')->with('success', 'Book updated successfully.');
     }
+
+    /**
+     * Display books by section.
+     */
+    public function booksBySection(Section $section)
+    {
+        if (!$section) {
+            abort(404, 'Section not found');
+        }
+
+        $books = $section->books()->with('section')->get(); // eager load section
+
+        return Inertia::render('BySection', [
+            'section' => $section,
+            'books' => $books
+        ]);
+    }
     
+
 
     /**
      * Remove the specified resource from storage.
