@@ -43,6 +43,7 @@ class BooksController extends Controller
             'book_cover' => 'nullable|image|max:2048',
         ]);
     
+        // Handle file upload
         if ($request->hasFile('book_cover')) {
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
@@ -50,9 +51,14 @@ class BooksController extends Controller
             $validated['book_cover'] = '/storage/' . $path;
         }
     
+        // 👇 Set copies_available based on book_copies
+        $validated['copies_available'] = $validated['book_copies'];
+    
+        // (Optional) Set default status as 'Available'
+        $validated['status'] = 'Available';
+    
         $book = Book::create($validated);
     
-        // 🔍 Add this log to confirm
         \Log::info('Book saved:', $book->toArray());
     
         return redirect()->route('books.index')->with('success', 'Book Added successfully.');

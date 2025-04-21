@@ -167,10 +167,11 @@ export default function BookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
+    <div className="fixed inset-0 flex items-center justify-center   z-50 p-4">
+      <div className="relative w-full max-w-4xl mx:auto p-8  bg-white rounded-md shadow-xl transition-all">
         <h2 className="text-lg font-semibold mb-4">{book ? "Edit Book" : "Add Book"}</h2>
         <form onSubmit={handleSubmit} encType="multipart/form-data">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> 
           {[
             { label: "Title", name: "title" },
             { label: "Author", name: "author" },
@@ -276,21 +277,23 @@ export default function BookModal({
               )}
             </select>
           </div>
+          {/* <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded"> */}
 
-          <div className="flex justify-between">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={closeModal}
-              className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600"
+              className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
             >
               {book ? "Update" : "Add"} Book
             </button>
+          </div>
           </div>
         </form>
       </div>
@@ -299,4 +302,4 @@ export default function BookModal({
   );
 }
 
-//original code 2
+//original code 3

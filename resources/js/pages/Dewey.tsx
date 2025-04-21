@@ -3,6 +3,14 @@ import { Head, router, usePage } from "@inertiajs/react";
 import DeweyModal from "../components/DeweyModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
+import { type BreadcrumbItem } from '@/types';
+
+const breadcrumbs: BreadcrumbItem[] = [
+  {
+      title: 'Manage Dewey',
+      href: '/deweys',
+  },
+];
 
 type Dewey = {
   id: number;
@@ -37,7 +45,7 @@ export default function Deweys() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dewey" />
       <Toaster position="top-right" richColors />
 

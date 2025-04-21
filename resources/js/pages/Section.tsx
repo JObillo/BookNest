@@ -3,6 +3,14 @@ import { Head, router, usePage } from "@inertiajs/react";
 import SectionModal from "../components/SectionModal";
 import AppLayout from "@/layouts/app-layout";
 import {Toaster, toast} from "sonner";
+import { type BreadcrumbItem } from '@/types';
+
+const breadcrumbs: BreadcrumbItem[] = [
+  {
+      title: 'Manage Section',
+      href: '/section',
+  },
+];
 
 type Section = {
     id: number;
@@ -37,7 +45,7 @@ export default function Sections() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Sections" />
       <Toaster position="top-right" richColors/>
 
@@ -45,7 +53,7 @@ export default function Sections() {
         <div className="flex justify-end">
           <button
             onClick={() => openModal()}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition"
+            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
           >
             Add Section
           </button>
@@ -68,19 +76,19 @@ export default function Sections() {
           <tbody>
             {section.length ? (
               section.map((section) => (
-                <tr key={section.id} className="border-b">
+                <tr key={section.id} className="border-b hover:bg-gray-100">
                   <td className="p-3">{section.id}</td>
                   <td className="p-3">{section.section_name}</td>
                   <td className="p-3 flex gap-2">
                     <button
                       onClick={() => openModal(section)}
-                      className="bg-blue-500 text-sm text-white px-3 py-1 rounded"
+                      className="bg-blue-500 text-sm text-white px-3 py-1 rounded cursor-pointer"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(section.id)}
-                      className="bg-red-500 text-sm text-white px-3 py-1 rounded"
+                      className="bg-red-500 text-sm text-white px-3 py-1 rounded cursor-pointer"
                     >
                       Delete
                     </button>
