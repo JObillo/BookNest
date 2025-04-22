@@ -44,7 +44,7 @@ export default function IssuedBooks() {
     }, [searchQuery]);
     const booksPerPage = 5;
       const filteredBooks = issuedbooks.filter((issuedbooks) =>
-        (issuedbooks.patron.name + issuedbooks.patron.school_id).toLowerCase().includes(searchQuery.toLowerCase())
+        (issuedbooks.patron.name + issuedbooks.patron.school_id).toLowerCase().startsWith(searchQuery.toLowerCase())
     );
   
     const totalPages = Math.ceil(filteredBooks.length / booksPerPage);

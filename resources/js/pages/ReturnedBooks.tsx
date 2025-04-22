@@ -77,7 +77,7 @@ export default function ReturnedBooks() {
     }, [searchQuery]);
     const booksPerPage = 10;
       const filteredBooks = issuedbooks.filter((issuedbooks) =>
-        (issuedbooks.patron.name).toUpperCase().includes(searchQuery.toUpperCase())
+        (issuedbooks.patron.name).toUpperCase().startsWith(searchQuery.toUpperCase())
     );
   
     const totalPages = Math.ceil(filteredBooks.length / booksPerPage);

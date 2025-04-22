@@ -45,7 +45,7 @@ class IssuedBookController extends Controller
         $patron = Patron::where('school_id', $request->school_id)->firstOrFail();
         $book = Book::where('isbn', $request->isbn)->firstOrFail();
 
-        if ($book->copies_available < 1) {
+        if ($book->copies_available < 2) {
             return back()->withErrors(['isbn' => 'No available copies to issue.']);
         }
 
@@ -58,7 +58,9 @@ class IssuedBookController extends Controller
         ]);
 
         $book->decrement('copies_available');
-        $book->status = $book->copies_available > 0 ? 'Available' : 'Not Available';
+        $book->status = $book->copies_available > 1 ? 'Available' : 'Not Available';
+        // $book->status = $book->copies_available > 0 ? 'Available' : 'Not Available';
+
         $book->save();
 
         return redirect()->route('issuedbooks.index')->with('success', 'Book successfully issued.');

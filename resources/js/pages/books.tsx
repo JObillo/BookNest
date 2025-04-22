@@ -21,6 +21,7 @@ export type Book = {
   publisher: string;
   book_copies: number;
   copies_available: number;
+  status: string;
   accession_number?: string;
   call_number: string;
   year?: string;
@@ -75,7 +76,7 @@ export default function Books() {
   }, [searchQuery]);
   const booksPerPage = 5;
     const filteredBooks = books.filter((book) =>
-      (book.title + book.isbn).toLowerCase().includes(searchQuery.toLowerCase())
+      (book.title + book.isbn).toLowerCase().startsWith(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
@@ -158,6 +159,7 @@ export default function Books() {
                     <td className="p-3 text-sm text-gray-800">
                       <div>Book Copies: {book.book_copies}</div>
                       <div>Available Copies: {book.copies_available}</div>
+                      <div>Status: {book.status}</div>
                     </td>
                     {/* <td className="p-3 text-center">{book.book_copies}</td> */}
                     <td className="p-3 flex gap-2">
