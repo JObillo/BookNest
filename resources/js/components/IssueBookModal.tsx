@@ -3,6 +3,7 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { useForm } from "@inertiajs/react";
 import { router } from '@inertiajs/react';
+import { Toaster, toast } from "sonner";
 
 export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [patron, setPatron] = useState<any>(null);
@@ -44,6 +45,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
         setPatron(null);
         setBook(null);
         onClose();
+        toast.success("Book issued successfully!"); //toast notification
         router.reload({ only: ['issuedbooks'] });
       },
       onError: (errors) => {
@@ -56,6 +58,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/30">
+      <Toaster position="top-right" richColors />
       <div className="max-w-xl mx-auto mt-20 bg-white rounded-2xl shadow p-6 space-y-4">
         <Dialog.Title className="text-xl font-bold">Issue Book</Dialog.Title>
 

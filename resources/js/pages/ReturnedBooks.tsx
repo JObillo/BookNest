@@ -53,25 +53,18 @@ export default function ReturnedBooks() {
   // Handle returning of the book
   const handleReturnBook = async (bookId: number, issuedId: number) => {
     try {
-      // Fetch CSRF token from meta tag in the HTML
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-
-      // Make the API request to return the book, sending CSRF token in headers
-      await axios.put(`/issuedbooks/${issuedId}/return`, {}, {
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,  // Include CSRF token in the header
-        },
-      });
-
+      await axios.put(`/issuedbooks/${issuedId}/return`); // CSRF handled globally
+  
       toast.success("Book returned successfully!");
       setIsModalOpen(false);
       setBookToReturn(null);
-      router.reload(); // Reload the page to reflect changes
+      router.reload(); // Refresh list
     } catch (error) {
       console.error(error);
       toast.error("Failed to return book.");
     }
   };
+  
   
   //pagination and seach
     const [searchQuery, setSearchQuery] = useState('');
