@@ -40,7 +40,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Total Books</p>
-                                <p className="text-2xl font-bold">1,250</p>
+                                <p className="text-2xl font-bold">1000</p>
                             </div>
                         </div>
 
@@ -50,8 +50,8 @@ export default function Dashboard() {
                                 <Layers className="w-6 h-6 text-black dark:text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <p className="text-sm text-gray-600 dark:text-gray-300">Total Categories</p>
-                                <p className="text-2xl font-bold">350</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Available Books</p>
+                                <p className="text-2xl font-bold">990</p>
                             </div>
                         </div>
 
@@ -61,8 +61,8 @@ export default function Dashboard() {
                                 <Library className="w-6 h-6 text-black dark:text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <p className="text-sm text-gray-600 dark:text-gray-300">Available Books</p>
-                                <p className="text-2xl font-bold">350</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Total Sections</p>
+                                <p className="text-2xl font-bold">6</p>
                             </div>
                         </div>
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Total Books Dewey</p>
-                                <p className="text-2xl font-bold">350</p>
+                                <p className="text-2xl font-bold">10</p>
                             </div>
                         </div>
 
@@ -83,8 +83,8 @@ export default function Dashboard() {
                                 <Undo2 className="w-6 h-6 text-black dark:text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <p className="text-sm text-gray-600 dark:text-gray-300">Borrowed Books</p>
-                                <p className="text-2xl font-bold">350</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Issued Books</p>
+                                <p className="text-2xl font-bold">10</p>
                             </div>
                         </div>
 
@@ -95,7 +95,17 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Not Returned Books</p>
-                                <p className="text-2xl font-bold">350</p>
+                                <p className="text-2xl font-bold">4</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                            <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
+                                <BookOpen className="w-6 h-6 text-black dark:text-white" />
+                            </div>
+                            <div className="flex flex-col">
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Returned Books</p>
+                                <p className="text-2xl font-bold">6</p>
                             </div>
                         </div>
                 </div>

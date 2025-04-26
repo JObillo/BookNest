@@ -135,7 +135,12 @@ export default function BySection({ section, books }: Props) {
                     </td>
                     <td className="p-3">{book.author}</td>
                     <td className="p-3">{book.publisher}</td>
-                    <td className="p-3">{book.accession_number}</td>
+                    <td className="p-3 text-sm text-gray-800">
+                      <div>Accession #: {book.accession_number}</div>
+                      <div>Call #: {book.call_number}</div>
+                      <div>Year: {book.year?.toString() || "N/A"}</div>
+                      <div>Place: {book.publication_place}</div>
+                    </td>
                     <td className="p-3">{book.status}</td>
                   </tr>
                 ))

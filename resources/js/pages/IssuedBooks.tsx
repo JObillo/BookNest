@@ -4,7 +4,11 @@ import IssueBookModal from "@/components/IssueBookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster } from "sonner";
 import { Input } from "@headlessui/react";
+import { type BreadcrumbItem } from '@/types';
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Issued Books', href: '/section' },
+];
 
 export type IssuedBook = {
   id?: number;
@@ -53,7 +57,7 @@ export default function IssuedBooks() {
     const displayedBooks = filteredBooks.slice(startIndex, endIndex);
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Issue Book" />
       <Toaster position="top-right" richColors />
 

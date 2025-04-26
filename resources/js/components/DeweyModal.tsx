@@ -95,8 +95,8 @@ export default function DeweyModal({ isOpen, closeModal, dewey }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
+    <div className="fixed inset-0 flex items-center justify-center border border-black rounded-lg overflow-y-auto bg-black/50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg rounded-lg border-3 border-gray-600 shadow w-full max-w-xl">
         <h2 className="text-lg font-semibold mb-4">
           {dewey ? "Edit Dewey" : "Add Dewey"}
         </h2>

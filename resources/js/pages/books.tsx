@@ -157,8 +157,8 @@ export default function Books() {
                       <div>Place: {book.publication_place}</div>
                     </td>
                     <td className="p-3 text-sm text-gray-800">
-                      <div>Book Copies: {book.book_copies}</div>
-                      <div>Available Copies: {book.copies_available}</div>
+                      <div>Copies: {book.book_copies}</div>
+                      <div>Available: {book.copies_available}</div>
                       <div>Status: {book.status}</div>
                     </td>
                     {/* <td className="p-3 text-center">{book.book_copies}</td> */}
@@ -169,12 +169,12 @@ export default function Books() {
                       >
                         Edit
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => handleDelete(book.id!)}
                         className="bg-red-500 hover:bg-red-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
                       >
                         Delete
-                      </button>
+                      </button> */}
                     </td>
                   </tr>
                 ))

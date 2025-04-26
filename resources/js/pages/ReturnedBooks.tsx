@@ -6,7 +6,11 @@ import { Toaster, toast } from "sonner";
 import ReturnBookModal from "@/components/ReturnBookModal";
 import axios from "axios";
 import { Input } from '@/components/ui/input';
+import { BreadcrumbItem } from '@/types';
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Not Returned Books', href: '/dashboard' },
+];
 
 // Define types for IssuedBook
 export type IssuedBook = {
@@ -88,7 +92,7 @@ export default function ReturnedBooks() {
 
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Returned Books" />
       <Toaster position="top-right" richColors />
 
