@@ -66,8 +66,8 @@ export default function IssuedBooks() {
           {/* Search Bar on the Left */}
         <div>
           <Input
-            className="border rounded px-2 py-1 w-100"
-            placeholder="Search"
+            className="border rounded px-2 py-1 w-100 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            placeholder="Search by name or school id"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
