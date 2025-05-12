@@ -1,7 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Head } from '@inertiajs/react';
-import { Link } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 import { useState, useEffect } from "react";
+import { FaHome } from 'react-icons/fa'; // Add this import
+
 
 type Props = {
   section: {
@@ -24,21 +26,35 @@ type Props = {
 };
 
 export default function BySection({ section, books }: Props) {
- //pagination and search
-  const [searchQuery, setSearchQuery] = useState('');
+// Pagination and search
+const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchCategory, setSearchCategory] = useState('title'); // Added state for search category
+
+  // Reset the page to 1 if search query or category changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
-  const booksPerPage = 5;
-    const filteredBooks = books.filter((book) =>
-      (book.title + book.isbn).toLowerCase().startsWith(searchQuery.toLowerCase())
-  );
+  }, [searchQuery, searchCategory]);
 
-  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-  const startIndex = (currentPage - 1) * booksPerPage;
-  const endIndex = startIndex + booksPerPage;
-  const displayedBooks = filteredBooks.slice(startIndex, endIndex); 
+const filteredBooks = books.filter((book) =>
+  book.title.toLowerCase().startsWith(searchQuery.toLowerCase()) ||
+  book.isbn.toLowerCase().startsWith(searchQuery.toLowerCase())
+);
+
+const booksPerPage = 5;
+const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+const startIndex = (currentPage - 1) * booksPerPage;
+const endIndex = startIndex + booksPerPage;
+const displayedBooks = filteredBooks.slice(startIndex, endIndex);
+
+// Adjust currentPage if the filtered books count is less than the number of items on the current page
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(totalPages); // Go to the last page if the current page is out of bounds
+  }
+}, [filteredBooks, totalPages, currentPage]);
+
+
   return (
     <>
       <Head title={`Books in ${section.section_name}`} />
@@ -68,17 +84,27 @@ export default function BySection({ section, books }: Props) {
           <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
             PhilCST Library: Your Gateway to Knowledge and Discovery
           </p>
-          <h1 className="text-xl font-bold mb-4">
-          Books in {section.section_name}
-          </h1>
-          <div>
+          <div className="flex items-center space-x-2">
+            <Link
+              href={route("home")}
+              className="text-black text-xl sm:text-2xl hover:text-purple-900"
+            >
+              <FaHome />
+            </Link>
+            <h1 className="font-bold text-xl">
+              Books in {section.section_name}
+            </h1>
+          </div>
+
+          <div className='flex items-center justify-between mt-4 px-2 sm:px-6'>
           <Input
-            className="border rounded px-2 py-1 w-100"
-            placeholder="Search"
+            className="border rounded px-2 py-1 w-100 placeholder-italic"
+            placeholder="Search by Author or ISBN"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
+          </div>
+          
         
         </div>
 
@@ -107,10 +133,24 @@ export default function BySection({ section, books }: Props) {
                   "Publisher",
                   "Catalog Info",
                   "Status",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
-                    {header}
-                  </th>
+                ].map((header, index) => (
+                  <th
+                  key={header}
+                  className={`border p-3 text-left ${
+                        index === 0 // Book Cover
+                      ? "hidden lg:table-cell"  // Hides Book Cover by default, shows on large screens (lg)
+                      : index === 3 // Publisher
+                      ? "hidden lg:table-cell"  // Hides Publisher by default, shows on large screens (lg)
+                      // : index === 5 // Book Copies
+                      // ? "hidden lg:table-cell"  // Hides Book Copies by default, shows on large screens (lg)
+                      // : index === 6
+                      // ? "hidden lg:table-cell"
+                      : ""
+                      
+                  }`}
+                >
+                  {header}
+                </th>
                 ))}
               </tr>
             </thead>
@@ -118,7 +158,7 @@ export default function BySection({ section, books }: Props) {
               {displayedBooks.length ? (
                 displayedBooks.map((book) => (
                   <tr key={book.id} className="border-b hover:bg-gray-100">
-                    <td className="p-3">
+                    <td className="p-3 hidden lg:table-cell">
                       {book.book_cover ? (
                         <img
                           src={book.book_cover}
@@ -135,13 +175,17 @@ export default function BySection({ section, books }: Props) {
                     </td>
                     <td className="p-3">{book.author}</td>
                     <td className="p-3">{book.publisher}</td>
-                    <td className="p-3 text-sm text-gray-800">
+                    <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
                       <div>Accession #: {book.accession_number}</div>
                       <div>Call #: {book.call_number}</div>
                       <div>Year: {book.year?.toString() || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
                     </td>
-                    <td className="p-3">{book.status}</td>
+                    <td className={`px-2 py-1 rounded text-black text-sm ${
+                                book.status === "Available"
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}>{book.status}</td>
                   </tr>
                 ))
               ) : (

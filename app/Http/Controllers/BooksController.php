@@ -16,12 +16,25 @@ class BooksController extends Controller
      */
     public function index(): Response
     {
+        $books = Book::with(['section', 'dewey'])->get();
+    
+        // Modify the 'book_cover' field to return a fully qualified URL
+        // foreach ($books as $book) {
+        //     $book->book_cover = url('storage/' . $book->book_cover);  // Full URL for the book cover
+        // }
+
+        foreach ($books as $book) {
+            $book->book_cover = url($book->book_cover);  // <-- Just $book->book_cover, no extra "storage/"
+        }
+        
+    
         return Inertia::render('Books', [
-            'books' => Book::with(['section', 'dewey'])->get(),
+            'books' => $books,
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
         ]);
     }
+    
 
     /**
      * Store a newly created resource in storage.

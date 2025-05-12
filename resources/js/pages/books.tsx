@@ -169,12 +169,12 @@ export default function Books() {
                       >
                         Edit
                       </button>
-                      {/* <button
+                      <button
                         onClick={() => handleDelete(book.id!)}
                         className="bg-red-500 hover:bg-red-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
                       >
                         Delete
-                      </button> */}
+                      </button>
                     </td>
                   </tr>
                 ))

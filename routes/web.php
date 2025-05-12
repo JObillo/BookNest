@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\BookApiController;
+use App\Http\Controllers\Api\SectionApiController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\{
@@ -12,6 +14,7 @@ use App\Http\Controllers\{
 use App\Models\Book;
 use App\Models\Patron;
 use App\Models\Section;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -99,8 +102,111 @@ Route::get('/patrons/school/{school_id}', function ($school_id) {
 
     \Log::info("Found patron: ", ['patron' => $patron]);
     return response()->json($patron);
+
 });
 
+// Route::get('fetchapi', function(){
+//     $data = Book::get();
+//     return response()->json($data, 200);
+// });
+Route::get('/api/books', function () {
+    return response()->json(Book::with('section')->get());
+});
+
+// Route::get('/api/books/search', function (Request $request) {
+//     $query = $request->input('q');
+//     return response()->json(Book::where('title', 'like', "%$query%")->with('section')->get());
+// });
+
+
+// Route::get('/api/sections-with-books', function () {
+//     $sections = Section::with('books')->get();
+
+//     return $sections->map(function ($section) {
+//         return [
+//             'section_name' => $section->section_name,
+//             'books' => $section->books->map(function ($book) {
+//                 return [
+//                     'id' => $book->id,
+//                     'title' => $book->title,
+//                     'author' => $book->author,
+//                 ];
+//             }),
+//         ];
+//     });
+// });
+
+
+    // Route::prefix('api')->group(function () {
+    //     Route::get('/books', [BookApiController::class, 'index']);
+    //     Route::get('/sections-with-books', [SectionApiController::class, 'index']);
+    // });
+
+
+    // Route::prefix('api')->group(function () {
+    
+    //     // Get all books
+    //     Route::get('/books', function () {
+    //         $books = Book::with('section')
+    //             ->select('id', 'title', 'author', 'isbn', 'copies_available', 'book_cover', 'section_id')
+    //             ->paginate(10); // or ->get() if you don't want pagination
+    
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Books fetched successfully',
+    //             'data' => $books
+    //         ]);
+    //     });
+    
+    //     // 🔍 Search books
+    //     Route::get('/books/search', function (Request $request) {
+    //         $query = $request->input('q');
+    
+    //         $books = Book::where('title', 'like', "%$query%")
+    //             ->orWhere('author', 'like', "%$query%")
+    //             ->with('section')
+    //             ->select('id', 'title', 'author', 'isbn', 'copies_available', 'book_cover', 'section_id')
+    //             ->paginate(10);
+    
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Search completed',
+    //             'data' => $books
+    //         ]);
+    //     });
+    
+    //     // 🏷️ Get all sections with their books
+    //     Route::get('/sections-with-books', function () {
+    //         $sections = Section::with('books:id,section_id,title,author,isbn')
+    //             ->select('id', 'section_name')
+    //             ->get();
+    
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Sections fetched successfully',
+    //             'data' => $sections
+    //         ]);
+    //     });
+    
+    //     // Get book by ISBN
+    //     Route::get('/books/isbn/{isbn}', function ($isbn) {
+    //         $book = Book::where('isbn', $isbn)->with('section')->first();
+    
+    //         if (!$book) {
+    //             return response()->json([
+    //                 'status' => false,
+    //                 'message' => 'Book not found'
+    //             ], 404);
+    //         }
+    
+    //         return response()->json([
+    //             'status' => true,
+    //             'message' => 'Book fetched successfully',
+    //             'data' => $book
+    //         ]);
+    //     });
+    
+    // });
 
 // Extra Route Files
 require __DIR__.'/settings.php';
