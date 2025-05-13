@@ -10,13 +10,25 @@ import {
     Undo2,
     BookX
   } from 'lucide-react';
+
+  interface StatsProps {
+    stats: {
+        total_books: number;
+        available_books: number;
+        total_sections: number;
+        deweys: number;
+        issued_books: number;
+        not_returned_books: number;
+        returned_books: number;
+    };
+}
   
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ stats }: StatsProps) {
     // const [filter, setFilter] = useState('title'); // Default filter option
     // const [searchQuery, setSearchQuery] = useState('');
 
@@ -40,7 +52,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Total Books</p>
-                                <p className="text-2xl font-bold">1000</p>
+                                <p className="text-2xl font-bold">{stats.total_books}</p>
                             </div>
                         </div>
 
@@ -51,7 +63,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Available Books</p>
-                                <p className="text-2xl font-bold">990</p>
+                                <p className="text-2xl font-bold">{stats.available_books}</p>
                             </div>
                         </div>
 
@@ -62,7 +74,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Total Sections</p>
-                                <p className="text-2xl font-bold">6</p>
+                                <p className="text-2xl font-bold">{stats.total_sections}</p>
                             </div>
                         </div>
 
@@ -73,7 +85,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Total Books Dewey</p>
-                                <p className="text-2xl font-bold">10</p>
+                                <p className="text-2xl font-bold">{stats.deweys}</p>
                             </div>
                         </div>
 
@@ -84,7 +96,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Issued Books</p>
-                                <p className="text-2xl font-bold">10</p>
+                                <p className="text-2xl font-bold">{stats.issued_books}</p>
                             </div>
                         </div>
 
@@ -95,7 +107,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Not Returned Books</p>
-                                <p className="text-2xl font-bold">4</p>
+                                <p className="text-2xl font-bold">{stats.not_returned_books}</p>
                             </div>
                         </div>
 
@@ -105,7 +117,7 @@ export default function Dashboard() {
                             </div>
                             <div className="flex flex-col">
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Returned Books</p>
-                                <p className="text-2xl font-bold">6</p>
+                                <p className="text-2xl font-bold">{stats.returned_books}</p>
                             </div>
                         </div>
                 </div>

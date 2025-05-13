@@ -7,7 +7,8 @@ use App\Http\Controllers\{
     DeweyController,
     IssuedBookController,
     PatronController,
-    SectionController
+    SectionController,
+    DashboardController
 };
 use App\Models\Book;
 use App\Models\Patron;
@@ -101,7 +102,9 @@ Route::get('/patrons/school/{school_id}', function ($school_id) {
     return response()->json($patron);
 });
 
-
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
 // Extra Route Files
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

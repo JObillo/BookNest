@@ -121,10 +121,23 @@ export default function ReturnedBooks() {
                   "Due Date",
                   "Status",
                   "Action",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
-                    {header}
-                  </th>
+                ].map((header, index) => (
+                  <th
+                  key={header}
+                  className={`border p-3 text-left ${
+                      
+                       index === 2 // author
+                      ? "hidden lg:table-cell"  // Hides Publisher by default, shows on large screens (lg)
+                      : index === 6 // status
+                      ? "hidden lg:table-cell"  // Hides Book Copies by default, shows on large screens (lg)
+                      : index === 4 //issued date
+                      ? "hidden lg:table-cell"
+                      : ""
+                      
+                  }`}
+                >
+                  {header}
+                </th>
                 ))}
               </tr>
             </thead>
@@ -144,18 +157,18 @@ export default function ReturnedBooks() {
                       <div className="font-semibold">{record.book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {record.book.isbn}</div>
                     </td>
-                    <td className="p-3">{record.book.author}</td>
+                    <td className="p-3 hidden lg:table-cell" >{record.book.author}</td>
                     <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
                       <div>Place: {record.book.publication_place || "N/A"}</div>
                     </td>
-                    <td className="p-3">{record.issued_date || "N/A"}</td>
+                    <td className="p-3 hidden lg:table-cell">{record.issued_date || "N/A"}</td>
                     <td className="p-3">{record.due_date || "N/A"}</td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded text-white text-sm ${
+                        className={`px-2 py-1 rounded text-white text-sm hidden lg:table-cell ${
                           record.status === "Issued" ? "bg-yellow-600" : "bg-green-600"
                         }`}
                       >

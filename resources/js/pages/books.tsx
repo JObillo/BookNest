@@ -76,7 +76,7 @@ export default function Books() {
   }, [searchQuery]);
   const booksPerPage = 5;
   const filteredBooks = books.filter((book) =>
-    book.title.toLowerCase().startsWith(searchQuery.toLowerCase()) ||
+    book.author.toLowerCase().startsWith(searchQuery.toLowerCase()) ||
     book.isbn.toLowerCase().startsWith(searchQuery.toLowerCase())
   );
   

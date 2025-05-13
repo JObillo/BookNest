@@ -3,7 +3,7 @@ import { Head, usePage } from "@inertiajs/react";
 import IssueBookModal from "@/components/IssueBookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster } from "sonner";
-import { Input } from "@headlessui/react";
+import { Input } from "@/components/ui/input";
 import { type BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -62,11 +62,11 @@ export default function IssuedBooks() {
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
           {/* Search Bar on the Left */}
         <div>
           <Input
-            className="border rounded px-2 py-1 w-100 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            className="border rounded px-2 py-1 w-100"
             placeholder="Search by name or school id"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -74,11 +74,11 @@ export default function IssuedBooks() {
         </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
+            className="bg-green-600 text-white rounded px-4 py-2 text-sm hover:bg-green-700 transition w-100 md:w-auto cursor-pointer"
           >
             Issue Book
           </button>
-      </div>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
@@ -92,10 +92,23 @@ export default function IssuedBooks() {
                   "Issued Date",
                   "Due Date",
                   "Status",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
-                    {header}
-                  </th>
+                ].map((header, index) => (
+                  <th
+                  key={header}
+                  className={`border p-3 text-left ${
+                      
+                       index === 2 // author
+                      ? "hidden lg:table-cell"  // Hides Publisher by default, shows on large screens (lg)
+                      : index === 6 // status
+                      ? "hidden lg:table-cell"  // Hides Book Copies by default, shows on large screens (lg)
+                      // : index === 6
+                      // ? "hidden lg:table-cell"
+                      : ""
+                      
+                  }`}
+                >
+                  {header}
+                </th>
                 ))}
               </tr>
             </thead>
@@ -121,7 +134,7 @@ export default function IssuedBooks() {
                         ISBN: {record.book.isbn}
                       </div>
                     </td>
-                    <td className="p-3">{record.book.author}</td>
+                    <td className="p-3 hidden lg:table-cell">{record.book.author}</td>
                     <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
@@ -132,7 +145,7 @@ export default function IssuedBooks() {
                     <td className="p-3">{record.due_date || "N/A"}</td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded text-white text-sm ${
+                        className={`px-2 py-1 rounded text-white text-sm hidden lg:table-cells ${
                           record.status === "Issued"
                             ? "bg-yellow-600"
                             : "bg-green-600"

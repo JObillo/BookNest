@@ -48,16 +48,16 @@ export default function Welcome() {
     const filteredBooks = books.filter((book) => {
       if (searchFilter === "All") {
         return (
-          book.title.toLowerCase().startsWith(lowerSearch) ||
-          book.author.toLowerCase().startsWith(lowerSearch) ||
-          book.section?.section_name.toLowerCase().startsWith(lowerSearch)
+          book.title.toLowerCase().includes(lowerSearch) ||
+          book.author.toLowerCase().includes(lowerSearch) ||
+          book.section?.section_name.toLowerCase().includes(lowerSearch)
         );
       } else if (searchFilter === "Title") {
-        return book.title.toLowerCase().startsWith(lowerSearch);
+        return book.title.toLowerCase().includes(lowerSearch);
       } else if (searchFilter === "Author") {
-        return book.author.toLowerCase().startsWith(lowerSearch);
+        return book.author.toLowerCase().includes(lowerSearch);
       } else if (searchFilter === "Section") {
-        return book.section?.section_name.toLowerCase().startsWith(lowerSearch);
+        return book.section?.section_name.toLowerCase().includes(lowerSearch);
       }
       return false;
     });

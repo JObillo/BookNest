@@ -37,8 +37,8 @@ const [searchQuery, setSearchQuery] = useState('');
   }, [searchQuery, searchCategory]);
 
 const filteredBooks = books.filter((book) =>
-  book.title.toLowerCase().startsWith(searchQuery.toLowerCase()) ||
-  book.isbn.toLowerCase().startsWith(searchQuery.toLowerCase())
+  book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  book.isbn.toLowerCase().includes(searchQuery.toLowerCase())
 );
 
 const booksPerPage = 5;
@@ -99,7 +99,7 @@ useEffect(() => {
           <div className='flex items-center justify-between mt-4 px-2 sm:px-6'>
           <Input
             className="border rounded px-2 py-1 w-100 placeholder-italic"
-            placeholder="Search by Author or ISBN"
+            placeholder="Search by Title or ISBN"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
