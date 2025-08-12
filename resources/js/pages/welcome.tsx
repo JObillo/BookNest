@@ -1,6 +1,8 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import { useEffect, useState, useMemo } from "react";
 import "../../css/app.css";
+import { Select } from "@headlessui/react";
+import { SelectIcon } from "@radix-ui/react-select";
 
 type Book = {
   id: number;
@@ -10,6 +12,7 @@ type Book = {
   status: string;
   book_cover?: string;
   section_id: number;
+  description?: string; // ✅ Add this
   section?: {
     id: number;
     section_name: string;
@@ -21,17 +24,43 @@ type Section = {
   section_name: string;
 };
 
+type Ebook = {  // ✅ Added Ebook type definition
+  id: number;
+  title: string;
+  author: string;
+  year: number;
+  cover?: string;
+  file_url: string;
+};
+
+
 export default function Welcome() {
   const { props } = usePage<{
     books: Book[];
     sections: Section[];
     flashMessage?: string;
+    ebooks: Ebook[];  // ✅ Added ebooks to the props
   }>();
 
   const [books, setBooks] = useState<Book[]>(props.books || []);
   const [sections, setSections] = useState<Section[]>(props.sections || []);
+  const [ebooks, setEbooks] = useState<Ebook[]>(props.ebooks || []); // ✅ State for ebooks (added)
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
+
+  // ✅ State for detail modal
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const openDetailModal = (book: Book) => {
+    setSelectedBook(book);
+    setIsDetailModalOpen(true);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedBook(null);
+    setIsDetailModalOpen(false);
+  };
 
   useEffect(() => {
     if (props.books) {
@@ -41,8 +70,8 @@ export default function Welcome() {
       setSections(props.sections);
     }
   }, [props.books, props.sections, props.flashMessage]);
+  if (props.ebooks) setEbooks(props.ebooks);  // ✅ Added: Set ebooks state based on props
 
-  // This groups the books by section AND applies the search filter
   const groupedBooks = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
     const filteredBooks = books.filter((book) => {
@@ -79,7 +108,9 @@ export default function Welcome() {
     return groups;
   }, [books, sections, searchTerm, searchFilter]);
 
-  const sectionNames = sections.map((section) => section.section_name);
+  const sectionNames = sections.map((section) => section.section_name);  
+  
+
 
   return (
     <>
@@ -111,7 +142,7 @@ export default function Welcome() {
 
         {/* Search Inputs */}
         <div className="flex space-x-2 mt-6">
-          <select
+          <Select
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
@@ -120,7 +151,7 @@ export default function Welcome() {
             <option value="Title">Title</option>
             <option value="Author">Author</option>
             <option value="Section">Section</option>
-          </select>
+          </Select>
 
           <input
             type="text"
@@ -159,33 +190,28 @@ export default function Welcome() {
                     {/* Books Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {groupedBooks[sectionName]?.slice(0, 5).map((book) => (
-                        <div
+                        <Link
+                          href={route("books.show", { book: book.id })}
                           key={book.id}
-                          className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center"
+                          className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
                         >
                           <img
                             src={book.book_cover || "/placeholder-book.png"}
                             alt={book.title}
-                            className="w-50 h-65 object-cover rounded cursor-pointer hover:scale-[1.02]"
-                          />
+                            className="w-50 h-65 object-cover rounded"
+                        />
                           <div className="mt-2 w-full text-center">
-                            <h3 className="text-sm font-semibold truncate">
-                              {book.title}
-                            </h3>
-                            <p className="text-s text-gray-600">
-                              By: {book.author}
-                            </p>
+                            <h3 className="text-sm font-semibold truncate">{book.title}</h3>
+                            <p className="text-s text-gray-600">By: {book.author}</p>
                             <span
                               className={`px-2 py-1 rounded text-white text-sm ${
-                                book.status === "Available"
-                                  ? "bg-green-600"
-                                  : "bg-red-600"
+                                book.status === "Available" ? "bg-green-600" : "bg-red-600"
                               }`}
                             >
                               {book.status}
                             </span>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -195,7 +221,78 @@ export default function Welcome() {
             <p className="text-center text-gray-500">No book sections found.</p>
           )}
         </div>
+        {/* eBook Section */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-4">eBooks</h2>
+
+          {ebooks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {ebooks.slice(0, 5).map((ebook) => (
+                <a
+                  key={ebook.id}
+                  href={ebook.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                >
+                  <img
+                    src={ebook.cover || "/placeholder-book.png"}
+                    alt={ebook.title}
+                    className="w-40 h-56 object-cover rounded"
+                  />
+                  <div className="mt-2 w-full text-center">
+                    <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
+                    <p className="text-s text-gray-600">By: {ebook.author}</p>
+                    <span className="text-xs text-gray-500">Published: {ebook.year}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center">No eBooks available.</p>
+          )}
+        </div>
+
       </div>
+
+      {/* ✅ Book Detail Modal */}
+      {isDetailModalOpen && selectedBook && (
+        <div className="fixed inset-0 z-50 bg-opacity-40 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-lg">
+            <button
+              onClick={closeDetailModal}
+              className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+            >
+              &times;
+            </button>
+            <div className="flex flex-col items-center">
+              <img
+                src={selectedBook.book_cover || "/placeholder-book.png"}
+                alt={selectedBook.title}
+                className="w-40 h-56 object-cover rounded mb-4"
+              />
+              <h2 className="text-lg font-bold mb-1">{selectedBook.title}</h2>
+              <p className="text-sm text-gray-700 mb-1">
+                <strong>Author:</strong> {selectedBook.author}
+              </p>
+              <p className="text-sm text-gray-700 mb-1">
+                <strong>Publisher:</strong> {selectedBook.publisher}
+              </p>
+              <p className="text-sm text-gray-700 mb-1">
+                <strong>Section:</strong> {selectedBook.section?.section_name}
+              </p>
+              <p className="text-sm text-gray-700 mb-1">
+                <strong>Status:</strong> {selectedBook.status}
+              </p>
+              {selectedBook.description && (
+                <p className="text-sm text-gray-700 mt-3 whitespace-pre-wrap text-justify">
+                  {selectedBook.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

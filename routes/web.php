@@ -8,11 +8,13 @@ use App\Http\Controllers\{
     IssuedBookController,
     PatronController,
     SectionController,
-    DashboardController
+    DashboardController,
+    EbookController
 };
 use App\Models\Book;
 use App\Models\Patron;
 use App\Models\Section;
+use App\Models\Ebook;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +26,12 @@ use App\Models\Section;
 Route::get('/', function () {
     $books = Book::with('section')->get();
     $sections = Section::all();
+    $ebooks = Ebook::all();
 
     return Inertia::render('welcome', [
         'books' => $books,
         'sections' => $sections,
+        'ebooks' => $ebooks
     ]);
 })->name('home');
 
@@ -105,6 +109,18 @@ Route::get('/patrons/school/{school_id}', function ($school_id) {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
+
+Route::get('/books/{book}', [BooksController::class, 'show'])->name('books.show');
+
+
+// Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index');
+
+Route::resource('ebooks', EbookController::class);
+
+Route::get('/ebooks', [EbookController::class, 'index'])->name('Ebooks.index');
+
+Route::delete('/ebooks/{id}', [EbookController::class, 'destroy']);
+
 // Extra Route Files
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

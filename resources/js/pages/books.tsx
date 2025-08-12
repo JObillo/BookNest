@@ -29,6 +29,7 @@ export type Book = {
   book_cover?: string;
   section_id?: number;
   dewey_id?: number;
+  description?:string;
 };
 
 type Section = {
@@ -75,11 +76,9 @@ export default function Books() {
     setCurrentPage(1);
   }, [searchQuery]);
   const booksPerPage = 5;
-  const filteredBooks = books.filter((book) =>
-    book.author.toLowerCase().startsWith(searchQuery.toLowerCase()) ||
-    book.isbn.toLowerCase().startsWith(searchQuery.toLowerCase())
+    const filteredBooks = books.filter((book) =>
+      (book.title + book.isbn).toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
@@ -92,20 +91,21 @@ export default function Books() {
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+        <div className="flex justify-between items-center mb-4">
         {/* Search Bar on the Left */}
         <div>
           <Input
             className="border rounded px-2 py-1 w-100"
-            placeholder="Search by author or isbn"
+            placeholder="Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
+
           <button
             onClick={() => openModal()}
-            className="bg-green-600 text-white rounded px-4 py-2 text-sm hover:bg-green-700 transition w-100 md:w-auto cursor-pointer"
+            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
           >
             Add Book
           </button>
@@ -113,122 +113,122 @@ export default function Books() {
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
-          <thead>
-            <tr className="bg-purple-900 text-white border-b">
-              {[
-                "Book Cover",
-                "Book",
-                "Author",
-                "Publisher",
-                "Catalog Info",
-                "Book Copies",
-                "Actions",
-              ].map((header, index) => (
-                <th
-                  key={header}
-                  className={`border p-3 text-left ${
-                        index === 0 // Book Cover
-                      ? "hidden lg:table-cell"  // Hides Book Cover by default, shows on large screens (lg)
-                      : index === 3 // Publisher
-                      ? "hidden lg:table-cell"  // Hides Publisher by default, shows on large screens (lg)
-                      : index === 5 // Book Copies
-                      ? "hidden lg:table-cell"  // Hides Book Copies by default, shows on large screens (lg)
-                      // : index === 6
-                      // ? "hidden lg:table-cell"
-                      : ""
-                      
-                  }`}
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
+  <thead>
+    <tr className="bg-purple-900 text-white border-b">
+      {[
+        "Book Cover",
+        "Book Title",
+        // "Description",
+        "Author",
+        "Publisher",
+        "Catalog Info",
+        "Book Copies",
+        "Actions",
+      ].map((header) => (
+        <th key={header} className="border p-3 text-left">
+          {header}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {displayedBooks.length ? (
+      displayedBooks.map((book) => (
+        <tr key={book.id} className="border-b hover:bg-gray-100">
+          <td className="p-3">
+            {book.book_cover ? (
+              <img
+                src={book.book_cover}
+                alt="Book Cover"
+                className="w-20 h-28 object-cover rounded shadow"
+              />
+            ) : (
+              <span className="text-gray-500">No Cover</span>
+            )}
+          </td>
+          <td className="p-3">
+            <div className="font-semibold">{book.title}</div>
+            <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
+          </td>
+          {/* <td className="p-3 text-gray-800">
+            Description content
+            {book.description ? (
+              <p className="text-justify">{book.description}</p>
+            ) : (
+              <span className="text-gray-500 italic">No description available</span>
+            )}
+          </td> */}
+          <td className="p-3">{book.author}</td>
+          <td className="p-3">{book.publisher}</td>
+          <td className="p-3 text-sm text-gray-800">
+            <div>Accession #: {book.accession_number}</div>
+            <div>Call #: {book.call_number}</div>
+            <div>Year: {book.year?.toString() || "N/A"}</div>
+            <div>Place: {book.publication_place}</div>
+          </td>
+          <td className="p-3 text-sm text-gray-800">
+            <div>Copies: {book.book_copies}</div>
+            <div>Available: {book.copies_available}</div>
+            <div>Status: {book.copies_available > 1 ? 'Available' : 'Not Available'}</div>
+          </td>
+          <td className="p-3 flex gap-2">
+            <button
+              onClick={() => openModal(book)}
+              className="bg-blue-500 hover:bg-blue-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDelete(book.id!)}
+              className="bg-red-500 hover:bg-red-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan={8} className="text-center p-4 text-gray-600">
+          No books found.
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
 
-
-            <tbody>
-              {displayedBooks.length ? (
-                displayedBooks.map((book) => (
-                  <tr key={book.id} className="border-b hover:bg-gray-100">
-                    <td className="p-3 hidden lg:table-cell">
-                      {book.book_cover ? (
-                        <img
-                          src={book.book_cover}
-                          alt="Book Cover"
-                          className="w-20 h-28 object-cover rounded shadow"
-                        />
-                      ) : (
-                        <span className="text-gray-500">No Cover</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <div className="font-semibold">{book.title}</div>
-                      <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
-                    </td>
-                    <td className="p-3">{book.author}</td>
-                    <td className="p-3 hidden lg:table-cell">{book.publisher}</td>
-                    <td className="p-3 text-sm text-gray-800">
-                      <div>Accession #: {book.accession_number}</div>
-                      <div>Call #: {book.call_number}</div>
-                      <div>Year: {book.year?.toString() || "N/A"}</div>
-                      <div>Place: {book.publication_place}</div>
-                    </td>
-                    <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
-                      <div>Copies: {book.book_copies}</div>
-                      <div>Available: {book.copies_available}</div>
-                      <div>Status: {book.status}</div>
-                    </td>
-                    <td className="p-3 flex gap-2">
-                      <button
-                        onClick={() => openModal(book)}
-                        className="bg-blue-500 hover:bg-blue-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-center p-4 text-gray-600">
-                    No books found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
-        <span>
-          Page {currentPage} — {displayedBooks.length} book
-          {displayedBooks.length !== 1 && "s"} on this page
+    <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
+      <span>
+        Page {currentPage} — {displayedBooks.length} book
+        {displayedBooks.length !== 1 && "s"} on this page
+      </span>
+
+      <div className="flex items-center gap-1">
+        <button
+          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+
+        <span className="px-3 py-1 bg-purple-700 text-white rounded">
+          {currentPage}
         </span>
 
-        <div className="flex items-center gap-1">
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-
-          <span className="px-3 py-1 bg-purple-700 text-white rounded">
-            {currentPage}
-          </span>
-
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
-        </div>
+        <button
+          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
       </div>
+    </div>
 
       <BookModal
         isOpen={isModalOpen}
@@ -240,3 +240,6 @@ export default function Books() {
     </AppLayout>
   );
 }
+
+
+//original code 3 working

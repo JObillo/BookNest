@@ -36,10 +36,14 @@ const [searchQuery, setSearchQuery] = useState('');
     setCurrentPage(1);
   }, [searchQuery, searchCategory]);
 
-const filteredBooks = books.filter((book) =>
-  book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  book.isbn.toLowerCase().includes(searchQuery.toLowerCase())
-);
+const filteredBooks = books.filter((book) => {
+  const value = book[searchCategory as keyof typeof book];
+  return (
+    typeof value === 'string' &&
+    value.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+});
+
 
 const booksPerPage = 5;
 const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
@@ -97,12 +101,27 @@ useEffect(() => {
           </div>
 
           <div className='flex items-center justify-between mt-4 px-2 sm:px-6'>
-          <Input
-            className="border rounded px-2 py-1 w-100 placeholder-italic"
-            placeholder="Search by Title or ISBN"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 px-2 sm:px-6'>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select
+                className="border rounded px-2 py-1 text-sm text-gray-700"
+                value={searchCategory}
+                onChange={(e) => setSearchCategory(e.target.value)}
+              >
+                <option value="title">Title</option>
+                <option value="author">Author</option>
+                <option value="isbn">ISBN</option>
+              </select>
+
+              <Input
+                className="border rounded px-2 py-1 w-full placeholder-italic"
+                placeholder={`Search by ${searchCategory}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
           </div>
           
         
@@ -159,7 +178,12 @@ useEffect(() => {
                 displayedBooks.map((book) => (
                   <tr key={book.id} className="border-b hover:bg-gray-100">
                     <td className="p-3 hidden lg:table-cell">
+                      <Link
+                          href={route("books.show", { book: book.id })}
+                          key={book.id}
+                        >
                       {book.book_cover ? (
+                        
                         <img
                           src={book.book_cover}
                           alt="Book Cover"
@@ -168,7 +192,11 @@ useEffect(() => {
                       ) : (
                         <span className="text-gray-500">No Cover</span>
                       )}
+                      </Link>
                     </td>
+                  
+                    
+                    
                     <td className="p-3">
                       <div className="font-semibold">{book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
@@ -181,8 +209,13 @@ useEffect(() => {
                       <div>Year: {book.year?.toString() || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
                     </td>
-                    <td className="p-3">{book.status}</td>
+                    
+                    <td className="p-3">{book.status}</td> 
+                      
                   </tr>
+                  
+                  
+                  
                 ))
               ) : (
                 <tr>
@@ -190,6 +223,8 @@ useEffect(() => {
                     No books found.
                   </td>
                 </tr>
+                 
+                
               )}
               </tbody>
           </table>

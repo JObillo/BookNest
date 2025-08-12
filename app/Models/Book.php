@@ -22,9 +22,12 @@ class Book extends Model
         'call_number',
         'year',
         'publication_place',
+        'description',
         'book_cover',
         'section_id',
         'dewey_id',
+        'is_ebook',
+        'ebook_file'
     ];
 
     // Relationships

@@ -46,6 +46,7 @@ export default function Dashboard({ stats }: StatsProps) {
 
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="/books">
                         <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                             <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                                 <BookOpen className="w-6 h-6 text-black dark:text-white" />
@@ -55,9 +56,10 @@ export default function Dashboard({ stats }: StatsProps) {
                                 <p className="text-2xl font-bold">{stats.total_books}</p>
                             </div>
                         </div>
+                        </a>
 
                         {/* Total Categories */}
-                        <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                        {/* <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                             <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                                 <Layers className="w-6 h-6 text-black dark:text-white" />
                             </div>
@@ -65,9 +67,10 @@ export default function Dashboard({ stats }: StatsProps) {
                                 <p className="text-sm text-gray-600 dark:text-gray-300">Available Books</p>
                                 <p className="text-2xl font-bold">{stats.available_books}</p>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Available Books */}
+                        <a href="/section">
                         <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                             <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                                 <Library className="w-6 h-6 text-black dark:text-white" />
@@ -77,8 +80,10 @@ export default function Dashboard({ stats }: StatsProps) {
                                 <p className="text-2xl font-bold">{stats.total_sections}</p>
                             </div>
                         </div>
+                        </a>
 
                         {/* Total Books Dewey */}
+                        <a href="/dewey">
                         <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                             <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                                 <Archive className="w-6 h-6 text-black dark:text-white" />
@@ -88,8 +93,10 @@ export default function Dashboard({ stats }: StatsProps) {
                                 <p className="text-2xl font-bold">{stats.deweys}</p>
                             </div>
                         </div>
+                        </a>
 
                         {/* Borrowed Books */}
+                        <a href="/issuedbooks">
                         <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                             <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                                 <Undo2 className="w-6 h-6 text-black dark:text-white" />
@@ -99,6 +106,7 @@ export default function Dashboard({ stats }: StatsProps) {
                                 <p className="text-2xl font-bold">{stats.issued_books}</p>
                             </div>
                         </div>
+                        </a>
 
                         {/* Not Returned Books */}
                         <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">

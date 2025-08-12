@@ -61,7 +61,7 @@ export default function IssuedBooks() {
       <Head title="Issue Book" />
       <Toaster position="top-right" richColors />
 
-      <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
+      <div className="flex flex-col gap-6 p-6 bg-white dark:bg-black text-black shadow-lg rounded">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
           {/* Search Bar on the Left */}
         <div>
@@ -81,7 +81,7 @@ export default function IssuedBooks() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
+          <table className="w-full border-collapse bg-white dark:bg-gray-700 text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
                 {[
@@ -115,27 +115,27 @@ export default function IssuedBooks() {
             <tbody>
               {displayedBooks.length > 0 ? (
                 displayedBooks.map((record) => (
-                  <tr key={record.id} className="border-b hover:bg-gray-100">
+                  <tr key={record.id} className="border-b hover:bg-gray-500">
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-white">
                         School ID: {record.patron.school_id}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-white">
                         {record.patron.course || "N/A"} | {record.patron.year || "N/A"}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-white">
                         {record.patron.department || "N/A"} ({record.patron.patron_type})
                       </div>
                     </td>
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-white">
                         ISBN: {record.book.isbn}
                       </div>
                     </td>
                     <td className="p-3 hidden lg:table-cell">{record.book.author}</td>
-                    <td className="p-3 text-sm text-gray-800">
+                    <td className="p-3 text-sm text-gray-800 dark:text-white">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
@@ -145,7 +145,7 @@ export default function IssuedBooks() {
                     <td className="p-3">{record.due_date || "N/A"}</td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded text-white text-sm hidden lg:table-cells ${
+                        className={`px-2 py-1 rounded text-white text-sm hidden lg:table-cells dark:text-white ${
                           record.status === "Issued"
                             ? "bg-yellow-600"
                             : "bg-green-600"

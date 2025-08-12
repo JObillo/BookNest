@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { Toaster, toast } from "sonner";
+import { Input } from "./ui/input";
+import { Select } from "@headlessui/react";
 
 type Book = {
   id?: number;
@@ -16,6 +18,7 @@ type Book = {
   book_cover?: string;
   section_id?: number;
   dewey_id?: number;
+  description?: string;
 };
 
 interface Props {
@@ -46,6 +49,7 @@ export default function BookModal({
     book_cover: "",
     section_id: undefined,
     dewey_id: undefined,
+    description: "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -67,6 +71,7 @@ export default function BookModal({
           book_cover: book.book_cover || "",
           section_id: book.section_id,
           dewey_id: book.dewey_id,
+          description: book.description || "", // Ensure description is always a string
         });
         setPreview(book.book_cover || "");
         setSelectedFile(null);
@@ -84,6 +89,7 @@ export default function BookModal({
           book_cover: "",
           section_id: undefined,
           dewey_id: undefined,
+          description: "", // Initialize with empty string instead of undefined
         });
         setPreview("");
         setSelectedFile(null);
@@ -103,7 +109,9 @@ export default function BookModal({
           : name === "book_copies"
           ? Number(value)
           : value
-        : undefined,
+        : name === "description" 
+          ? "" // For description, set empty string instead of undefined
+          : undefined,
     }));
   };
 
@@ -130,6 +138,9 @@ export default function BookModal({
     data.append("publication_place", formData.publication_place || "");
     data.append("section_id", String(formData.section_id || ""));
     data.append("dewey_id", String(formData.dewey_id || ""));
+    
+    // Always append description, even if it's an empty string
+    data.append("description", formData.description !== undefined ? formData.description : "");
 
     if (selectedFile) {
       data.append("book_cover", selectedFile);
@@ -146,7 +157,8 @@ export default function BookModal({
           closeModal();
           router.reload();
         },
-        onError: () => {
+        onError: (errors) => {
+          console.error("Update errors:", errors);
           toast.error(errorMessage);
         },
       });
@@ -157,7 +169,8 @@ export default function BookModal({
           closeModal();
           router.reload();
         },
-        onError: () => {
+        onError: (errors) => {
+          console.error("Create errors:", errors);
           toast.error(errorMessage);
         },
       });
@@ -167,8 +180,8 @@ export default function BookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center   z-50 p-4">
-      <div className="relative w-full max-w-4xl mx:auto p-8  bg-white rounded-md shadow-xl transition-all">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="relative w-full max-w-4xl mx:auto p-8 bg-white rounded-md shadow-xl transition-all">
         <h2 className="text-lg font-semibold mb-4">{book ? "Edit Book" : "Add Book"}</h2>
         <form onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> 
@@ -183,7 +196,7 @@ export default function BookModal({
           ].map(({ label, name }) => (
             <div className="mb-3" key={name}>
               <label className="block text-sm font-medium">{label}</label>
-              <input
+              <Input
                 type="text"
                 name={name}
                 value={(formData as any)[name] || ""}
@@ -196,7 +209,7 @@ export default function BookModal({
 
           <div className="mb-3">
             <label className="block text-sm font-medium">Book Copies</label>
-            <input
+            <Input
               type="number"
               name="book_copies"
               value={formData.book_copies}
@@ -207,9 +220,21 @@ export default function BookModal({
             />
           </div>
 
+          <div className="mb-3 md:col-span-3">
+            <label className="block text-sm font-medium">Description</label>
+            <textarea
+              name="description"
+              value={formData.description || ""}
+              onChange={handleChange}
+              className="w-full border rounded p-2"
+              placeholder="Enter book description..."
+              rows={1}
+            ></textarea>
+          </div>
+
           <div className="mb-3">
             <label className="block text-sm font-medium">Year</label>
-            <input
+            <Input
               type="date"
               name="year"
               value={formData.year || ""}
@@ -220,7 +245,7 @@ export default function BookModal({
 
           <div className="mb-3">
             <label className="block text-sm font-medium">Book Cover</label>
-            <input
+            <Input
               type="file"
               name="book_cover"
               onChange={handleFileChange}
@@ -238,7 +263,7 @@ export default function BookModal({
 
           <div className="mb-3">
             <label className="block text-sm font-medium">Section</label>
-            <select
+            <Select
               name="section_id"
               value={formData.section_id || ""}
               onChange={handleChange}
@@ -254,12 +279,12 @@ export default function BookModal({
               ) : (
                 <option disabled>No sections available</option>
               )}
-            </select>
+            </Select>
           </div>
 
           <div className="mb-3">
             <label className="block text-sm font-medium">Dewey ID</label>
-            <select
+            <Select
               name="dewey_id"
               value={formData.dewey_id || ""}
               onChange={handleChange}
@@ -275,25 +300,25 @@ export default function BookModal({
               ) : (
                 <option disabled>No Dewey classifications available</option>
               )}
-            </select>
+            </Select>
           </div>
-          {/* <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded"> */}
 
-          <div className="flex gap-2">
+          <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
             <button
               type="button"
               onClick={closeModal}
-              className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
+              className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
+              className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer"
             >
               {book ? "Update" : "Add"} Book
             </button>
           </div>
+
           </div>
         </form>
       </div>
@@ -301,5 +326,3 @@ export default function BookModal({
     </div>
   );
 }
-
-//original code 3

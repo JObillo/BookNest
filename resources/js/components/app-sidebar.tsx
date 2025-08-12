@@ -43,6 +43,17 @@ const mainNavItems: NavItem[] = [
         href: '/deweys',
         icon: Layers,
     },
+    {
+        title: 'Manage E-Books',
+        href: '/ebooks',
+        icon: Book,
+    },
+
+    {
+        title: 'Report',
+        href: '/report',
+        icon: Layers,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

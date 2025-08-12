@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Book;
 use App\Models\Section;
 use App\Models\Dewey;
+use App\Models\Ebook;
 
 class BooksController extends Controller
 {
@@ -20,6 +22,7 @@ class BooksController extends Controller
             'books' => Book::with(['section', 'dewey'])->get(),
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
+            'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')->get()
         ]);
     }
 
@@ -40,8 +43,12 @@ class BooksController extends Controller
             'publication_place' => 'nullable|string|max:255',
             'section_id' => 'nullable|integer|exists:sections,id',
             'dewey_id' => 'nullable|integer|exists:deweys,id',
+            'description' => 'nullable|string|max:500', // Keep as is
             'book_cover' => 'nullable|image|max:2048',
         ]);
+    
+        // Log the incoming description for debugging
+        Log::info('Incoming description: ' . $request->description);
     
         // Handle file upload
         if ($request->hasFile('book_cover')) {
@@ -49,6 +56,12 @@ class BooksController extends Controller
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
             $validated['book_cover'] = '/storage/' . $path;
+        }
+    
+        // Ensure description is handled properly - convert empty string to space to avoid null
+        $validated['description'] = $request->input('description', '');
+        if (trim($validated['description']) === '') {
+            $validated['description'] = ' '; // Use a space instead of empty string
         }
     
         // 👇 Set copies_available based on book_copies
@@ -59,13 +72,11 @@ class BooksController extends Controller
     
         $book = Book::create($validated);
     
-        \Log::info('Book saved:', $book->toArray());
+        Log::info('Book saved with description: ' . $book->description);
     
         return redirect()->route('books.index')->with('success', 'Book Added successfully.');
     }
     
-    
-
     /**
      * Update the specified resource in storage.
      */
@@ -75,21 +86,24 @@ class BooksController extends Controller
         $book = Book::findOrFail($id);
     
         // Validate the input
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id,  // Skip current book's ISBN for uniqueness
             'publisher' => 'required|string|max:255',
             'book_copies' => 'required|integer|min:1',
-            'accession_number' => 'required|string|max:255',
+            'accession_number' => 'nullable|string|max:255',
             'call_number' => 'required|string|max:255',
             'year' => 'nullable|string|max:255',  // Allow null or string year
-            'publication_place' => 'required|string|max:255',
-            'section_id' => 'required|exists:sections,id',
-            'dewey_id' => 'required|exists:deweys,id',
+            'publication_place' => 'nullable|string|max:255',
+            'section_id' => 'nullable|exists:sections,id',
+            'dewey_id' => 'nullable|exists:deweys,id',
+            'description' => 'nullable|string|max:500',
             'book_cover' => 'nullable|image|max:2048',
         ]);
     
+        Log::info('Update request data:', $request->all());
+        
         // Only pick fields that should be updated
         $data = $request->only([
             'title',
@@ -104,6 +118,12 @@ class BooksController extends Controller
             'section_id',
             'dewey_id',
         ]);
+    
+        // Ensure description is handled properly - convert empty string to space to avoid null
+        $data['description'] = $request->input('description', '');
+        if (trim($data['description']) === '') {
+            $data['description'] = ' '; // Use a space instead of empty string
+        }
     
         // Handle the book cover if a new one is uploaded
         if ($request->hasFile('book_cover')) {
@@ -122,10 +142,10 @@ class BooksController extends Controller
         // Update the book
         if ($book->update($data)) {
             // Log successful update for debugging
-            \Log::info('Book updated:', $book->toArray());
+            Log::info('Book updated with description: ' . $book->description);
         } else {
             // Log failure to update
-            \Log::error('Failed to update book:', $book->toArray());
+            Log::error('Failed to update book:', $book->toArray());
         }
     
         // Redirect back with a success message
@@ -149,8 +169,6 @@ class BooksController extends Controller
         ]);
     }
     
-
-
     /**
      * Remove the specified resource from storage.
      */
@@ -158,5 +176,14 @@ class BooksController extends Controller
     {
         $book->delete();
         return redirect()->route('books.index')->with('success', 'Book deleted successfully.');
+    }
+
+    public function show(Book $book)
+    {
+        $book->load('section','dewey');
+
+        return Inertia::render('BookDetail', [
+            'book' => $book,
+        ]);
     }
 }
