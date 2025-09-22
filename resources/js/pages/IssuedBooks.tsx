@@ -115,7 +115,7 @@ export default function IssuedBooks() {
             <tbody>
               {displayedBooks.length > 0 ? (
                 displayedBooks.map((record) => (
-                  <tr key={record.id} className="border-b hover:bg-gray-500">
+                  <tr key={record.id} className="border-b hover:bg-gray-200">
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
                       <div className="text-sm text-gray-600 dark:text-white">

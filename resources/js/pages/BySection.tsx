@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { Select } from '@headlessui/react';
 import { Head } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { useState, useEffect } from "react";
@@ -103,7 +104,7 @@ useEffect(() => {
           <div className='flex items-center justify-between mt-4 px-2 sm:px-6'>
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 px-2 sm:px-6'>
             <div className="flex gap-2 w-full sm:w-auto">
-              <select
+              <Select
                 className="border rounded px-2 py-1 text-sm text-gray-700"
                 value={searchCategory}
                 onChange={(e) => setSearchCategory(e.target.value)}
@@ -111,7 +112,7 @@ useEffect(() => {
                 <option value="title">Title</option>
                 <option value="author">Author</option>
                 <option value="isbn">ISBN</option>
-              </select>
+              </Select>
 
               <Input
                 className="border rounded px-2 py-1 w-full placeholder-italic"

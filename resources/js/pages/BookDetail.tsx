@@ -67,9 +67,9 @@ export default function BookDetail() {
                 >
                   {book.status}
                 </p>
-                <p className="text-sm mt-1">
+                {/* <p className="text-sm mt-1">
                   Copies Available: {book.book_copies ?? "N/A"}
-                </p>
+                </p> */}
               </div>
             </div>
 

@@ -9,66 +9,114 @@ use Inertia\Inertia;
 
 class EbookController extends Controller
 {
-    public function index()
-        {
-            $ebooks = Ebook::all();
-            return Inertia::render('Ebooks', [
-                'ebooks' => $ebooks,
-            ]);
-        }
-
-    public function store(Request $request)
+    // Display homepage latest 5 ebooks
+    public function latest()
     {
-        // Validate inputs
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'author' => 'required|string',
-            'publisher' => 'nullable|string',
-            'year' => 'nullable|string',
-            'cover' => 'nullable|file|image|max:2048',
-            'file_url' => 'nullable|file|mimes:pdf,epub|max:102400',
+        $ebooks = Ebook::orderBy('created_at', 'desc')->take(5)->get();
+        return Inertia::render('Welcome', [
+            'ebooks' => $ebooks,
         ]);
-
-        // Store cover file if it exists
-        if ($request->hasFile('cover')) {
-            $validated['cover'] = $request->file('cover')->store('covers', 'public');
-        }
-
-        // Store eBook file if it exists
-        if ($request->hasFile('file_url')) {
-            $validated['file_url'] = $request->file('file_url')->store('ebooks', 'public');
-        }
-        
-
-        // Create ebook entry in the database
-        $ebook = Ebook::create($validated);
-
-        // Return the saved ebook as a JSON response
-        //return response()->json($ebook, 201);
-        return redirect()->route('ebooks.index')->with('success', 'EBook Added successfully.');
-
-        
     }
-    public function destroy($id)
+
+    // Manage ebooks page
+    public function manage()
+    {
+        $ebooks = Ebook::orderBy('created_at', 'desc')->get();
+        return Inertia::render('Ebooks', [
+            'ebooks' => $ebooks,
+        ]);
+    }
+
+    // Index page (See All eBooks)
+    public function index()
+    {
+        $ebooks = Ebook::orderBy('created_at', 'desc')->get();
+        return Inertia::render('EbooksBySection', [
+            'ebooks' => $ebooks,
+        ]);
+    }
+
+    // Store uploaded or fetched ebooks
+    public function store(Request $request)
 {
-    $ebook = Ebook::findOrFail($id);
+    $validated = $request->validate([
+        'title' => 'required|string',
+        'author' => 'required|string',
+        'publisher' => 'nullable|string',
+        'year' => 'nullable|string',
+        'description' => 'nullable|string',
 
-    // Delete eBook file from the public disk
-    if ($ebook->file_url && Storage::disk('public')->exists($ebook->file_url)) {
-        Storage::disk('public')->delete($ebook->file_url);
+        // Allow file or URL for cover
+        'cover' => 'nullable',
+        // Allow file or URL for ebook file
+        'file_url' => 'nullable',
+    ]);
+
+    // Handle uploaded cover file
+    if ($request->hasFile('cover')) {
+        $validated['cover'] = $request->file('cover')->store('covers', 'public');
+    } elseif ($request->cover && filter_var($request->cover, FILTER_VALIDATE_URL)) {
+        // If it's a URL (fetched)
+        try {
+            $contents = file_get_contents($request->cover);
+            $filename = 'covers/' . uniqid() . '.jpg';
+            Storage::disk('public')->put($filename, $contents);
+            $validated['cover'] = $filename;
+        } catch (\Exception $e) {
+            $validated['cover'] = $request->cover; // fallback keep URL
+        }
     }
 
-    // Delete cover image from the public disk
-    if ($ebook->cover && Storage::disk('public')->exists($ebook->cover)) {
-        Storage::disk('public')->delete($ebook->cover);
+    // Handle uploaded ebook file
+    if ($request->hasFile('file_url')) {
+        $validated['file_url'] = $request->file('file_url')->store('ebooks', 'public');
+    } elseif ($request->file_url && filter_var($request->file_url, FILTER_VALIDATE_URL)) {
+        // Keep external URL if provided
+        $validated['file_url'] = $request->file_url;
     }
 
-    $ebook->delete();
+    // Save to DB
+    // Ebook::create($validated);?
+        $ebook = Ebook::create($validated);
+    // ✅ Return Inertia with new ebook
+    return response()->json([
+        'newEbook' => $ebook
+    ]);
+    }
+    // Download local ebooks
+    public function download($id)
+    {
+        $ebook = Ebook::findOrFail($id);
 
-    return back();
+        if (filter_var($ebook->file_url, FILTER_VALIDATE_URL)) {
+            // External URL
+            return redirect($ebook->file_url);
+        }
+
+        $path = storage_path('app/public/' . $ebook->file_url);
+        if (!file_exists($path)) {
+            abort(404, 'File not found.');
+        }
+
+        return response()->download($path, $ebook->title . '.pdf');
+    }
+
+    // Delete ebook
+    public function destroy($id)
+    {
+        $ebook = Ebook::findOrFail($id);
+
+        if ($ebook->file_url && Storage::disk('public')->exists($ebook->file_url)) {
+            Storage::disk('public')->delete($ebook->file_url);
+        }
+
+        if ($ebook->cover && Storage::disk('public')->exists($ebook->cover)) {
+            Storage::disk('public')->delete($ebook->cover);
+        }
+
+        $ebook->delete();
+        return back()->with('success', 'EBook deleted successfully.');
+    }
 }
 
-
-
-}
-
+#controller ebook

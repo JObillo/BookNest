@@ -16,5 +16,6 @@ class Ebook extends Model
         'year',
         'cover',
         'file_url',
+        'description',
     ];
 }

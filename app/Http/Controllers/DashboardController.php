@@ -7,6 +7,8 @@ use App\Models\Dewey;
 use App\Models\Section;
 use App\Models\IssuedBook;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use App\Models\SearchLog;
 
 class DashboardController extends Controller
 {
@@ -35,10 +37,38 @@ class DashboardController extends Controller
 
             // Already returned
             'returned_books' => IssuedBook::where('status', 'returned')->count(),
+
+           'mostBorrowed' => IssuedBook::select('book_id', DB::raw('count(*) as borrow_count'))
+                ->with('book:id,title,author')
+                ->groupBy('book_id')
+                ->orderByDesc('borrow_count')
+                ->take(5)
+                ->get()
+                ->map(fn ($borrow) => [
+                    'id' => $borrow->book->id,
+                    'title' => $borrow->book->title,
+                    'author' => $borrow->book->author,
+                    'borrow_count' => $borrow->borrow_count,
+                ]),
+
+            'leastBorrowed' => IssuedBook::select('book_id', DB::raw('count(*) as borrow_count'))
+                ->with('book:id,title,author')
+                ->groupBy('book_id')
+                ->orderBy('borrow_count', 'asc')
+                ->take(5)
+                ->get()
+                ->map(fn ($borrow) => [
+                    'id' => $borrow->book->id,
+                    'title' => $borrow->book->title,
+                    'author' => $borrow->book->author,
+                    'borrow_count' => $borrow->borrow_count,
+                ]),
         ];
 
         return Inertia::render('dashboard', [
             'stats' => $stats,
+            'mostBorrowed' =>$stats['mostBorrowed'],
+            'leastBorrowed' =>$stats['leastBorrowed'],
         ]);
     }
 }

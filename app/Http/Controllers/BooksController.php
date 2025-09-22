@@ -11,6 +11,7 @@ use App\Models\Section;
 use App\Models\Dewey;
 use App\Models\Ebook;
 
+
 class BooksController extends Controller
 {
     /**
@@ -22,7 +23,10 @@ class BooksController extends Controller
             'books' => Book::with(['section', 'dewey'])->get(),
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
-            'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')->get()
+            'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')
+            ->latest()
+            ->take(5) // remove this if you want all, keep it if you only want the newest 5
+            ->get(),
         ]);
     }
 
@@ -186,4 +190,6 @@ class BooksController extends Controller
             'book' => $book,
         ]);
     }
+
+
 }

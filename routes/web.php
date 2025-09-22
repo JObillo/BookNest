@@ -9,8 +9,13 @@ use App\Http\Controllers\{
     PatronController,
     SectionController,
     DashboardController,
-    EbookController
+    EbookController,
+    ReportController,
+    SearchLogController,
 };
+
+use Illuminate\Support\Facades\Log;
+
 use App\Models\Book;
 use App\Models\Patron;
 use App\Models\Section;
@@ -93,16 +98,16 @@ Route::resource('deweys', DeweyController::class);
 Route::get('/patrons', [PatronController::class, 'index']);
 Route::get('/patrons/{id}', [PatronController::class, 'show']);
 Route::get('/patrons/school/{school_id}', function ($school_id) {
-    \Log::info("Fetching patron with school_id: $school_id");
+    Log::info("Fetching patron with school_id: $school_id");
 
     $patron = Patron::where('school_id', $school_id)->first();
 
     if (!$patron) {
-        \Log::error("Patron with school_id: $school_id not found.");
+        Log::error("Patron with school_id: $school_id not found.");
         return response()->json(['message' => 'Patron not found'], 404);
     }
 
-    \Log::info("Found patron: ", ['patron' => $patron]);
+    Log::info("Found patron: ", ['patron' => $patron]);
     return response()->json($patron);
 });
 
@@ -115,11 +120,28 @@ Route::get('/books/{book}', [BooksController::class, 'show'])->name('books.show'
 
 // Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index');
 
-Route::resource('ebooks', EbookController::class);
+// Ebooks Management (Admin/Logged-in user)
+Route::get('/ebooks/manage', [EbookController::class, 'manage'])->name('ebooks.manage'); // Manage page
+Route::post('/ebooks', [EbookController::class, 'store'])->name('ebooks.store'); // Add ebook
+Route::delete('/ebooks/{ebook}', [EbookController::class, 'destroy'])->name('ebooks.destroy'); // Delete ebook
 
-Route::get('/ebooks', [EbookController::class, 'index'])->name('Ebooks.index');
+// Ebooks Public / Homepage
+Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index'); // All ebooks page
+Route::get('/ebooks/bysection-simple/{id}', [EbookController::class, 'bySectionSimple'])->name('ebooks.bySectionSimple'); // By section page
+Route::get('/ebooks/{ebook}/download', [EbookController::class, 'download'])->name('ebooks.download'); // Download ebook
+
+// Optional: Show single ebook details (if you need it)
+Route::get('/ebooks/{ebook}', [EbookController::class, 'show'])->name('ebooks.show');
 
 Route::delete('/ebooks/{id}', [EbookController::class, 'destroy']);
+
+// Route::resource('report', ReportController::class);
+
+Route::prefix('reports')->group(function () {
+    Route::get('/most-borrowed', [ReportController::class, 'mostBorrowed'])->name('reports.mostBorrowed');
+    Route::get('/least-borrowed', [ReportController::class, 'leastBorrowed'])->name('reports.leastBorrowed');
+});
+
 
 // Extra Route Files
 require __DIR__.'/settings.php';

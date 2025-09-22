@@ -47,6 +47,24 @@ export default function Welcome() {
   const [ebooks, setEbooks] = useState<Ebook[]>(props.ebooks || []); // ✅ State for ebooks (added)
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
+  const handleSearch = (value: string) => {
+  setSearchTerm(value);
+
+  // Log search to backend
+  if (value.trim() !== "") {
+    fetch(route("search.log"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? ""
+      },
+      body: JSON.stringify({
+        query: value,
+      }),
+    });
+  }
+};
+
 
   // ✅ State for detail modal
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -70,7 +88,12 @@ export default function Welcome() {
       setSections(props.sections);
     }
   }, [props.books, props.sections, props.flashMessage]);
-  if (props.ebooks) setEbooks(props.ebooks);  // ✅ Added: Set ebooks state based on props
+  useEffect(() => {
+  if (props.ebooks) {
+    setEbooks(props.ebooks);
+  }
+}, [props.ebooks]);
+ // ✅ Added: Set ebooks state based on props
 
   const groupedBooks = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
@@ -158,7 +181,7 @@ export default function Welcome() {
             placeholder={`Search by ${searchFilter.toLowerCase()}...`}
             className="border rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
 
@@ -175,18 +198,18 @@ export default function Welcome() {
                 return (
                   <div key={sectionName}>
                     {/* Section Heading + See All */}
-                    <div className="flex justify-between items-center mb-2">
-                      <h2 className="text-lg font-semibold">{sectionName}</h2>
-                      {sectionId ? (
-                        <Link
-                          href={route("books.bySection", { section: sectionId })}
-                          className="text-blue-500 text-sm hover:underline"
-                        >
-                          see all
-                        </Link>
-                      ) : null}
-                    </div>
-
+                       <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-lg font-semibold">{sectionName}</h2>
+                    {/* Show "See All" only if 5 or more books */}
+                    {groupedBooks[sectionName].length >= 5 && sectionId ? (
+                      <Link
+                        href={route("books.bySection", { section: sectionId })}
+                        className="text-blue-500 text-sm hover:underline"
+                      >
+                        see all
+                      </Link>
+                    ) : null}
+                  </div>
                     {/* Books Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {groupedBooks[sectionName]?.slice(0, 5).map((book) => (
@@ -222,36 +245,48 @@ export default function Welcome() {
           )}
         </div>
         {/* eBook Section */}
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-4">eBooks</h2>
-
-          {ebooks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {ebooks.slice(0, 5).map((ebook) => (
-                <a
-                  key={ebook.id}
-                  href={ebook.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
-                >
-                  <img
-                    src={ebook.cover || "/placeholder-book.png"}
-                    alt={ebook.title}
-                    className="w-40 h-56 object-cover rounded"
-                  />
-                  <div className="mt-2 w-full text-center">
-                    <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
-                    <p className="text-s text-gray-600">By: {ebook.author}</p>
-                    <span className="text-xs text-gray-500">Published: {ebook.year}</span>
-                  </div>
-                </a>
-              ))}
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">eBooks</h2>
+              <Link href={route('ebooks.index')} className="text-blue-500 hover:underline">
+                See All
+              </Link>
             </div>
-          ) : (
-            <p className="text-gray-500 text-center">No eBooks available.</p>
-          )}
-        </div>
+
+            {ebooks.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {ebooks.slice(0, 5).map((ebook) => (
+                  <div
+                    key={ebook.id}
+                    className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                  >
+                    <img
+                      src={ebook.cover ? `/storage/${ebook.cover}` : "/placeholder-book.png"}
+                      alt={ebook.title}
+                      className="w-40 h-56 object-cover rounded"
+                    />
+                    <div className="mt-2 w-full text-center">
+                      <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
+                      <p className="text-s text-gray-600">By: {ebook.author}</p>
+                      <span className="text-xs text-gray-500">Published: {ebook.year}</span>
+                    </div>
+
+                    {/* Download Button */}
+                    <a
+                      href={`/ebooks/${ebook.id}/download`}
+                      className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
+                    >
+                      Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center">No eBooks available.</p>
+            )}
+
+          </div>
+
 
       </div>
 

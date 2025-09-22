@@ -45,14 +45,24 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Manage E-Books',
-        href: '/ebooks',
+        href: '/ebooks/manage',
         icon: Book,
     },
 
     {
         title: 'Report',
-        href: '/report',
         icon: Layers,
+        href: '/report',
+        children: [
+            {
+                title: 'Most Borrowed Books',
+                href: '/reports/most-borrowed',
+            },
+            {
+                title: 'Least Borrowed Books',
+                href: '/reports/least-borrowed',
+            },
+        ],
     },
 ];
 
@@ -68,6 +78,8 @@ const footerNavItems: NavItem[] = [
     //     icon: BookOpen,
     // },
 ];
+
+
 
 export function AppSidebar() {
     return (
