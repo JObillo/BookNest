@@ -4,9 +4,13 @@ namespace App\Models;
 
 use App\Enums\PatronType;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable; // imported
+use Illuminate\Foundation\Auth\User as Authenticatable; // optional if you want auth
 
-class Patron extends Model
+class Patron extends Model // or extends Authenticatable if you need login
 {
+    use Notifiable; // <-- THIS IS REQUIRED
+
     protected $table = 'patrons';
 
     protected $fillable = [
@@ -16,18 +20,16 @@ class Patron extends Model
         'year',
         'department',
         'patron_type',
+        'email',
     ];
 
     protected $casts = [
         'patron_type' => PatronType::class,
     ];
 
-    // Define the relationship with IssuedBook
+    // Relationship with IssuedBook
     public function issuedBooks()
     {
         return $this->hasMany(IssuedBook::class);
     }
 }
-
-
-

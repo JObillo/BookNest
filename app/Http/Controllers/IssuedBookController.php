@@ -10,10 +10,17 @@ use Inertia\Inertia;
 
 class IssuedBookController extends Controller
 {
-    // Show all issued books (Issued + Returned)
+    // Show all issued books (Issued, Returned and Overdue)
     public function index()
     {
         $issuedBooks = IssuedBook::with(['book', 'patron'])->latest()->get();
+
+        foreach ($issuedBooks as $issuedBook) {
+            if ($issuedBook->status === 'Issued' && now()->greaterThan($issuedBook->due_date)) {
+                $issuedBook->status = 'Overdue';
+                $issuedBook->save();
+            }
+        }
 
         return Inertia::render('IssuedBooks', [
             'issuedbooks' => $issuedBooks,
@@ -24,7 +31,7 @@ class IssuedBookController extends Controller
     public function returnedBooks()
     {
         $returnedBooks = IssuedBook::with(['book', 'patron'])
-            ->where('status', 'Issued')
+            ->whereIn('status', ['Issued', 'Overdue'])
             ->latest()
             ->get();
 
@@ -32,6 +39,7 @@ class IssuedBookController extends Controller
             'issuedbooks' => $returnedBooks,
         ]);
     }
+
 
     // Store a newly issued book
     public function store(Request $request)

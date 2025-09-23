@@ -7,7 +7,8 @@ use App\Http\Controllers\{
     DeweyController,
     IssuedBookController,
     PatronController,
-    SectionController
+    SectionController,
+    MailController
 };
 use App\Models\Book;
 use App\Models\Patron;
@@ -100,6 +101,20 @@ Route::get('/patrons/school/{school_id}', function ($school_id) {
     \Log::info("Found patron: ", ['patron' => $patron]);
     return response()->json($patron);
 });
+
+// Route::get('/test-email', function () {
+//     Mail::raw('This is a test email from Laravel OPAC System!', function ($message) {
+//         $message->to('jeobss01@gmail.com')
+//                 ->subject('Test Email');
+//     });
+
+//     return "Test email sent!";x`
+
+Route::get('/notification', [MailController::class, 'index']);
+
+
+
+
 
 
 // Extra Route Files

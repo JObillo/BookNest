@@ -5,6 +5,8 @@ use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+// ❌ remove this one: use Illuminate\Foundation\Configuration\Schedule;
+use Illuminate\Console\Scheduling\Schedule; // ✅ correct one
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -24,4 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->withSchedule(function (Schedule $schedule) {
+        // test schedule
+        $schedule->command('inspire')->everyMinute();
+
+        // overdue schedule
+        $schedule->command('overdue:send')
+            ->everyMinute()
+            ->appendOutputTo(storage_path('logs/schedule.log'));
+    })
+    ->create();

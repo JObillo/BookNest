@@ -135,6 +135,8 @@ export default function IssuedBooks() {
                         className={`px-2 py-1 rounded text-white text-sm ${
                           record.status === "Issued"
                             ? "bg-yellow-600"
+                            : record.status === "Overdue"
+                            ? "bg-red-600"
                             : "bg-green-600"
                         }`}
                       >

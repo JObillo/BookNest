@@ -156,14 +156,18 @@ export default function ReturnedBooks() {
                     <td className="p-3">
                       <span
                         className={`px-2 py-1 rounded text-white text-sm ${
-                          record.status === "Issued" ? "bg-yellow-600" : "bg-green-600"
+                          record.status === "Issued"
+                            ? "bg-yellow-600"
+                            : record.status === "Overdue"
+                            ? "bg-red-600"
+                            : "bg-green-600"
                         }`}
                       >
                         {record.status}
                       </span>
                     </td>
                     <td className="p-3">
-                      {record.status === "Issued" && (
+                      {(record.status === "Issued" || record.status === "Overdue") && (
                         <button
                           onClick={() => openReturnModal(record)}
                           className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 cursor-pointer"
