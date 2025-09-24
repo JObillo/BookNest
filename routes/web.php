@@ -11,7 +11,7 @@ use App\Http\Controllers\{
     DashboardController,
     EbookController,
     ReportController,
-    SearchLogController,
+    SemesterController,
 };
 
 use Illuminate\Support\Facades\Log;
@@ -129,9 +129,11 @@ Route::delete('/ebooks/{ebook}', [EbookController::class, 'destroy'])->name('ebo
 Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index'); // All ebooks page
 Route::get('/ebooks/bysection-simple/{id}', [EbookController::class, 'bySectionSimple'])->name('ebooks.bySectionSimple'); // By section page
 Route::get('/ebooks/{ebook}/download', [EbookController::class, 'download'])->name('ebooks.download'); // Download ebook
-
+// Route::post('/ebooks/bulk-delete', [EbookController::class, 'bulkDelete'])->name('ebooks.bulk-delete');
 // Optional: Show single ebook details (if you need it)
 Route::get('/ebooks/{ebook}', [EbookController::class, 'show'])->name('ebooks.show');
+
+
 
 Route::delete('/ebooks/{id}', [EbookController::class, 'destroy']);
 
@@ -140,8 +142,13 @@ Route::delete('/ebooks/{id}', [EbookController::class, 'destroy']);
 Route::prefix('reports')->group(function () {
     Route::get('/most-borrowed', [ReportController::class, 'mostBorrowed'])->name('reports.mostBorrowed');
     Route::get('/least-borrowed', [ReportController::class, 'leastBorrowed'])->name('reports.leastBorrowed');
+    Route::get('top-borrowers', [ReportController::class,'topBorrowers'])->name('reports.topBorrowers');
+    
 });
-
+    // Semester Contorller
+    
+Route::post('/semesters/start', [SemesterController::class, 'start']);
+Route::post('/semesters/end', [SemesterController::class, 'end']);
 
 // Extra Route Files
 require __DIR__.'/settings.php';

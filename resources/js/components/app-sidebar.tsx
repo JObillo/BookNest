@@ -62,6 +62,10 @@ const mainNavItems: NavItem[] = [
                 title: 'Least Borrowed Books',
                 href: '/reports/least-borrowed',
             },
+            {
+                title: 'Top Borrowers',
+                href: '/reports/top-borrowers'
+            },
         ],
     },
 ];

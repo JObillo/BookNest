@@ -29,29 +29,59 @@ type Section = {
   section_name: string;
 };
 
-export default function MostBorrowed() {
-  const { books: backendBooks, sections = [] } = usePage<{ books: Book[]; sections: Section[] }>().props;
+type Semester = {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string | null;
+};
 
-  // States
+export default function MostBorrowed() {
+  const { books: backendBooks, sections = [], semester: activeSemester } = usePage<{
+    books: Book[];
+    sections: Section[];
+    semester: Semester | null;
+  }>().props;
+
+  // Filters
   const [limit, setLimit] = useState(10);
   const [range, setRange] = useState("month");
   const [category, setCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Whenever filters change, request backend
+  // Handle filters
   const handleFilterChange = (newLimit: number, newRange: string, newCategory: string) => {
     router.get(
       "/reports/most-borrowed",
-      {
-        limit: newLimit,
-        range: newRange,
-        category: newCategory,
-      },
+      { limit: newLimit, range: newRange, category: newCategory },
       { preserveState: true, replace: true }
     );
   };
 
-  // Pagination & filter (client-side search can be added here if needed)
+  // Start semester (backend handles saving)
+  const handleStartSemester = (semesterType: "1st" | "2nd") => {
+    const today = new Date().toISOString().split("T")[0];
+
+    router.post(
+      "/semesters/start",
+      { name: `${semesterType} Semester`, start_date: today },
+      { preserveState: true, replace: true }
+    );
+  };
+
+  // End semester
+  const handleEndSemester = () => {
+    if (!activeSemester) return;
+    const today = new Date().toISOString().split("T")[0];
+
+    router.post(
+      "/semesters/end",
+      { id: activeSemester.id, end_date: today },
+      { preserveState: true, replace: true }
+    );
+  };
+
+  // Pagination
   const booksPerPage = limit;
   const totalPages = Math.ceil(backendBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
@@ -66,7 +96,42 @@ export default function MostBorrowed() {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Most Borrowed Books" />
       <Toaster position="top-right" richColors />
-      
+
+      {/* Semester Controls */}
+      <div className="flex gap-4 mt-6">
+        <button
+          onClick={() => handleStartSemester("1st")}
+          className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
+        >
+          Start 1st Semester
+        </button>
+        <button
+          onClick={() => handleStartSemester("2nd")}
+          className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
+        >
+          Start 2nd Semester
+        </button>
+
+        {activeSemester && !activeSemester.end_date && (
+          <button
+            onClick={handleEndSemester}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            End {activeSemester.name}
+          </button>
+        )}
+      </div>
+
+      {/* Semester Info */}
+      {activeSemester && (
+        <p className="mt-2 text-sm text-gray-600">
+          📅 {activeSemester.name}
+          <br />
+          Start: <strong>{activeSemester.start_date}</strong>
+          <br />
+          End: <strong>{activeSemester.end_date || "Ongoing…"}</strong>
+        </p>
+      )}
 
       {/* Filters */}
       <div className="flex gap-4 mt-10">
@@ -132,9 +197,13 @@ export default function MostBorrowed() {
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {["Book Cover", "Title & Author", "Publisher", "Catalog Info", "Borrowed Times"].map((header) => (
-                  <th key={header} className="border p-3 text-left">{header}</th>
-                ))}
+                {["Book Cover", "Title & Author", "Publisher", "Catalog Info", "Borrowed Times"].map(
+                  (header) => (
+                    <th key={header} className="border p-3 text-left">
+                      {header}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
@@ -143,7 +212,11 @@ export default function MostBorrowed() {
                   <tr key={item.book?.id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
                       {item.book?.book_cover ? (
-                        <img src={item.book.book_cover} alt={item.book.title} className="w-20 h-28 object-cover rounded shadow" />
+                        <img
+                          src={item.book.book_cover}
+                          alt={item.book.title}
+                          className="w-20 h-28 object-cover rounded shadow"
+                        />
                       ) : (
                         <span className="text-gray-500">No Cover</span>
                       )}
@@ -159,12 +232,16 @@ export default function MostBorrowed() {
                       <div>Year: {item.book?.year || "N/A"}</div>
                       <div>Place: {item.book?.publication_place}</div>
                     </td>
-                    <td className="p-3 text-purple-700 font-semibold">{item.borrow_count} Times</td>
+                    <td className="p-3 text-purple-700 font-semibold">
+                      {item.borrow_count} Times
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center p-4 text-gray-600">No borrowed books found.</td>
+                  <td colSpan={5} className="text-center p-4 text-gray-600">
+                    No borrowed books found.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -174,7 +251,8 @@ export default function MostBorrowed() {
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
           <span>
-            Page {currentPage} — {displayedBooks.length} book{displayedBooks.length !== 1 && "s"} on this page
+            Page {currentPage} — {displayedBooks.length} book
+            {displayedBooks.length !== 1 && "s"} on this page
           </span>
 
           <div className="flex items-center gap-1">

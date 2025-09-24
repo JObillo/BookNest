@@ -2,7 +2,7 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import { useEffect, useState, useMemo } from "react";
 import "../../css/app.css";
 import { Select } from "@headlessui/react";
-import { SelectIcon } from "@radix-ui/react-select";
+import { FaDownload } from "react-icons/fa";
 
 type Book = {
   id: number;
@@ -12,7 +12,7 @@ type Book = {
   status: string;
   book_cover?: string;
   section_id: number;
-  description?: string; // ✅ Add this
+  description?: string;
   section?: {
     id: number;
     section_name: string;
@@ -24,49 +24,33 @@ type Section = {
   section_name: string;
 };
 
-type Ebook = {  // ✅ Added Ebook type definition
+type Ebook = {
   id: number;
   title: string;
   author: string;
-  year: number;
+  year: number | string;
   cover?: string;
   file_url: string;
+  description: string;
+  publisher: string;
 };
-
 
 export default function Welcome() {
   const { props } = usePage<{
     books: Book[];
     sections: Section[];
     flashMessage?: string;
-    ebooks: Ebook[];  // ✅ Added ebooks to the props
   }>();
 
   const [books, setBooks] = useState<Book[]>(props.books || []);
   const [sections, setSections] = useState<Section[]>(props.sections || []);
-  const [ebooks, setEbooks] = useState<Ebook[]>(props.ebooks || []); // ✅ State for ebooks (added)
+  const [ebooks, setEbooks] = useState<Ebook[]>([]);
+  const [loadingEbooks, setLoadingEbooks] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
-  const handleSearch = (value: string) => {
-  setSearchTerm(value);
 
-  // Log search to backend
-  if (value.trim() !== "") {
-    fetch(route("search.log"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-TOKEN": (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? ""
-      },
-      body: JSON.stringify({
-        query: value,
-      }),
-    });
-  }
-};
-
-
-  // ✅ State for detail modal
+  // Book Detail Modal
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -80,21 +64,65 @@ export default function Welcome() {
     setIsDetailModalOpen(false);
   };
 
-  useEffect(() => {
-    if (props.books) {
-      setBooks(props.books);
-    }
-    if (props.sections) {
-      setSections(props.sections);
-    }
-  }, [props.books, props.sections, props.flashMessage]);
-  useEffect(() => {
-  if (props.ebooks) {
-    setEbooks(props.ebooks);
-  }
-}, [props.ebooks]);
- // ✅ Added: Set ebooks state based on props
+  // Search logging
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
 
+    if (value.trim() !== "") {
+      fetch(route("search.log"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN":
+            (document.querySelector(
+              'meta[name="csrf-token"]'
+            ) as HTMLMetaElement)?.content ?? "",
+        },
+        body: JSON.stringify({ query: value }),
+      });
+    }
+  };
+
+  // Update books/sections if props change
+  useEffect(() => {
+    if (props.books) setBooks(props.books);
+    if (props.sections) setSections(props.sections);
+  }, [props.books, props.sections]);
+
+  // Fetch free eBooks from Open Library
+  useEffect(() => {
+    const fetchEbooks = async () => {
+      setLoadingEbooks(true);
+      try {
+        const res = await fetch(
+          `https://openlibrary.org/search.json?q=classic+literature&limit=5`
+        );
+        const data = await res.json();
+        const books: Ebook[] = data.docs
+          .filter((doc: any) => doc.ia && doc.ia.length > 0)
+          .map((doc: any) => ({
+            id: doc.key.split("/").join("").hashCode(),
+            title: doc.title,
+            author: doc.author_name ? doc.author_name.join(", ") : "Unknown",
+            year: doc.first_publish_year || "Unknown",
+            cover: doc.cover_i
+              ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+              : undefined,
+            file_url: `https://archive.org/download/${doc.ia[0]}/${doc.ia[0]}.pdf`,
+            description: doc.subtitle || "No description available.",
+            publisher: doc.publisher ? doc.publisher[0] : "Unknown",
+          }));
+        setEbooks(books);
+      } catch (err) {
+        console.error("Failed to fetch eBooks:", err);
+      }
+      setLoadingEbooks(false);
+    };
+
+    fetchEbooks();
+  }, []);
+
+  // Group books by section for display
   const groupedBooks = useMemo(() => {
     const lowerSearch = searchTerm.toLowerCase();
     const filteredBooks = books.filter((book) => {
@@ -115,31 +143,28 @@ export default function Welcome() {
     });
 
     const groups: Record<string, Book[]> = {};
-
     sections.forEach((section) => {
       groups[section.section_name] = [];
     });
 
     filteredBooks.forEach((book) => {
-      const sectionName = book.section?.section_name || sections.find(s => s.id === book.section_id)?.section_name || "Uncategorized";
-      if (!groups[sectionName]) {
-        groups[sectionName] = [];
-      }
+      const sectionName =
+        book.section?.section_name ||
+        sections.find((s) => s.id === book.section_id)?.section_name ||
+        "Uncategorized";
+      if (!groups[sectionName]) groups[sectionName] = [];
       groups[sectionName].push(book);
     });
 
     return groups;
   }, [books, sections, searchTerm, searchFilter]);
 
-  const sectionNames = sections.map((section) => section.section_name);  
-  
-
+  const sectionNames = sections.map((section) => section.section_name);
 
   return (
     <>
       <Head title="PhilCST Library" />
       <div className="flex flex-col min-h-screen bg-gray-100 text-gray-900 p-4 sm:p-6">
-        
         {/* Header */}
         <header className="fixed top-0 left-0 z-50 w-full flex justify-between items-center px-6 py-4 bg-white shadow-md">
           <img src="philcstlogo.png" alt="Library Logo" className="h-10" />
@@ -167,7 +192,7 @@ export default function Welcome() {
         <div className="flex space-x-2 mt-6">
           <Select
             value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
+            onChange={(e: any) => setSearchFilter(e.target.value)}
             className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
           >
             <option value="All">All</option>
@@ -197,20 +222,17 @@ export default function Welcome() {
 
                 return (
                   <div key={sectionName}>
-                    {/* Section Heading + See All */}
-                       <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-lg font-semibold">{sectionName}</h2>
-                    {/* Show "See All" only if 5 or more books */}
-                    {groupedBooks[sectionName].length >= 5 && sectionId ? (
-                      <Link
-                        href={route("books.bySection", { section: sectionId })}
-                        className="text-blue-500 text-sm hover:underline"
-                      >
-                        see all
-                      </Link>
-                    ) : null}
-                  </div>
-                    {/* Books Grid */}
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="text-lg font-semibold">{sectionName}</h2>
+                      {groupedBooks[sectionName].length >= 5 && sectionId ? (
+                        <Link
+                          href={route("books.bySection", { section: sectionId })}
+                          className="text-blue-500 text-sm hover:underline"
+                        >
+                          see all
+                        </Link>
+                      ) : null}
+                    </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {groupedBooks[sectionName]?.slice(0, 5).map((book) => (
                         <Link
@@ -222,13 +244,19 @@ export default function Welcome() {
                             src={book.book_cover || "/placeholder-book.png"}
                             alt={book.title}
                             className="w-50 h-65 object-cover rounded"
-                        />
+                          />
                           <div className="mt-2 w-full text-center">
-                            <h3 className="text-sm font-semibold truncate">{book.title}</h3>
-                            <p className="text-s text-gray-600">By: {book.author}</p>
+                            <h3 className="text-sm font-semibold truncate">
+                              {book.title}
+                            </h3>
+                            <p className="text-s text-gray-600">
+                              By: {book.author}
+                            </p>
                             <span
                               className={`px-2 py-1 rounded text-white text-sm ${
-                                book.status === "Available" ? "bg-green-600" : "bg-red-600"
+                                book.status === "Available"
+                                  ? "bg-green-600"
+                                  : "bg-red-600"
                               }`}
                             >
                               {book.status}
@@ -244,53 +272,59 @@ export default function Welcome() {
             <p className="text-center text-gray-500">No book sections found.</p>
           )}
         </div>
-        {/* eBook Section */}
-          <div className="mt-12">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">eBooks</h2>
-              <Link href={route('ebooks.index')} className="text-blue-500 hover:underline">
-                See All
-              </Link>
-            </div>
 
-            {ebooks.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {ebooks.slice(0, 5).map((ebook) => (
-                  <div
-                    key={ebook.id}
-                    className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
-                  >
-                    <img
-                      src={ebook.cover ? `/storage/${ebook.cover}` : "/placeholder-book.png"}
-                      alt={ebook.title}
-                      className="w-40 h-56 object-cover rounded"
-                    />
-                    <div className="mt-2 w-full text-center">
-                      <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
-                      <p className="text-s text-gray-600">By: {ebook.author}</p>
-                      <span className="text-xs text-gray-500">Published: {ebook.year}</span>
-                    </div>
+        {/* Free eBook Section */}
+<div className="mt-12">
+  <div className="flex justify-between items-center mb-4">
+    <h2 className="text-xl font-semibold">Free eBooks</h2>
+    <Link
+      href={route("ebooks.index")}
+      className="text-blue-500 hover:underline"
+    >
+      See All
+    </Link>
+  </div>
 
-                    {/* Download Button */}
-                    <a
-                      href={`/ebooks/${ebook.id}/download`}
-                      className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
-                    >
-                      Download
-                    </a>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center">No eBooks available.</p>
-            )}
-
+  {loadingEbooks ? (
+    <p className="text-gray-500">Loading eBooks...</p>
+  ) : ebooks.length > 0 ? (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {ebooks.slice(0, 5).map((ebook) => (
+        <div
+          key={ebook.id}
+          className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+        >
+          <img
+            src={ebook.cover || "/placeholder-book.png"}
+            alt={ebook.title}
+            className="w-40 h-56 object-cover rounded"
+          />
+          <div className="mt-2 w-full text-center">
+            <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
+            <p className="text-s text-gray-600">By: {ebook.author}</p>
+            <span className="text-xs text-gray-500">Published: {ebook.year}</span>
           </div>
 
+          {/* Download Button */}
+          <a
+            href={ebook.file_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
+          >
+            Download
+          </a>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="text-gray-500 text-center">No eBooks available.</p>
+  )}
+</div>
 
       </div>
 
-      {/* ✅ Book Detail Modal */}
+      {/* Book Detail Modal */}
       {isDetailModalOpen && selectedBook && (
         <div className="fixed inset-0 z-50 bg-opacity-40 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-lg">
@@ -331,3 +365,18 @@ export default function Welcome() {
     </>
   );
 }
+
+// Helper to generate numeric ID from string
+declare global {
+  interface String {
+    hashCode(): number;
+  }
+}
+String.prototype.hashCode = function (): number {
+  let hash = 0;
+  for (let i = 0; i < this.length; i++) {
+    hash = (hash << 5) - hash + this.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};

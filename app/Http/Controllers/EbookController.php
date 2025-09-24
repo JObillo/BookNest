@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Ebook;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Dompdf\Dompdf;
 
 class EbookController extends Controller
 {
@@ -117,6 +118,23 @@ class EbookController extends Controller
         $ebook->delete();
         return back()->with('success', 'EBook deleted successfully.');
     }
+
+//     public function bulkDelete(Request $request)
+// {
+//     $ids = $request->input('ids', []);
+
+//     if (empty($ids)) {
+//         return back()->with('error', 'No e-books selected for deletion.');
+//     }
+
+//     // delete from DB
+//     \App\Models\Ebook::whereIn('id', $ids)->delete();
+
+//     return back()->with('success', count($ids) . ' e-books deleted successfully.');
+// }
+
+    
+
 }
 
 #controller ebook

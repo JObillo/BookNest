@@ -89,7 +89,7 @@ export default function Dashboard({ stats }: StatsProps) {
             </a>
 
             {/* Total Books Dewey */}
-            <a href="/dewey">
+            <a href="/deweys">
               <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                 <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
                   <Archive className="w-6 h-6 text-black dark:text-white" />
