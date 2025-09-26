@@ -89,15 +89,24 @@ export default function Welcome() {
     if (props.sections) setSections(props.sections);
   }, [props.books, props.sections]);
 
-  // Fetch free eBooks from Open Library
+  // Fetch free eBooks from Open Library with caching
   useEffect(() => {
     const fetchEbooks = async () => {
       setLoadingEbooks(true);
+
+      // 1️⃣ Try loading from cache first
+      const cached = localStorage.getItem("freeEbooks");
+      if (cached) {
+        setEbooks(JSON.parse(cached));
+      }
+
       try {
+        // 2️⃣ Fetch fresh data if online
         const res = await fetch(
           `https://openlibrary.org/search.json?q=classic+literature&limit=5`
         );
         const data = await res.json();
+
         const books: Ebook[] = data.docs
           .filter((doc: any) => doc.ia && doc.ia.length > 0)
           .map((doc: any) => ({
@@ -112,10 +121,16 @@ export default function Welcome() {
             description: doc.subtitle || "No description available.",
             publisher: doc.publisher ? doc.publisher[0] : "Unknown",
           }));
+
         setEbooks(books);
+
+        // 3️⃣ Save to cache
+        localStorage.setItem("freeEbooks", JSON.stringify(books));
       } catch (err) {
-        console.error("Failed to fetch eBooks:", err);
+        console.error("Failed to fetch eBooks, using cache:", err);
+        // If fetch fails → rely on cache only
       }
+
       setLoadingEbooks(false);
     };
 
@@ -274,54 +289,57 @@ export default function Welcome() {
         </div>
 
         {/* Free eBook Section */}
-<div className="mt-12">
-  <div className="flex justify-between items-center mb-4">
-    <h2 className="text-xl font-semibold">Free eBooks</h2>
-    <Link
-      href={route("ebooks.index")}
-      className="text-blue-500 hover:underline"
-    >
-      See All
-    </Link>
-  </div>
-
-  {loadingEbooks ? (
-    <p className="text-gray-500">Loading eBooks...</p>
-  ) : ebooks.length > 0 ? (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {ebooks.slice(0, 5).map((ebook) => (
-        <div
-          key={ebook.id}
-          className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
-        >
-          <img
-            src={ebook.cover || "/placeholder-book.png"}
-            alt={ebook.title}
-            className="w-40 h-56 object-cover rounded"
-          />
-          <div className="mt-2 w-full text-center">
-            <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
-            <p className="text-s text-gray-600">By: {ebook.author}</p>
-            <span className="text-xs text-gray-500">Published: {ebook.year}</span>
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Free eBooks</h2>
+            <Link
+              href={route("ebooks.index")}
+              className="text-blue-500 hover:underline"
+            >
+              See All
+            </Link>
           </div>
 
-          {/* Download Button */}
-          <a
-            href={ebook.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
-          >
-            Download
-          </a>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-gray-500 text-center">No eBooks available.</p>
-  )}
-</div>
+          {loadingEbooks ? (
+            <p className="text-gray-500">Loading eBooks...</p>
+          ) : ebooks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {ebooks.slice(0, 5).map((ebook) => (
+                <div
+                  key={ebook.id}
+                  className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                >
+                  <img
+                    src={ebook.cover || "/placeholder-book.png"}
+                    alt={ebook.title}
+                    className="w-40 h-56 object-cover rounded"
+                  />
+                  <div className="mt-2 w-full text-center">
+                    <h3 className="text-sm font-semibold truncate">
+                      {ebook.title}
+                    </h3>
+                    <p className="text-s text-gray-600">By: {ebook.author}</p>
+                    <span className="text-xs text-gray-500">
+                      Published: {ebook.year}
+                    </span>
+                  </div>
 
+                  {/* Download Button */}
+                  <a
+                    href={ebook.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
+                  >
+                    Download
+                  </a>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center">No eBooks available.</p>
+          )}
+        </div>
       </div>
 
       {/* Book Detail Modal */}
@@ -366,17 +384,3 @@ export default function Welcome() {
   );
 }
 
-// Helper to generate numeric ID from string
-declare global {
-  interface String {
-    hashCode(): number;
-  }
-}
-String.prototype.hashCode = function (): number {
-  let hash = 0;
-  for (let i = 0; i < this.length; i++) {
-    hash = (hash << 5) - hash + this.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-};

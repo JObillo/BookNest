@@ -18,8 +18,6 @@ public function mostBorrowed(Request $request)
     $range = $request->input('range', 'month');
     $category = $request->input('category', 'All');
 
-    $activeSemester = Semester::whereNull('end_date')->latest('start_date')->first();
-
     $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
         ->join('books', 'issued_books.book_id', '=', 'books.id')
         ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
@@ -29,9 +27,7 @@ public function mostBorrowed(Request $request)
         ->when($range === 'month', fn($q) =>
             $q->whereBetween('issued_books.issued_date', [now()->startOfMonth(), now()->endOfMonth()])
         )
-        ->when($range === 'semester' && $activeSemester, fn($q) => 
-            $q->whereBetween('issued_books.issued_date', [$activeSemester->start_date, $activeSemester->end_date ?? now()])
-        )
+        // removed semester range filter
         ->groupBy('book_id')
         ->orderByDesc('borrow_count')
         ->limit($limit)
@@ -46,9 +42,9 @@ public function mostBorrowed(Request $request)
             'range' => $range,
             'category' => $category,
         ],
-        'semester' => $activeSemester,
     ]);
 }
+
 
 
 

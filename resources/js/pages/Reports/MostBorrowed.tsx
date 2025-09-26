@@ -29,18 +29,10 @@ type Section = {
   section_name: string;
 };
 
-type Semester = {
-  id: number;
-  name: string;
-  start_date: string;
-  end_date: string | null;
-};
-
 export default function MostBorrowed() {
-  const { books: backendBooks, sections = [], semester: activeSemester } = usePage<{
+  const { books: backendBooks, sections = [] } = usePage<{
     books: Book[];
     sections: Section[];
-    semester: Semester | null;
   }>().props;
 
   // Filters
@@ -54,29 +46,6 @@ export default function MostBorrowed() {
     router.get(
       "/reports/most-borrowed",
       { limit: newLimit, range: newRange, category: newCategory },
-      { preserveState: true, replace: true }
-    );
-  };
-
-  // Start semester (backend handles saving)
-  const handleStartSemester = (semesterType: "1st" | "2nd") => {
-    const today = new Date().toISOString().split("T")[0];
-
-    router.post(
-      "/semesters/start",
-      { name: `${semesterType} Semester`, start_date: today },
-      { preserveState: true, replace: true }
-    );
-  };
-
-  // End semester
-  const handleEndSemester = () => {
-    if (!activeSemester) return;
-    const today = new Date().toISOString().split("T")[0];
-
-    router.post(
-      "/semesters/end",
-      { id: activeSemester.id, end_date: today },
       { preserveState: true, replace: true }
     );
   };
@@ -96,42 +65,6 @@ export default function MostBorrowed() {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Most Borrowed Books" />
       <Toaster position="top-right" richColors />
-
-      {/* Semester Controls */}
-      <div className="flex gap-4 mt-6">
-        <button
-          onClick={() => handleStartSemester("1st")}
-          className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
-        >
-          Start 1st Semester
-        </button>
-        <button
-          onClick={() => handleStartSemester("2nd")}
-          className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
-        >
-          Start 2nd Semester
-        </button>
-
-        {activeSemester && !activeSemester.end_date && (
-          <button
-            onClick={handleEndSemester}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            End {activeSemester.name}
-          </button>
-        )}
-      </div>
-
-      {/* Semester Info */}
-      {activeSemester && (
-        <p className="mt-2 text-sm text-gray-600">
-          📅 {activeSemester.name}
-          <br />
-          Start: <strong>{activeSemester.start_date}</strong>
-          <br />
-          End: <strong>{activeSemester.end_date || "Ongoing…"}</strong>
-        </p>
-      )}
 
       {/* Filters */}
       <div className="flex gap-4 mt-10">

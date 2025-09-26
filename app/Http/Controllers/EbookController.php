@@ -2,139 +2,164 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EbookCache;
 use Illuminate\Http\Request;
-use App\Models\Ebook;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
-use Dompdf\Dompdf;
+use Illuminate\Support\Facades\DB;
 
 class EbookController extends Controller
 {
-    // Display homepage latest 5 ebooks
-    public function latest()
+    public function index(Request $request)
     {
-        $ebooks = Ebook::orderBy('created_at', 'desc')->take(5)->get();
-        return Inertia::render('Welcome', [
-            'ebooks' => $ebooks,
-        ]);
+        $perPage = $request->input('perPage', 5);
+        $page = $request->input('page', 1);
+        $search = $request->input('search', '');
+        $random = $request->input('random', false);
+
+        if (EbookCache::count() > 0) {
+            // Filter by search if provided
+            $query = EbookCache::query();
+            if ($search) {
+                $query->where('title', 'like', "%$search%")
+                      ->orWhere('author', 'like', "%$search%")
+                      ->orWhere('publisher', 'like', "%$search%");
+            }
+
+            // Return random ebooks if requested
+            if ($random) {
+                $ebooks = $query->inRandomOrder()->take($perPage)->get();
+
+                return response()->json([
+                    'data' => $ebooks,
+                    'total' => $ebooks->count(),
+                    'per_page' => $perPage,
+                    'current_page' => 1,
+                ]);
+            }
+
+            // Default: paginate
+            $ebooks = $query->orderBy('created_at', 'desc')
+                            ->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data' => $ebooks->items(),
+                'total' => $ebooks->total(),
+                'per_page' => $ebooks->perPage(),
+                'current_page' => $ebooks->currentPage(),
+            ]);
+        } else {
+            return response()->json([
+                'data' => [],
+                'total' => 0,
+                'per_page' => $perPage,
+                'current_page' => $page,
+            ]);
+        }
     }
 
-    // Manage ebooks page
     public function manage()
     {
-        $ebooks = Ebook::orderBy('created_at', 'desc')->get();
+        $ebooks = EbookCache::orderBy('created_at', 'desc')->paginate(10);
+
         return Inertia::render('Ebooks', [
-            'ebooks' => $ebooks,
+            'ebooks' => $ebooks->items(),
+            'total' => $ebooks->total(),
+            'per_page' => $ebooks->perPage(),
+            'current_page' => $ebooks->currentPage(),
         ]);
     }
 
-    // Index page (See All eBooks)
-    public function index()
+    public function studentView()
     {
-        $ebooks = Ebook::orderBy('created_at', 'desc')->get();
         return Inertia::render('EbooksBySection', [
-            'ebooks' => $ebooks,
+            'limit' => 5,
         ]);
     }
 
-    // Store uploaded or fetched ebooks
-    public function store(Request $request)
-{
-    $validated = $request->validate([
-        'title' => 'required|string',
-        'author' => 'required|string',
-        'publisher' => 'nullable|string',
-        'year' => 'nullable|string',
-        'description' => 'nullable|string',
+    public function adminView()
+    {
+        return Inertia::render('Ebooks');
+    }
 
-        // Allow file or URL for cover
-        'cover' => 'nullable',
-        // Allow file or URL for ebook file
-        'file_url' => 'nullable',
-    ]);
+    // Return ebooks per section with admin-controlled limit
+    public function getBySection(Request $request, $sectionId)
+    {
+        $limit = $request->input('limit', 5);
+        $ebooks = EbookCache::where('section_id', $sectionId)
+                        ->where('available', true)
+                        ->take($limit)
+                        ->get();
 
-    // Handle uploaded cover file
-    if ($request->hasFile('cover')) {
-        $validated['cover'] = $request->file('cover')->store('covers', 'public');
-    } elseif ($request->cover && filter_var($request->cover, FILTER_VALIDATE_URL)) {
-        // If it's a URL (fetched)
+        return response()->json($ebooks);
+    }
+
+        /**
+     * Reset: Delete all cached ebooks
+     */
+public function reset()
+    {
         try {
-            $contents = file_get_contents($request->cover);
-            $filename = 'covers/' . uniqid() . '.jpg';
-            Storage::disk('public')->put($filename, $contents);
-            $validated['cover'] = $filename;
+            // Truncate the table
+            DB::table('ebooks_cache')->truncate();
+
+            return response()->json(['message' => '✅ Cache reset successfully.']);
         } catch (\Exception $e) {
-            $validated['cover'] = $request->cover; // fallback keep URL
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    // Handle uploaded ebook file
-    if ($request->hasFile('file_url')) {
-        $validated['file_url'] = $request->file('file_url')->store('ebooks', 'public');
-    } elseif ($request->file_url && filter_var($request->file_url, FILTER_VALIDATE_URL)) {
-        // Keep external URL if provided
-        $validated['file_url'] = $request->file_url;
-    }
 
-    // Save to DB
-    // Ebook::create($validated);?
-        $ebook = Ebook::create($validated);
-    // ✅ Return Inertia with new ebook
-    return response()->json([
-        'newEbook' => $ebook
-    ]);
-    }
-    // Download local ebooks
-    public function download($id)
+    /**
+     * Fetch: Get 100 new ebooks from OpenLibrary and cache them
+     */
+    public function fetchNew()
     {
-        $ebook = Ebook::findOrFail($id);
+        try {
+            $query = 'classic literature';
+            $apiRes = Http::get("http://openlibrary.org/search.json?q=" . urlencode($query) . "&limit=100");
+            $data = $apiRes->json();
 
-        if (filter_var($ebook->file_url, FILTER_VALIDATE_URL)) {
-            // External URL
-            return redirect($ebook->file_url);
+            if (!isset($data['docs'])) {
+                return response()->json(['message' => 'No ebooks found from API.']);
+            }
+
+            $ebooksToCache = [];
+
+            foreach ($data['docs'] as $doc) {
+                if (!isset($doc['ia']) || count($doc['ia']) === 0) continue;
+
+                $iaId = $doc['ia'][0];
+                $pdfFileUrl = "http://archive.org/download/$iaId/$iaId.pdf";
+
+                $ebooksToCache[] = [
+                    'title' => $doc['title'] ?? 'Unknown',
+                    'author' => isset($doc['author_name']) ? implode(', ', $doc['author_name']) : 'Unknown',
+                    'publisher' => $doc['publisher'][0] ?? 'Unknown',
+                    'year' => $doc['first_publish_year'] ?? 'Unknown',
+                    'cover' => isset($doc['cover_i']) ? "https://covers.openlibrary.org/b/id/{$doc['cover_i']}-M.jpg" : null,
+                    'file_url' => $pdfFileUrl,
+                    'description' => $doc['first_sentence'][0] ?? $doc['subtitle'] ?? 'No description',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            if (!empty($ebooksToCache)) {
+                EbookCache::insert($ebooksToCache);
+            }
+
+            return response()->json([
+                'message' => '✅ Successfully fetched new ebooks.',
+                'count' => count($ebooksToCache)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => '❌ Failed to fetch new ebooks',
+                'details' => $e->getMessage()
+            ], 500);
         }
-
-        $path = storage_path('app/public/' . $ebook->file_url);
-        if (!file_exists($path)) {
-            abort(404, 'File not found.');
-        }
-
-        return response()->download($path, $ebook->title . '.pdf');
     }
-
-    // Delete ebook
-    public function destroy($id)
-    {
-        $ebook = Ebook::findOrFail($id);
-
-        if ($ebook->file_url && Storage::disk('public')->exists($ebook->file_url)) {
-            Storage::disk('public')->delete($ebook->file_url);
-        }
-
-        if ($ebook->cover && Storage::disk('public')->exists($ebook->cover)) {
-            Storage::disk('public')->delete($ebook->cover);
-        }
-
-        $ebook->delete();
-        return back()->with('success', 'EBook deleted successfully.');
-    }
-
-//     public function bulkDelete(Request $request)
-// {
-//     $ids = $request->input('ids', []);
-
-//     if (empty($ids)) {
-//         return back()->with('error', 'No e-books selected for deletion.');
-//     }
-
-//     // delete from DB
-//     \App\Models\Ebook::whereIn('id', $ids)->delete();
-
-//     return back()->with('success', count($ids) . ' e-books deleted successfully.');
-// }
-
-    
 
 }
 
-#controller ebook
