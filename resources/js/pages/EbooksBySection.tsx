@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Head } from "@inertiajs/react";
 import { Input } from "@/components/ui/input";
+import { Select } from "@headlessui/react";
+import { FaDownload, FaHome } from "react-icons/fa";
+import { Link } from '@inertiajs/react';
 
 type Ebook = {
   id: number;
@@ -11,92 +14,130 @@ type Ebook = {
   file_url?: string;
 };
 
-type Props = {
-  limit: number; // comes from admin
-};
-
-export default function EbooksBySection({ limit }: Props) {
+export default function EbooksBySection() {
   const [ebooks, setEbooks] = useState<Ebook[]>([]);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  
-
-  const totalPages = Math.ceil(total / limit);
+  const [searchCategory, setSearchCategory] = useState<"title" | "author">("title");
 
   useEffect(() => {
     const fetchEbooks = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/ebooks?page=${currentPage}&perPage=${limit}&search=${search}`);
+        // Fetch all ebooks, no limit
+        const res = await fetch(`/api/ebooks?search=${search}&category=${searchCategory}`);
         const data = await res.json();
         setEbooks(data.data ?? []);
-        setTotal(data.total ?? 0);
       } catch {
         setEbooks([]);
-        setTotal(0);
       }
       setLoading(false);
     };
 
     fetchEbooks();
-  }, [currentPage, limit, search]);
+  }, [search, searchCategory]);
 
   return (
     <>
       <Head title="Student eBooks" />
       <div className="p-6">
-        <Input
-          placeholder="Search by title or author..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="w-full max-w-md mb-4"
-        />
+        <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white shadow-md">
+          <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
+        </header>
+
+        <div className="mt-20 text-center">
+          <h1 className="lilitaOneFont royalPurple text-2xl sm:text-3xl font-bold">
+            Welcome to Online Public Access Catalog
+          </h1>
+          <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
+            PhilCST Library: Your Gateway to Knowledge and Discovery
+          </p>
+          <div className="flex items-center space-x-2 justify-center mt-2">
+            <Link href={route("home")} className="text-black text-xl sm:text-2xl hover:text-purple-900">
+              <FaHome />
+            </Link>
+            <h1 className="font-bold text-xl">Ebooks For Student</h1>
+          </div>
+        </div>
+
+        {/* Search & Category */}
+        <div className="flex gap-2 w-full sm:w-auto mb-5 mt-6">
+          <Select
+            className="border rounded px-2 py-1 text-sm text-gray-700"
+            value={searchCategory}
+            onChange={(e) => setSearchCategory(e.target.value as "title" | "author")}
+          >
+            <option value="title">Title</option>
+            <option value="author">Author</option>
+          </Select>
+
+          <Input
+            className="border rounded px-2 py-1 w-full sm:w-64 placeholder-italic"
+            placeholder={`Search by ${searchCategory}`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Total eBooks */}
+        <p className="text-gray-700 mb-4">
+          Total eBooks available: <span className="font-semibold">{ebooks.length}</span>
+        </p>
 
         {loading && <p className="text-gray-500 text-center">Loading...</p>}
 
         {!loading && ebooks.length > 0 && (
-          <table className="w-full border-collapse bg-white shadow-sm rounded-lg">
-            <thead>
-              <tr className="bg-purple-900 text-white border-b">
-                {["Cover", "Title", "Author", "Year", "Download"].map((h) => (
-                  <th key={h} className="border p-3 text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ebooks.map((ebook) => (
-                <tr key={ebook.id} className="border-b hover:bg-gray-100">
-                  <td className="p-3">
-                    <img src={ebook.cover || "/placeholder-book.png"} alt={ebook.title} className="w-20 h-28 object-cover rounded" />
-                  </td>
-                  <td className="p-3">{ebook.title}</td>
-                  <td className="p-3">{ebook.author}</td>
-                  <td className="p-3">{ebook.year ?? "Unknown"}</td>
-                  <td className="p-3">
-                    <a href={ebook.file_url ?? "#"} target="_blank" rel="noopener noreferrer" className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm">
-                      Download
-                    </a>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse bg-white shadow-sm rounded-lg">
+              <thead>
+                <tr className="bg-purple-900 text-white border-b">
+                  {["Cover", "Title", "Author", "Year", "Download"].map((h) => (
+                    <th key={h} className="border p-3 text-left">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ebooks.map((ebook) => (
+                  <tr key={ebook.id} className="border-b hover:bg-gray-100">
+                    <td className="p-3">
+                      {ebook.cover ? (
+                        <img src={ebook.cover} alt={ebook.title} className="w-20 h-28 object-cover rounded shadow" />
+                      ) : (
+                        <span className="text-gray-500">No Cover</span>
+                      )}
+                    </td>
+                    <td className="p-3 font-semibold">{ebook.title}</td>
+                    <td className="p-3">
+                        <a
+                          href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(ebook.author)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {ebook.author}
+                        </a>
+                      </td>
+
+                    <td className="p-3">{ebook.year ?? "Unknown"}</td>
+                    <td className="p-3">
+                      <a
+                        href={ebook.file_url ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm flex items-center gap-1"
+                      >
+                        <FaDownload /> Download
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        {/* Pagination */}
-        {!loading && totalPages > 1 && (
-          <div className="flex justify-center mt-4 gap-2">
-            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1 rounded bg-gray-300 disabled:opacity-50">Prev</button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button key={page} onClick={() => setCurrentPage(page)} className={`px-3 py-1 rounded ${page === currentPage ? "bg-purple-700 text-white" : "bg-gray-200 text-gray-700"}`}>{page}</button>
-            ))}
-            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-3 py-1 rounded bg-gray-300 disabled:opacity-50">Next</button>
-          </div>
+        {!loading && ebooks.length === 0 && (
+          <p className="text-center text-gray-500 mt-4">No eBooks found.</p>
         )}
       </div>
     </>

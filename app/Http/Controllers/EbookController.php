@@ -12,7 +12,7 @@ class EbookController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->input('perPage', 5);
+        $perPage = $request->input('perPage', 100);
         $page = $request->input('page', 1);
         $search = $request->input('search', '');
         $random = $request->input('random', false);

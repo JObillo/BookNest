@@ -147,7 +147,7 @@ const Ebooks = () => {
         </div>
 
         {/* Table header */}
-        <div className="grid grid-cols-12 bg-gray-800 text-white font-semibold px-4 py-2 rounded">
+        <div className="grid grid-cols-12 bg-purple-800 text-white font-semibold px-4 py-2 rounded">
           <div className="col-span-10">BOOK INFORMATION</div>
           <div className="col-span-2 text-center">DOWNLOAD</div>
         </div>
