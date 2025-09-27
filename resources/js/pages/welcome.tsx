@@ -7,6 +7,7 @@ import { FaDownload } from "react-icons/fa";
 type Book = {
   id: number;
   title: string;
+  isbn: string;
   author: string;
   publisher: string;
   status: string;
@@ -95,7 +96,7 @@ export default function Welcome() {
     setLoadingEbooks(true);
 
     try {
-      // ✅ Fetch from Laravel backend (ebooks_cache)
+      // Fetch from Laravel backend (ebooks_cache)
       const res = await fetch("/api/ebooks/free");
       const data = await res.json();
 
@@ -122,17 +123,22 @@ export default function Welcome() {
 
   // Group books by section for display
   const groupedBooks = useMemo(() => {
-    const lowerSearch = searchTerm.toLowerCase();
+    const lowerSearch = searchTerm.trim().toLowerCase();
     const filteredBooks = books.filter((book) => {
       if (searchFilter === "All") {
         return (
           book.title.toLowerCase().includes(lowerSearch) ||
+          String(book.isbn || "").toLowerCase().includes(lowerSearch) ||
           book.author.toLowerCase().includes(lowerSearch) ||
           book.section?.section_name.toLowerCase().includes(lowerSearch)
         );
       } else if (searchFilter === "Title") {
         return book.title.toLowerCase().includes(lowerSearch);
-      } else if (searchFilter === "Author") {
+      } 
+      else if (searchFilter === "ISBN") {
+        return book.isbn?.toLowerCase().includes(lowerSearch);
+      }
+      else if (searchFilter === "Author") {
         return book.author.toLowerCase().includes(lowerSearch);
       } else if (searchFilter === "Section") {
         return book.section?.section_name.toLowerCase().includes(lowerSearch);
@@ -195,6 +201,7 @@ export default function Welcome() {
           >
             <option value="All">All</option>
             <option value="Title">Title</option>
+            <option value="ISBN">ISBN</option>
             <option value="Author">Author</option>
             <option value="Section">Section</option>
           </Select>
@@ -227,7 +234,7 @@ export default function Welcome() {
                           href={route("books.bySection", { section: sectionId })}
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          see all
+                          See All
                         </Link>
                       ) : null}
                     </div>

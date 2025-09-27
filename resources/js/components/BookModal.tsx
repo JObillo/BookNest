@@ -55,6 +55,9 @@ export default function BookModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
 
+  //validation and setting form data if editing
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   useEffect(() => {
     if (isOpen) {
       if (book) {
@@ -71,7 +74,7 @@ export default function BookModal({
           book_cover: book.book_cover || "",
           section_id: book.section_id,
           dewey_id: book.dewey_id,
-          description: book.description || "", // Ensure description is always a string
+          description: book.description || "", 
         });
         setPreview(book.book_cover || "");
         setSelectedFile(null);
@@ -89,13 +92,38 @@ export default function BookModal({
           book_cover: "",
           section_id: undefined,
           dewey_id: undefined,
-          description: "", // Initialize with empty string instead of undefined
+          description: "", 
         });
         setPreview("");
         setSelectedFile(null);
       }
     }
   }, [isOpen, book]);
+
+  const validateField = (name: string, value: string) => {
+    let error = "";
+
+    if (name === "isbn") {
+      if (!/^\d{13}$/.test(value)) {
+        error = "ISBN must be exactly 13 digits.";
+      }
+    }
+
+    if (name === "accession_number") {
+      if (value && !/^\d+$/.test(value)) {
+        error = "Accession Number must contain only numbers.";
+      }
+    }
+
+    if (name === "call_number") {
+      if (value && !/^\d+$/.test(value)) {
+        error = "Call Number must contain only numbers.";
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error;
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -110,9 +138,11 @@ export default function BookModal({
           ? Number(value)
           : value
         : name === "description" 
-          ? "" // For description, set empty string instead of undefined
+          ? "" 
           : undefined,
     }));
+
+    validateField(name, value);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +156,32 @@ export default function BookModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Final validation before submission
+    const validationErrors: { [key: string]: string } = {};
+
+    ["isbn", "accession_number", "call_number"].forEach((field) => {
+      const error = validateField(field, (formData as any)[field] || "");
+      if (error) validationErrors[field] = error;
+    });
+
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error("Please fix validation errors before submitting.");
+      return;
+    }
+
+    if (!formData.section_id) {
+    validationErrors.section_id = "Section is required.";
+    }
+    if (!formData.dewey_id) {
+      validationErrors.dewey_id = "Dewey classification is required.";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please fix validation errors before submitting.");
+      return;
+    }
+
     const data = new FormData();
     data.append("title", formData.title);
     data.append("author", formData.author);
@@ -138,8 +194,6 @@ export default function BookModal({
     data.append("publication_place", formData.publication_place || "");
     data.append("section_id", String(formData.section_id || ""));
     data.append("dewey_id", String(formData.dewey_id || ""));
-    
-    // Always append description, even if it's an empty string
     data.append("description", formData.description !== undefined ? formData.description : "");
 
     if (selectedFile) {
@@ -180,7 +234,7 @@ export default function BookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center border border-black rounded-lg overflow-y-auto bg-black/50 z-50">
       <div className="relative w-full max-w-4xl mx:auto p-8 bg-white rounded-md shadow-xl transition-all">
         <h2 className="text-lg font-semibold mb-4">{book ? "Edit Book" : "Add Book"}</h2>
         <form onSubmit={handleSubmit} encType="multipart/form-data">
@@ -204,6 +258,9 @@ export default function BookModal({
                 className="w-full border rounded p-2"
                 required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
               />
+              {errors[name] && (
+                  <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
+                )}
             </div>
           ))}
 
@@ -218,18 +275,6 @@ export default function BookModal({
               required
               min={1}
             />
-          </div>
-
-          <div className="mb-3 md:col-span-3">
-            <label className="block text-sm font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description || ""}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              placeholder="Enter book description..."
-              rows={1}
-            ></textarea>
           </div>
 
           <div className="mb-3">
@@ -280,6 +325,9 @@ export default function BookModal({
                 <option disabled>No sections available</option>
               )}
             </Select>
+            {errors.section_id && (
+              <p className="text-xs text-red-500 mt-1">{errors.section_id}</p>
+            )}
           </div>
 
           <div className="mb-3">
@@ -301,6 +349,21 @@ export default function BookModal({
                 <option disabled>No Dewey classifications available</option>
               )}
             </Select>
+            {errors.dewey_id && (
+              <p className="text-xs text-red-500 mt-1">{errors.dewey_id}</p>
+            )}
+          </div>
+
+          <div className="mb-3 md:col-span-3">
+            <label className="block text-sm font-medium">Description</label>
+            <textarea
+              name="description"
+              value={formData.description || ""}
+              onChange={handleChange}
+              className="w-full border rounded p-2"
+              placeholder="Enter book description..."
+              rows={1}
+            ></textarea>
           </div>
 
           <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
@@ -322,7 +385,7 @@ export default function BookModal({
           </div>
         </form>
       </div>
-      <Toaster />
+      
     </div>
   );
 }

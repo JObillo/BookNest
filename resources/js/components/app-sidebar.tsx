@@ -21,7 +21,7 @@ const mainNavItems: NavItem[] = [
     },
 
     {
-        title: 'Not Returned Books',
+        title: 'Unreturned Books',
         href: '/returnedbooks',
         icon: CornerDownLeft,
     },

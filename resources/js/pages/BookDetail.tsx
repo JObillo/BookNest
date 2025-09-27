@@ -1,4 +1,5 @@
 import { Head, Link, usePage } from "@inertiajs/react";
+import { FaHome } from "react-icons/fa";
 
 // type Dewey = {
 //   id: number;
@@ -27,7 +28,7 @@ type Book = {
   accession_number?: string;
   call_number?: string;
   dewey_classifiaction?: string;
-  book_copies?: number;
+  copies_available?: number;
 };
 
 export default function BookDetail() {
@@ -39,12 +40,15 @@ export default function BookDetail() {
       <Head title={book.title} />
 
       <div className="min-h-screen bg-gray-100 p-6">
-        <div className="max-w-5xl mx-auto bg-white rounded shadow p-6">
+        <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white shadow-md">
+          <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
+        </header>
+        <div className="max-w-5xl mx-auto bg-white rounded shadow p-6 mt-15">
           <Link
             href={route("home")}
-            className="text-blue-600 hover:underline block mb-4"
+            className="text-black text-xl sm:text-2xl hover:text-purple-900 inline-flex items-center gap-2 font-bold"
           >
-            ← Back to Catalog
+            <FaHome /> Home
           </Link>
 
           {/* Title */}
@@ -67,9 +71,9 @@ export default function BookDetail() {
                 >
                   {book.status}
                 </p>
-                {/* <p className="text-sm mt-1">
-                  Copies Available: {book.book_copies ?? "N/A"}
-                </p> */}
+                <p className="text-sm mt-1">
+                  Copies Available: {book.copies_available ?? "N/A"}
+                </p>
               </div>
             </div>
 

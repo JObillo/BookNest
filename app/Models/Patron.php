@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\PatronType;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Patron extends Model
 {
+    use Notifiable;
     protected $table = 'patrons';
 
     protected $fillable = [
@@ -16,6 +18,7 @@ class Patron extends Model
         'year',
         'department',
         'patron_type',
+        'email',
     ];
 
     protected $casts = [

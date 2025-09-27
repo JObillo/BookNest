@@ -96,7 +96,7 @@ export default function DeweyModal({ isOpen, closeModal, dewey }: Props) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center border border-black rounded-lg overflow-y-auto bg-black/50 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg rounded-lg border-3 border-gray-600 shadow w-full max-w-xl">
+      <div className="bg-white p-6 rounded-lg shadow-lg shadow w-full max-w-xl transition-all">
         <h2 className="text-lg font-semibold mb-4">
           {dewey ? "Edit Dewey" : "Add Dewey"}
         </h2>
@@ -128,17 +128,17 @@ export default function DeweyModal({ isOpen, closeModal, dewey }: Props) {
           </div>
 
           {/* Buttons */}
-          <div className="flex justify-end gap-2">
+          <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 bg-gray-500 text-white rounded"
+              className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded"
+              className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer "
             >
               {dewey ? "Update" : "Create"}
             </button>

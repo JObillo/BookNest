@@ -3,8 +3,9 @@ import { Head, usePage } from "@inertiajs/react";
 import IssueBookModal from "@/components/IssueBookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster } from "sonner";
-import { Input } from "@/components/ui/input";
+import { Input } from "@headlessui/react";
 import { type BreadcrumbItem } from '@/types';
+
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Issued Books', href: '/section' },
@@ -61,27 +62,27 @@ export default function IssuedBooks() {
       <Head title="Issue Book" />
       <Toaster position="top-right" richColors />
 
-      <div className="flex flex-col gap-6 p-6 bg-white dark:bg-black text-black shadow-lg rounded">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+      <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
+        <div className="flex justify-between items-center mb-2">
           {/* Search Bar on the Left */}
         <div>
           <Input
             className="border rounded px-2 py-1 w-100"
-            placeholder="Search by name or school id"
+            placeholder="Search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-green-600 text-white rounded px-4 py-2 text-sm hover:bg-green-700 transition w-100 md:w-auto cursor-pointer"
+            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
           >
             Issue Book
           </button>
-        </div>
+      </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse bg-white dark:bg-gray-700 text-black shadow-sm rounded-lg">
+          <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
                 {[
@@ -92,62 +93,68 @@ export default function IssuedBooks() {
                   "Issued Date",
                   "Due Date",
                   "Status",
-                ].map((header, index) => (
-                  <th
-                  key={header}
-                  className={`border p-3 text-left ${
-                      
-                       index === 2 // author
-                      ? "hidden lg:table-cell"  // Hides Publisher by default, shows on large screens (lg)
-                      : index === 6 // status
-                      ? "hidden lg:table-cell"  // Hides Book Copies by default, shows on large screens (lg)
-                      // : index === 6
-                      // ? "hidden lg:table-cell"
-                      : ""
-                      
-                  }`}
-                >
-                  {header}
-                </th>
+                ].map((header) => (
+                  <th key={header} className="border p-3 text-left">
+                    {header}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {displayedBooks.length > 0 ? (
                 displayedBooks.map((record) => (
-                  <tr key={record.id} className="border-b hover:bg-gray-200">
+                  <tr key={record.id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
-                      <div className="text-sm text-gray-600 dark:text-white">
+                      <div className="text-sm text-gray-600">
                         School ID: {record.patron.school_id}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-white">
+                      <div className="text-sm text-gray-600">
                         {record.patron.course || "N/A"} | {record.patron.year || "N/A"}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-white">
+                      <div className="text-sm text-gray-600">
                         {record.patron.department || "N/A"} ({record.patron.patron_type})
                       </div>
                     </td>
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>
-                      <div className="text-sm text-gray-600 dark:text-white">
+                      <div className="text-sm text-gray-600">
                         ISBN: {record.book.isbn}
                       </div>
                     </td>
-                    <td className="p-3 hidden lg:table-cell">{record.book.author}</td>
-                    <td className="p-3 text-sm text-gray-800 dark:text-white">
+                    <td className="p-3">{record.book.author}</td>
+                    <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
                       <div>Place: {record.book.publication_place || "N/A"}</div>
                     </td>
-                    <td className="p-3">{record.issued_date || "N/A"}</td>
-                    <td className="p-3">{record.due_date || "N/A"}</td>
+                    <td className="p-3">
+                      {record.issued_date
+                        ? new Date(record.issued_date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "N/A"}
+                    </td>
+
+                    <td className="p-3">
+                      {record.due_date
+                        ? new Date(record.due_date).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "N/A"}
+                    </td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-1 rounded text-white text-sm hidden lg:table-cells dark:text-white ${
+                        className={`px-2 py-1 rounded text-white text-sm ${
                           record.status === "Issued"
                             ? "bg-yellow-600"
+                            : record.status === "Overdue"
+                            ? "bg-red-600"
                             : "bg-green-600"
                         }`}
                       >

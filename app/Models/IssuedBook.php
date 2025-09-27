@@ -16,12 +16,12 @@ class IssuedBook extends Model
 
     public function patron()
     {
-        return $this->belongsTo(Patron::class);
+        return $this->belongsTo(Patron::class, 'patron_id');
     }
 
     public function book()
     {
-        return $this->belongsTo(Book::class);
+        return $this->belongsTo(Book::class, 'book_id');
     }
 }
 

@@ -77,20 +77,20 @@ export default function Deweys() {
           <tbody>
             {deweys.length ? (
               deweys.map((dewey) => (
-                <tr key={dewey.id} className="border-b">
+                <tr key={dewey.id} className="border-b hover:bg-gray-100">
                   <td className="p-3">{dewey.id}</td>
                   <td className="p-3">{dewey.dewey_number}</td>
                   <td className="p-3">{dewey.dewey_classification}</td>
                   <td className="p-3 flex gap-2">
                     <button
                       onClick={() => openModal(dewey)}
-                      className="bg-blue-500 text-sm text-white px-3 py-1 rounded"
+                      className="bg-blue-500 text-sm text-white px-3 py-1 rounded cursor-pointer"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(dewey.id)}
-                      className="bg-red-500 text-sm text-white px-3 py-1 rounded"
+                      className="bg-red-500 text-sm text-white px-3 py-1 rounded cursor-pointer"
                     >
                       Delete
                     </button>

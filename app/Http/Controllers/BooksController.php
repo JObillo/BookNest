@@ -20,7 +20,7 @@ class BooksController extends Controller
     public function index(): Response
     {
         return Inertia::render('Books', [
-            'books' => Book::with(['section', 'dewey'])->get(),
+            'books' => Book::with(['section', 'dewey'])->latest()->get(),
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
             'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')

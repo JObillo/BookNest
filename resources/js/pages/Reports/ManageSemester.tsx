@@ -84,7 +84,7 @@ export default function ManageSemester() {
       <div className="flex justify-between items-center mt-10 mb-4">
         <button
           onClick={handleAddSemester}
-          className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800"
+          className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
         >
           Add New Semester
         </button>
