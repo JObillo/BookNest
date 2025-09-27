@@ -113,53 +113,64 @@ public function reset()
     /**
      * Fetch: Get 100 new ebooks from OpenLibrary and cache them
      */
-    public function fetchNew()
-    {
-        try {
-            $query = 'classic literature';
-            $apiRes = Http::get("http://openlibrary.org/search.json?q=" . urlencode($query) . "&limit=100");
-            $data = $apiRes->json();
+   public function fetchNew(Request $request)
+{
+    try {
+        $query = $request->input('query', 'classic literature'); // default if not provided
+        $limit = $request->input('limit', 100);
 
-            if (!isset($data['docs'])) {
-                return response()->json(['message' => 'No ebooks found from API.']);
-            }
+        $apiRes = Http::get("http://openlibrary.org/search.json?q=" . urlencode($query) . "&limit={$limit}");
+        $data = $apiRes->json();
 
-            $ebooksToCache = [];
-
-            foreach ($data['docs'] as $doc) {
-                if (!isset($doc['ia']) || count($doc['ia']) === 0) continue;
-
-                $iaId = $doc['ia'][0];
-                $pdfFileUrl = "http://archive.org/download/$iaId/$iaId.pdf";
-
-                $ebooksToCache[] = [
-                    'title' => $doc['title'] ?? 'Unknown',
-                    'author' => isset($doc['author_name']) ? implode(', ', $doc['author_name']) : 'Unknown',
-                    'publisher' => $doc['publisher'][0] ?? 'Unknown',
-                    'year' => $doc['first_publish_year'] ?? 'Unknown',
-                    'cover' => isset($doc['cover_i']) ? "https://covers.openlibrary.org/b/id/{$doc['cover_i']}-M.jpg" : null,
-                    'file_url' => $pdfFileUrl,
-                    'description' => $doc['first_sentence'][0] ?? $doc['subtitle'] ?? 'No description',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-
-            if (!empty($ebooksToCache)) {
-                EbookCache::insert($ebooksToCache);
-            }
-
-            return response()->json([
-                'message' => '✅ Successfully fetched new ebooks.',
-                'count' => count($ebooksToCache)
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => '❌ Failed to fetch new ebooks',
-                'details' => $e->getMessage()
-            ], 500);
+        if (!isset($data['docs'])) {
+            return response()->json(['message' => 'No ebooks found from API.']);
         }
+
+        $ebooksToCache = [];
+
+        foreach ($data['docs'] as $doc) {
+            if (!isset($doc['ia']) || count($doc['ia']) === 0) continue;
+
+            $iaId = $doc['ia'][0];
+            $pdfFileUrl = "http://archive.org/download/$iaId/$iaId.pdf";
+
+            $ebooksToCache[] = [
+                'title' => $doc['title'] ?? 'Unknown',
+                'author' => isset($doc['author_name']) ? implode(', ', $doc['author_name']) : 'Unknown',
+                'publisher' => $doc['publisher'][0] ?? 'Unknown',
+                'year' => $doc['first_publish_year'] ?? 'Unknown',
+                'cover' => isset($doc['cover_i']) ? "https://covers.openlibrary.org/b/id/{$doc['cover_i']}-M.jpg" : null,
+                'file_url' => $pdfFileUrl,
+                'description' => $doc['first_sentence'][0] ?? $doc['subtitle'] ?? 'No description',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($ebooksToCache)) {
+            EbookCache::insert($ebooksToCache);
+        }
+
+        return response()->json([
+            'message' => '✅ Successfully fetched new ebooks.',
+            'count' => count($ebooksToCache)
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => '❌ Failed to fetch new ebooks',
+            'details' => $e->getMessage()
+        ], 500);
     }
+}
+
+    public function freeEbooks()
+{
+    $ebooks = EbookCache::orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
+
+    return response()->json($ebooks);
+}
 
 }
 

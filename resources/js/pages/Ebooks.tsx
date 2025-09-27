@@ -21,8 +21,19 @@ const Ebooks = () => {
   const [total, setTotal] = useState(0);
   const [perPage, setPerPage] = useState(5);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [query, setQuery] = useState("classic literature"); // selected category
 
   const totalPages = Math.ceil(total / perPage);
+
+  // Example categories/genres
+  const genres = [
+    "classic literature",
+    "science fiction",
+    "romance",
+    "fantasy",
+    "history",
+    "technology"
+  ];
 
   // Fetch ebooks from API
   const fetchEbooks = async (options?: { random?: boolean }) => {
@@ -47,11 +58,6 @@ const Ebooks = () => {
     }
   };
 
-  // Load random
-  const loadNewEbooks = () => {
-    fetchEbooks({ random: true });
-  };
-
   // Reset cache (delete from DB)
   const resetCache = async () => {
     if (!confirm("Delete all cached ebooks?")) return;
@@ -66,11 +72,15 @@ const Ebooks = () => {
     }
   };
 
-  // Fetch new ebooks
+  // Fetch new ebooks from OpenLibrary by selected category
   const fetchNewEbooks = async () => {
-    if (!confirm("Fetch 100 new ebooks?")) return;
+    if (!confirm(`Fetch 100 new ebooks for "${query}"?`)) return;
     try {
-      const res = await fetch("/api/ebooks/fetch", { method: "POST" });
+      const res = await fetch("/api/ebooks/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
       const data = await res.json();
       setStatusMsg(data.message);
       fetchEbooks();
@@ -78,10 +88,6 @@ const Ebooks = () => {
       setStatusMsg("❌ Failed to fetch ebooks.");
     }
   };
-
-  useEffect(() => {
-    fetchEbooks();
-  }, [currentPage, search, perPage]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -91,6 +97,10 @@ const Ebooks = () => {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
+
+  useEffect(() => {
+    fetchEbooks();
+  }, [currentPage, search, perPage]);
 
   return (
     <AppLayout>
@@ -114,12 +124,28 @@ const Ebooks = () => {
           className="mb-4 w-full max-w-md"
         />
 
+        {/* Category dropdown */}
+        <div className="flex items-center gap-2 mb-4">
+          <label className="font-semibold">Category:</label>
+          <Select
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="border rounded px-2 py-1"
+          >
+            {genres.map((genre) => (
+              <option key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </Select>
+        </div>
+
         {/* Limit dropdown */}
         <div className="flex items-center gap-2 mb-4">
           <label className="font-semibold">Show:</label>
           <Select
             value={perPage}
-            onChange={(e: any) => setPerPage(Number(e.target.value))}
+            onChange={(e) => setPerPage(Number(e.target.value))}
             className="border rounded px-2 py-1"
           >
             {[5, 10, 15, 20].map((num) => (

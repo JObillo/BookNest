@@ -91,51 +91,34 @@ export default function Welcome() {
 
   // Fetch free eBooks from Open Library with caching
   useEffect(() => {
-    const fetchEbooks = async () => {
-      setLoadingEbooks(true);
+  const fetchEbooks = async () => {
+    setLoadingEbooks(true);
 
-      // 1️⃣ Try loading from cache first
+    try {
+      // ✅ Fetch from Laravel backend (ebooks_cache)
+      const res = await fetch("/api/ebooks/free");
+      const data = await res.json();
+
+      setEbooks(data);
+
+      // Optional: cache locally in browser too
+      localStorage.setItem("freeEbooks", JSON.stringify(data));
+    } catch (err) {
+      console.error("Failed to fetch eBooks:", err);
+
+      // Fallback: load from localStorage
       const cached = localStorage.getItem("freeEbooks");
       if (cached) {
         setEbooks(JSON.parse(cached));
       }
+    }
 
-      try {
-        // 2️⃣ Fetch fresh data if online
-        const res = await fetch(
-          `https://openlibrary.org/search.json?q=classic+literature&limit=5`
-        );
-        const data = await res.json();
+    setLoadingEbooks(false);
+  };
 
-        const books: Ebook[] = data.docs
-          .filter((doc: any) => doc.ia && doc.ia.length > 0)
-          .map((doc: any) => ({
-            id: doc.key.split("/").join("").hashCode(),
-            title: doc.title,
-            author: doc.author_name ? doc.author_name.join(", ") : "Unknown",
-            year: doc.first_publish_year || "Unknown",
-            cover: doc.cover_i
-              ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
-              : undefined,
-            file_url: `https://archive.org/download/${doc.ia[0]}/${doc.ia[0]}.pdf`,
-            description: doc.subtitle || "No description available.",
-            publisher: doc.publisher ? doc.publisher[0] : "Unknown",
-          }));
+  fetchEbooks();
+}, []);
 
-        setEbooks(books);
-
-        // 3️⃣ Save to cache
-        localStorage.setItem("freeEbooks", JSON.stringify(books));
-      } catch (err) {
-        console.error("Failed to fetch eBooks, using cache:", err);
-        // If fetch fails → rely on cache only
-      }
-
-      setLoadingEbooks(false);
-    };
-
-    fetchEbooks();
-  }, []);
 
   // Group books by section for display
   const groupedBooks = useMemo(() => {

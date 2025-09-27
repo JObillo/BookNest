@@ -66,6 +66,10 @@ const mainNavItems: NavItem[] = [
                 title: 'Top Borrowers',
                 href: '/reports/top-borrowers'
             },
+            {
+                title: 'Manage Semester',
+                href: '/reports/managesemester'
+            }
         ],
     },
 ];

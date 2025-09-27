@@ -29,24 +29,36 @@ type Section = {
   section_name: string;
 };
 
+type Semester = {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+};
+
+
 export default function LeastBorrowed() {
-  const { books: backendBooks, sections = [] } = usePage<{ books: Book[]; sections: Section[] }>().props;
+  const { books: backendBooks, sections = [], semesters = [], selectedSemester } = usePage<{
+      books: Book[];
+      sections: Section[];
+      semesters: Semester[];
+      selectedSemester?: number | "All";   // <--- allow "All"
+    }>().props;
 
   // States
   const [limit, setLimit] = useState(10);
-  const [range, setRange] = useState("month");
   const [category, setCategory] = useState("All");
+  const [semesterId, setSemesterId] = useState<number | "All">(selectedSemester || "All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Whenever filters change, request backend
-  const handleFilterChange = (newLimit: number, newRange: string, newCategory: string) => {
+  const handleFilterChange = (
+    newLimit: number,
+    newCategory: string,
+    newSemester: number | "All"
+  ) => {
     router.get(
       "/reports/least-borrowed",
-      {
-        limit: newLimit,
-        range: newRange,
-        category: newCategory,
-      },
+      { limit: newLimit, category: newCategory, semester_id: newSemester },
       { preserveState: true, replace: true }
     );
   };
@@ -60,7 +72,7 @@ export default function LeastBorrowed() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [backendBooks, limit, range, category]);
+  }, [backendBooks, limit, category, semesterId]);
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -69,6 +81,7 @@ export default function LeastBorrowed() {
 
       {/* Filters */}
       <div className="flex gap-4 mt-10">
+        {/* Limit */}
         <label>
           Limit
           <select
@@ -76,7 +89,7 @@ export default function LeastBorrowed() {
             onChange={(e) => {
               const newLimit = Number(e.target.value);
               setLimit(newLimit);
-              handleFilterChange(newLimit, range, category);
+              handleFilterChange(newLimit, category, semesterId);
             }}
             className="ml-2 border rounded px-2 py-1"
           >
@@ -87,23 +100,7 @@ export default function LeastBorrowed() {
           </select>
         </label>
 
-        <label>
-          Range
-          <select
-            value={range}
-            onChange={(e) => {
-              const newRange = e.target.value;
-              setRange(newRange);
-              handleFilterChange(limit, newRange, category);
-            }}
-            className="ml-2 border rounded px-2 py-1"
-          >
-            <option value="month">Month</option>
-            <option value="week">Week</option>
-            <option value="semester">Semester</option>
-          </select>
-        </label>
-
+        {/* Category */}
         <label>
           Category
           <select
@@ -111,7 +108,7 @@ export default function LeastBorrowed() {
             onChange={(e) => {
               const newCategory = e.target.value;
               setCategory(newCategory);
-              handleFilterChange(limit, range, newCategory);
+              handleFilterChange(limit, newCategory, semesterId);
             }}
             className="ml-2 border rounded px-2 py-1"
           >
@@ -119,6 +116,26 @@ export default function LeastBorrowed() {
             {sections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.section_name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {/* Semester */}
+        <label>
+          Semester
+          <select
+            value={semesterId}
+            onChange={(e) => {
+              const newSemester = e.target.value === "All" ? "All" : Number(e.target.value);
+              setSemesterId(newSemester);
+              handleFilterChange(limit, category, newSemester);
+            }}
+            className="ml-2 border rounded px-2 py-1"
+          >
+            <option value="All">All</option>
+            {semesters.map((sem) => (
+              <option key={sem.id} value={sem.id}>
+                {sem.name} ({sem.start_date} - {sem.end_date})
               </option>
             ))}
           </select>

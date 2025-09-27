@@ -7,135 +7,219 @@ use Inertia\Inertia;
 use App\Models\IssuedBook;
 use Illuminate\Support\Facades\DB;
 use App\Models\Section;
-use Carbon\Carbon;
 use App\Models\Semester;
 
 class ReportController extends Controller
 {
+    // ------------------------------
+    // Helper to get all semesters
+    // ------------------------------
+    private function getSemesters()
+    {
+        return Semester::orderBy('start_date', 'desc')->get();
+    }
+
+    // ------------------------------
+// Resolve selected semester
+// ------------------------------
+private function resolveSemester($semesterId)
+{
+    if ($semesterId && $semesterId !== 'All') {
+        return Semester::find((int) $semesterId); // specific semester
+    }
+
+    if ($semesterId === 'All') {
+        return 'All'; // special case for all
+    }
+
+    // default: active semester
+    return Semester::where('status', 'Active')
+        ->orderBy('start_date', 'desc')
+        ->first();
+}
+
+// ------------------------------
+// Most Borrowed Books
+// ------------------------------
 public function mostBorrowed(Request $request)
 {
     $limit = $request->input('limit', 10);
-    $range = $request->input('range', 'month');
+    $semesterId = $request->input('semester_id');
     $category = $request->input('category', 'All');
+
+    $semesters = $this->getSemesters();
+    $semester = $this->resolveSemester($semesterId);
+
+    $startDate = $semester !== 'All' ? $semester?->start_date : null;
+    $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
     $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
         ->join('books', 'issued_books.book_id', '=', 'books.id')
         ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
-        ->when($range === 'week', fn($q) =>
-            $q->whereBetween('issued_books.issued_date', [now()->startOfWeek(), now()->endOfWeek()])
+        ->when($semester !== 'All' && $startDate && $endDate, fn($q) =>
+            $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
         )
-        ->when($range === 'month', fn($q) =>
-            $q->whereBetween('issued_books.issued_date', [now()->startOfMonth(), now()->endOfMonth()])
-        )
-        // removed semester range filter
         ->groupBy('book_id')
         ->orderByDesc('borrow_count')
         ->limit($limit)
         ->with('book')
         ->get();
 
-    return inertia('Reports/MostBorrowed', [
+    return Inertia::render('Reports/MostBorrowed', [
         'books' => $query,
         'sections' => Section::all(),
+        'semesters' => $semesters,
+        // if semester is "All" keep it, otherwise pass the id of active semester
+        'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
         'filters' => [
             'limit' => $limit,
-            'range' => $range,
             'category' => $category,
         ],
     ]);
 }
 
 
-
-
-
+    // ------------------------------
+    // Least Borrowed Books
+    // ------------------------------
     public function leastBorrowed(Request $request)
-{
-    $limit = $request->input('limit', 10);
-    $range = $request->input('range', 'month');
-    $category = $request->input('category', 'All'); // default to All
+    {
+        $limit = $request->input('limit', 10);
+        $semesterId = $request->input('semester_id');
+        $category = $request->input('category', 'All');
 
-    $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
-        ->join('books', 'issued_books.book_id', '=', 'books.id')
-        ->when($category !== 'All', function ($q) use ($category) {
-            $q->where('books.section_id', $category); // filter by section if not "All"
-        })
-        ->when($range === 'week', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                Carbon::now()->startOfWeek(),
-                Carbon::now()->endOfWeek(Carbon::SUNDAY)
-            ]);
-        })
-        ->when($range === 'month', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                Carbon::now()->startOfMonth(),
-                Carbon::now()->endOfMonth()
-            ]);
-        })
-        ->when($range === 'semester', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                Carbon::create(now()->year, 7, 1),
-                Carbon::create(now()->year, 11, 30)
-            ]);
-        })
-        ->groupBy('book_id')
-        ->orderBy('borrow_count') // ascending for least borrowed
-        ->limit($limit)
-        ->with('book')
-        ->get();
+        $semesters = $this->getSemesters();
+        $semester = $this->resolveSemester($semesterId);
 
-    $sections = Section::all();
+        $startDate = $semester !== 'All' ? $semester?->start_date : null;
+        $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-    return Inertia::render('Reports/LeastBorrowed', [
-        'books' => $query,
-        'sections' => $sections,
-        'filters' => [
-            'limit' => $limit,
-            'range' => $range,
-            'category' => $category,
-        ]
-    ]);
-}
+        $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
+            ->join('books', 'issued_books.book_id', '=', 'books.id')
+            ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
+            ->when($semester && $startDate && $endDate, fn($q) =>
+                $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
+            )
+            ->groupBy('book_id')
+            ->orderBy('borrow_count') // ascending for least borrowed
+            ->limit($limit)
+            ->with('book')
+            ->get();
+
+        return Inertia::render('Reports/LeastBorrowed', [
+            'books' => $query,
+            'sections' => Section::all(),
+            'semesters' => $semesters,
+            // if semester is "All" keep it, otherwise pass the id of active semester
+            'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
+            'filters' => [
+                'limit' => $limit,
+                'category' => $category,
+        ],
+        ]);
+    }
+
+    // ------------------------------
+    // Top Borrowers
+    // ------------------------------
     public function topBorrowers(Request $request)
-{
-    $limit = $request->input('limit', 10);
-    $range = $request->input('range', 'month');
+    {
+        $limit = $request->input('limit', 10);
+        $semesterId = $request->input('semester_id');
 
-    $query = IssuedBook::select('patron_id', DB::raw('COUNT(*) as borrow_count'))
-        ->when($range === 'week', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                now()->startOfWeek(),
-                now()->endOfWeek()
-            ]);
-        })
-        ->when($range === 'month', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                now()->startOfMonth(),
-                now()->endOfMonth()
-            ]);
-        })
-        ->when($range === 'semester', function ($q) {
-            $q->whereBetween('issued_books.issued_date', [
-                Carbon::create(now()->year, 7, 1),
-                Carbon::create(now()->year, 11, 30)
-            ]);
-        })
-        ->groupBy('patron_id')
-        ->orderByDesc('borrow_count')
-        ->limit($limit)
-        ->with('patron') // eager load patron details
-        ->get();
+        $semesters = $this->getSemesters();
+        $semester = $this->resolveSemester($semesterId);
 
-    return Inertia::render('Reports/TopBorrowed', [
-        'borrowers' => $query,
-        'filters' => [
-            'limit'   => $limit,
-            'range'   => $range,
-        ]
-    ]);
-}
+        $startDate = $semester !== 'All' ? $semester?->start_date : null;
+        $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-    
+        $query = IssuedBook::select('patron_id', DB::raw('COUNT(*) as borrow_count'))
+            ->when($semester && $startDate && $endDate, fn($q) =>
+                $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
+            )
+            ->groupBy('patron_id')
+            ->orderByDesc('borrow_count')
+            ->limit($limit)
+            ->with('patron')
+            ->get();
 
-    
+        return Inertia::render('Reports/TopBorrowed', [
+            'borrowers' => $query,
+            'semesters' => $semesters,
+            'selectedSemester' => $semesterId ?? 'Active',
+            'filters' => [
+                'limit' => $limit,
+            ],
+        ]);
+    }
+
+    // ------------------------------
+    // Manage Semester Page
+    // ------------------------------
+    public function managesemester()
+    {
+        $semesters = Semester::orderBy('start_date', 'desc')->get();
+        return Inertia::render('Reports/ManageSemester', [
+            'semesters' => $semesters
+        ]);
+    }
+
+    // ------------------------------
+    // Store new semester
+    // ------------------------------
+    public function storeSemester(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'school_year' => 'required|string|max:9',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'status' => 'required|in:Active,Inactive',
+        ]);
+
+        if ($request->status === 'Active') {
+            Semester::where('status', 'Active')->update(['status' => 'Inactive']);
+        }
+
+        Semester::create($request->all());
+        return redirect()->back()->with('success', 'Semester added successfully!');
+    }
+
+    // ------------------------------
+    // Update semester
+    // ------------------------------
+    public function updateSemester(Request $request, Semester $semester)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'school_year' => 'required|string|max:9',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'status' => 'required|in:Active,Inactive',
+        ]);
+
+        if ($request->status === 'Active') {
+            Semester::where('id', '!=', $semester->id)->update(['status' => 'Inactive']);
+        }
+
+        if ($request->status === 'Inactive' && Semester::where('status', 'Active')->count() === 1 && $semester->status === 'Active') {
+            return back()->with('error', '⚠️ You must have at least one active semester.');
+        }
+
+        $semester->update($request->all());
+        return redirect()->back()->with('success', 'Semester updated successfully!');
+    }
+
+    // ------------------------------
+    // Delete semester
+    // ------------------------------
+    public function deleteSemester(Semester $semester)
+    {
+        if ($semester->status === 'Active' && Semester::where('status', 'Active')->count() === 1) {
+            return back()->with('error', '⚠️ You cannot delete the last active semester.');
+        }
+
+        $semester->delete();
+        return redirect()->back()->with('success', 'Semester deleted successfully!');
+    }
 }

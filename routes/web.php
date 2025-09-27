@@ -144,6 +144,9 @@ Route::get('/ebooks', [EbookController::class, 'studentView'])->name('ebooks.ind
 Route::get('/admin/ebooks', [EbookController::class, 'adminView'])->name('ebooks.admin');
 // Route::resource('report', ReportController::class);
 
+Route::get('/api/ebooks/free', [EbookController::class, 'freeEbooks']);
+
+
 // Route::get('/ebooks', function () {
 //     return Inertia::render('Ebooks'); // <-- Just render the page, no JSON
 // });
@@ -152,7 +155,10 @@ Route::prefix('reports')->group(function () {
     Route::get('/most-borrowed', [ReportController::class, 'mostBorrowed'])->name('reports.mostBorrowed');
     Route::get('/least-borrowed', [ReportController::class, 'leastBorrowed'])->name('reports.leastBorrowed');
     Route::get('top-borrowers', [ReportController::class,'topBorrowers'])->name('reports.topBorrowers');
-    
+    Route::get('/managesemester', [ReportController::class, 'managesemester'])->name('reports.managesemester');
+    Route::post('/managesemester', [ReportController::class, 'storeSemester'])->name('reports.semester.store');
+    Route::put('/managesemester/{semester}', [ReportController::class, 'updateSemester'])->name('reports.semester.update');
+    Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 });
     // Semester Contorller
     

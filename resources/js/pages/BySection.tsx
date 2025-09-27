@@ -202,7 +202,16 @@ useEffect(() => {
                       <div className="font-semibold">{book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
                     </td>
-                    <td className="p-3">{book.author}</td>
+                    <td className="p-3">
+                        <a
+                          href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(book.author)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {book.author}
+                        </a>
+                      </td>
                     <td className="p-3">{book.publisher}</td>
                     <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
                       <div>Accession #: {book.accession_number}</div>
