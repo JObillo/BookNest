@@ -19,23 +19,32 @@ export default function EbooksBySection() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [searchCategory, setSearchCategory] = useState<"title" | "author">("title");
+  const [startYear, setStartYear] = useState<string>("");
+  const [endYear, setEndYear] = useState<string>("");
+
+  const fetchEbooks = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search,
+        searchBy: searchCategory,
+        startYear,
+        endYear,
+      });
+
+      const res = await fetch(`/api/ebooks?${params.toString()}`);
+      const data = await res.json();
+      setEbooks(data.data ?? []);
+    } catch (err) {
+      console.error(err);
+      setEbooks([]);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchEbooks = async () => {
-      setLoading(true);
-      try {
-        // Fetch all ebooks, no limit
-        const res = await fetch(`/api/ebooks?search=${search}&category=${searchCategory}`);
-        const data = await res.json();
-        setEbooks(data.data ?? []);
-      } catch {
-        setEbooks([]);
-      }
-      setLoading(false);
-    };
-
     fetchEbooks();
-  }, [search, searchCategory]);
+  }, [search, searchCategory, startYear, endYear]);
 
   return (
     <>
@@ -60,8 +69,8 @@ export default function EbooksBySection() {
           </div>
         </div>
 
-        {/* Search & Category */}
-        <div className="flex gap-2 w-full sm:w-auto mb-5 mt-6">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto mb-5 mt-6 items-center">
           <Select
             className="border rounded px-2 py-1 text-sm text-gray-700"
             value={searchCategory}
@@ -76,6 +85,20 @@ export default function EbooksBySection() {
             placeholder={`Search by ${searchCategory}`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <Input
+            className="border rounded px-2 py-1 w-20 placeholder-italic"
+            placeholder="Start Year"
+            value={startYear}
+            onChange={(e) => setStartYear(e.target.value)}
+          />
+
+          <Input
+            className="border rounded px-2 py-1 w-20 placeholder-italic"
+            placeholder="End Year"
+            value={endYear}
+            onChange={(e) => setEndYear(e.target.value)}
           />
         </div>
 
@@ -97,17 +120,24 @@ export default function EbooksBySection() {
                 </tr>
               </thead>
               <tbody>
-                {ebooks.map((ebook) => (
-                  <tr key={ebook.id} className="border-b hover:bg-gray-100">
-                    <td className="p-3">
-                      {ebook.cover ? (
-                        <img src={ebook.cover} alt={ebook.title} className="w-20 h-28 object-cover rounded shadow" />
-                      ) : (
-                        <span className="text-gray-500">No Cover</span>
-                      )}
-                    </td>
-                    <td className="p-3 font-semibold">{ebook.title}</td>
-                    <td className="p-3">
+                {ebooks.map((ebook) => {
+                  const yearNum = Number(ebook.year);
+                  if (
+                    (startYear && yearNum < Number(startYear)) ||
+                    (endYear && yearNum > Number(endYear))
+                  ) return null; // filter by year
+
+                  return (
+                    <tr key={ebook.id} className="border-b hover:bg-gray-100">
+                      <td className="p-3">
+                        {ebook.cover ? (
+                          <img src={ebook.cover} alt={ebook.title} className="w-20 h-28 object-cover rounded shadow" />
+                        ) : (
+                          <span className="text-gray-500">No Cover</span>
+                        )}
+                      </td>
+                      <td className="p-3 font-semibold">{ebook.title}</td>
+                      <td className="p-3">
                         <a
                           href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(ebook.author)}`}
                           target="_blank"
@@ -117,20 +147,20 @@ export default function EbooksBySection() {
                           {ebook.author}
                         </a>
                       </td>
-
-                    <td className="p-3">{ebook.year ?? "Unknown"}</td>
-                    <td className="p-3">
-                      <a
-                        href={ebook.file_url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm flex items-center gap-1"
-                      >
-                        <FaDownload /> Download
-                      </a>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="p-3">{ebook.year ?? "Unknown"}</td>
+                      <td className="p-3">
+                        <a
+                          href={ebook.file_url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm flex items-center gap-1"
+                        >
+                          <FaDownload /> Download
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

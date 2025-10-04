@@ -172,7 +172,16 @@ export default function BySection({ section, books }: Props) {
                     </td>
 
                     {/* Author */}
-                    <td className="p-3">{book.author}</td>
+                    <td className="p-3">
+                        <a
+                          href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(book.author)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {book.author}
+                        </a>
+                      </td>
 
                     {/* Publisher */}
                     <td className="p-3 hidden lg:table-cell">{book.publisher}</td>

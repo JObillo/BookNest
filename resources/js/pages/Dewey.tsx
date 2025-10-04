@@ -53,7 +53,7 @@ export default function Deweys() {
         <div className="flex justify-end">
           <button
             onClick={() => openModal()}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition"
+            className="bg-green-600 text-white font-medium rounded-lg px-4 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 mr-5"
           >
             Add Dewey
           </button>

@@ -120,6 +120,10 @@ Route::get('/books/{book}', [BooksController::class, 'show'])->name('books.show'
 
 // Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index');
 
+
+
+// Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index');
+
 // 1️⃣ Inertia page route — renders your React component
 Route::get('/ebooks', function () {
     return Inertia::render('Ebooks');
@@ -146,6 +150,10 @@ Route::get('/admin/ebooks', [EbookController::class, 'adminView'])->name('ebooks
 
 Route::get('/api/ebooks/free', [EbookController::class, 'freeEbooks']);
 
+Route::post('/api/ebooks/fetch', [EbookController::class, 'fetchNew']);
+
+Route::post('/api/ebooks/fetch-all', [EbookController::class, 'fetchAllCategories']);
+
 
 // Route::get('/ebooks', function () {
 //     return Inertia::render('Ebooks'); // <-- Just render the page, no JSON
@@ -161,7 +169,8 @@ Route::prefix('reports')->group(function () {
     Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 });
     // Semester Contorller
-    
+Route::get('/reports/top-borrowers/{patron}/books', [ReportController::class, 'borrowerBooks']);
+
 // Route::post('/semesters/start', [SemesterController::class, 'start']);
 // Route::post('/semesters/end', [SemesterController::class, 'end']);
 

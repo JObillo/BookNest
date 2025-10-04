@@ -13,4 +13,9 @@ Route::get('/ebooks', [EbookController::class, 'index']);
 Route::post('/ebooks/fetch', [EbookController::class, 'fetchNew']);
 Route::delete('/ebooks/reset', [EbookController::class, 'reset']);
 
+Route::delete('/ebooks/reset', [EbookController::class, 'reset']);
+Route::get('/ebooks/fetch-all', [EbookController::class, 'fetchAllCategories']);
+
+Route::get('/ebooks/{id}/download', [EbookController::class, 'download'])
+    ->name('ebooks.download');
 

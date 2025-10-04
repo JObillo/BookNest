@@ -63,38 +63,50 @@ export default function IssuedBooks() {
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        <div className="flex justify-between items-center mb-2">
-          {/* Search Bar on the Left */}
-        <div>
-          <Input
-            className="border rounded px-2 py-1 w-100"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
-          >
-            Issue Book
-          </button>
-      </div>
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mb-2 gap-3">
+            {/* Search Bar */}
+            <div className="flex-1">
+              <Input
+                className="border rounded px-2 py-1"
+                placeholder="Search Student Name"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
+            {/* Issue Book Button */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-green-600 text-white font-medium rounded-lg px-4 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200"
+            >
+              Issue Book
+            </button>
+          </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
                 {[
                   "Patron Info",
-                  "Book",
-                  "Author",
+                  "Book",        
+                  "Author",      
                   "Catalog Info",
-                  "Issued Date",
-                  "Due Date",
-                  "Status",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
+                  "Issued Date", 
+                  "Due Date",    
+                  "Status",      
+                ].map((header, index) => (
+                  <th
+                    key={header}
+                    className={`border p-3 text-left ${
+                      index === 2
+                        ? "hidden md:table-cell" 
+                        : index === 3
+                        ? "hidden lg:table-cell" 
+                        : index === 6
+                        ? "hidden sm:table-cell" 
+                        : ""
+                    }`}
+                  >
                     {header}
                   </th>
                 ))}
@@ -104,6 +116,7 @@ export default function IssuedBooks() {
               {displayedBooks.length > 0 ? (
                 displayedBooks.map((record) => (
                   <tr key={record.id} className="border-b hover:bg-gray-100">
+                    {/* Patron Info - always visible */}
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
                       <div className="text-sm text-gray-600">
@@ -116,19 +129,29 @@ export default function IssuedBooks() {
                         {record.patron.department || "N/A"} ({record.patron.patron_type})
                       </div>
                     </td>
+
+                    {/* Book - always visible */}
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>
                       <div className="text-sm text-gray-600">
                         ISBN: {record.book.isbn}
                       </div>
                     </td>
-                    <td className="p-3">{record.book.author}</td>
-                    <td className="p-3 text-sm text-gray-800">
+
+                    {/* Author - md and up */}
+                    <td className="p-3 hidden md:table-cell">
+                      {record.book.author}
+                    </td>
+
+                    {/* Catalog Info - lg and up */}
+                    <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
                       <div>Place: {record.book.publication_place || "N/A"}</div>
                     </td>
+
+                    {/* Issued Date - always */}
                     <td className="p-3">
                       {record.issued_date
                         ? new Date(record.issued_date).toLocaleDateString("en-US", {
@@ -139,6 +162,7 @@ export default function IssuedBooks() {
                         : "N/A"}
                     </td>
 
+                    {/* Due Date - always */}
                     <td className="p-3">
                       {record.due_date
                         ? new Date(record.due_date).toLocaleDateString("en-US", {
@@ -148,7 +172,9 @@ export default function IssuedBooks() {
                           })
                         : "N/A"}
                     </td>
-                    <td className="p-3">
+
+                    {/* Status - hidden on xs */}
+                    <td className="p-3 hidden sm:table-cell">
                       <span
                         className={`px-2 py-1 rounded text-white text-sm ${
                           record.status === "Issued"

@@ -47,6 +47,25 @@ export default function TopBorrowers() {
 
   const [semesters] = useState<Semester[]>(backendSemesters);
 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedBorrower, setSelectedBorrower] = useState<Borrower | null>(null);
+  const [borrowedBooks, setBorrowedBooks] = useState<any[]>([]);
+
+  const handleViewDetails = async (patronId?: number) => {
+    if (!patronId) return;
+
+    try {
+      const response = await fetch(`/reports/top-borrowers/${patronId}/books`);
+      const data = await response.json();
+
+      setSelectedBorrower(data.patron);
+      setBorrowedBooks(data.borrowedBooks);
+      setShowModal(true);
+    } catch (err) {
+      console.error("Failed to fetch borrowed books", err);
+    }
+  };
+
   // --- Consistent filter handler like MostBorrowed ---
   const handleFilterChange = (
     newLimit: number,
@@ -123,7 +142,7 @@ export default function TopBorrowers() {
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {["Name & Email", "Course & Year", "Borrowed Times"].map(
+                {["Name & Email", "Course & Year", "Borrowed Times", "Actions"].map(
                   (header) => (
                     <th key={header} className="border p-3 text-left">
                       {header}
@@ -154,14 +173,19 @@ export default function TopBorrowers() {
                     <td className="p-3 text-purple-700 font-semibold">
                       {item.borrow_count} Times
                     </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleViewDetails(item.patron?.id)}
+                        className="px-3 py-1 bg-purple-700 text-white rounded hover:bg-purple-800"
+                      >
+                        View Details
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="text-center p-4 text-gray-600"
-                  >
+                  <td colSpan={4} className="text-center p-4 text-gray-600">
                     No borrowers found.
                   </td>
                 </tr>
@@ -202,6 +226,80 @@ export default function TopBorrowers() {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      {showModal && selectedBorrower && (
+        <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b pb-3 mb-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {selectedBorrower?.patron?.name} — Borrowed Books
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-800 text-xl font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 bg-purple-900 text-white">
+                  <tr>
+                    <th className="p-2 text-left">Title</th>
+                    <th className="p-2 text-left">Author</th>
+                    {/* <th className="p-2 text-left">Borrowed At</th>
+                    <th className="p-2 text-left">Returned At</th> */}
+                  </tr>
+                </thead>
+                <tbody>
+                  {borrowedBooks.length ? (
+                    borrowedBooks.map((book) => (
+                      <tr
+                        key={book.id}
+                        className="border-b hover:bg-gray-50 transition"
+                      >
+                        <td className="p-2">{book.title}</td>
+                        <td className="p-2">{book.author}</td>
+                        {/* <td className="p-2">{book.issued_date}</td>
+                        <td className="p-2">
+                          {book.returned_at || (
+                            <span className="text-red-500 font-medium">
+                              Not yet returned
+                            </span>
+                          )}
+                        </td> */}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="text-center p-6 text-gray-500 italic"
+                      >
+                        No books borrowed.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-lg bg-purple-900 text-white hover:bg-purple-700 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

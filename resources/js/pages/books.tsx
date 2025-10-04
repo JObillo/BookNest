@@ -4,6 +4,7 @@ import BookModal from "@/components/BookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
+import { Select } from "@headlessui/react";
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -118,53 +119,56 @@ export default function Books() {
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        <div className="flex justify-between items-center mb-4">
-          {/* Search + Section Filter */}
-          <div className="flex space-x-2">
-            {/* Search Filter Dropdown */}
-            <select
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
-            >
-              <option value="All">All</option>
-              <option value="Title">Title</option>
-              <option value="ISBN">ISBN</option>
-              <option value="Author">Author</option>
-            </select>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 space-y-3 md:space-y-0">
+  {/* Search + Section Filter */}
+  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0 flex-1">
+    {/* Search Filter Dropdown */}
+    <Select
+      value={searchFilter}
+      onChange={(e) => setSearchFilter(e.target.value)}
+      className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500 w-full sm:w-32 lg:w-40"
+    >
+      <option value="All">All</option>
+      <option value="Title">Title</option>
+      <option value="ISBN">ISBN</option>
+      <option value="Author">Author</option>
+    </Select>
 
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-              className="border rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    {/* Search Input */}
+    <input
+      type="text"
+      placeholder={`Search by ${searchFilter.toLowerCase()}...`}
+      className="border rounded px-3 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500 flex-1 w-full lg:w-[400px]"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
 
-            {/* Section Filter Dropdown (moved here, next to search) */}
-            <select
-              value={sectionFilter}
-              onChange={(e) => setSectionFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
-            >
-              <option value="All">All Sections</option>
-              {sections.map((section) => (
-                <option key={section.id} value={section.section_name}>
-                  {section.section_name}
-                </option>
-              ))}
-            </select>
-          </div>
+    {/* Section Filter Dropdown */}
+    <Select
+      value={sectionFilter}
+      onChange={(e) => setSectionFilter(e.target.value)}
+      className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500 w-full sm:w-40"
+    >
+      <option value="All">All Sections</option>
+      {sections.map((section) => (
+        <option key={section.id} value={section.section_name}>
+          {section.section_name}
+        </option>
+      ))}
+    </Select>
+  </div>
 
-          {/* Add Book Button */}
-          <button
-            onClick={() => openModal()}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
-          >
-            Add Book
-          </button>
-        </div>
+  {/* Add Book Button */}
+  <div className="flex justify-end">
+    <button
+      onClick={() => openModal()}
+      className="cursor-pointer bg-green-600 text-white font-medium rounded-lg ml-5 px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+    >
+      Add Book
+    </button>
+  </div>
+</div>
+
 
         {/* Books Table */}
         <div className="overflow-x-auto">
@@ -179,8 +183,19 @@ export default function Books() {
                   "Catalog Info",
                   "Book Copies",
                   "Actions",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
+                ].map((header, index) => (
+                  <th 
+                  key={header}
+                  className={`border p-3 text-left ${
+                    index === 0
+                      ? "hidden md:table-cell"
+                      :index === 3
+                      ? "hidden lg:table-cell"
+                      :index === 6
+                      ? "hidden sm:table-cell"
+                      : ""
+                  }`}
+                  >
                     {header}
                   </th>
                 ))}
@@ -190,7 +205,7 @@ export default function Books() {
               {displayedBooks.length ? (
                 displayedBooks.map((book) => (
                   <tr key={book.id} className="border-b hover:bg-gray-100">
-                    <td className="p-3">
+                    <td className="p-3 hidden md:table-cell">
                       {book.book_cover ? (
                         <img
                           src={book.book_cover}
@@ -208,7 +223,7 @@ export default function Books() {
                       </div>
                     </td>
                     <td className="p-3">{book.author}</td>
-                    <td className="p-3">{book.publisher}</td>
+                    <td className="hidden lg:table-cell">{book.publisher}</td>
                     <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {book.accession_number}</div>
                       <div>Call #: {book.call_number}</div>
@@ -218,7 +233,7 @@ export default function Books() {
                     <td className="p-3 text-sm text-gray-800">
                       <div>Copies: {book.book_copies}</div>
                       <div>Available: {book.copies_available}</div>
-                      <div className="text-gray-800">
+                      <div className="text-gray-800 ">
                         Status:{" "}
                         <span
                           className={
@@ -231,7 +246,7 @@ export default function Books() {
                         </span>
                       </div>
                     </td>
-                    <td className="p-3 flex gap-2">
+                    <td className="p-3 flex gap-2 hidden sm:table-cell">
                       <button
                         onClick={() => openModal(book)}
                         className="bg-blue-500 hover:bg-blue-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
