@@ -40,4 +40,26 @@ class Book extends Model
     {
         return $this->belongsTo(Dewey::class);
     }
+
+    public function getCoverUrlAttribute()
+{
+    if (!$this->book_cover) {
+        return null;
+    }
+
+    // Remove leading slash
+    $path = ltrim($this->book_cover, '/');
+
+    // Prepend 'storage/' if not already
+    if (!str_starts_with($path, 'storage/')) {
+        $path = 'storage/' . $path;
+    }
+
+    // Encode only the filename
+    $parts = explode('/', $path);
+    $encodedFilename = rawurlencode(array_pop($parts));
+    $path = implode('/', $parts) . '/' . $encodedFilename;
+
+    return url($path);
+}
 }

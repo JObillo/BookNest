@@ -2,15 +2,15 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import { useEffect, useState, useMemo } from "react";
 import "../../css/app.css";
 import { Select } from "@headlessui/react";
-import { FaDownload } from "react-icons/fa";
 
 type Book = {
   id: number;
   title: string;
-  isbn: string;
   author: string;
+  isbn: string;
   publisher: string;
   status: string;
+  year?: number | string;
   book_cover?: string;
   section_id: number;
   description?: string;
@@ -51,9 +51,15 @@ export default function Welcome() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
 
+  const [startYear, setStartYear] = useState<number | null>(null);
+  const [endYear, setEndYear] = useState<number | null>(null);
+
   // Book Detail Modal
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Help Modal & Book Animation
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const openDetailModal = (book: Book) => {
     setSelectedBook(book);
@@ -65,7 +71,6 @@ export default function Welcome() {
     setIsDetailModalOpen(false);
   };
 
-  // Search logging
   const handleSearch = (value: string) => {
     setSearchTerm(value);
 
@@ -75,75 +80,86 @@ export default function Welcome() {
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-TOKEN":
-            (document.querySelector(
-              'meta[name="csrf-token"]'
-            ) as HTMLMetaElement)?.content ?? "",
+            (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)
+              ?.content ?? "",
         },
         body: JSON.stringify({ query: value }),
       });
     }
   };
 
-  // Update books/sections if props change
   useEffect(() => {
     if (props.books) setBooks(props.books);
     if (props.sections) setSections(props.sections);
   }, [props.books, props.sections]);
 
-  // Fetch free eBooks from Open Library with caching
+  // Fetch free eBooks
   useEffect(() => {
-  const fetchEbooks = async () => {
-    setLoadingEbooks(true);
+    const fetchEbooks = async () => {
+      setLoadingEbooks(true);
 
-    try {
-      // Fetch from Laravel backend (ebooks_cache)
-      const res = await fetch("/api/ebooks/free");
-      const data = await res.json();
+      try {
+        const res = await fetch("/api/ebooks/free");
+        const data = await res.json();
 
-      setEbooks(data);
+        setEbooks(data);
+        localStorage.setItem("freeEbooks", JSON.stringify(data));
+      } catch (err) {
+        console.error("Failed to fetch eBooks:", err);
 
-      // Optional: cache locally in browser too
-      localStorage.setItem("freeEbooks", JSON.stringify(data));
-    } catch (err) {
-      console.error("Failed to fetch eBooks:", err);
-
-      // Fallback: load from localStorage
-      const cached = localStorage.getItem("freeEbooks");
-      if (cached) {
-        setEbooks(JSON.parse(cached));
+        const cached = localStorage.getItem("freeEbooks");
+        if (cached) {
+          setEbooks(JSON.parse(cached));
+        }
       }
-    }
 
-    setLoadingEbooks(false);
+      setLoadingEbooks(false);
+    };
+
+    fetchEbooks();
+  }, []);
+
+  const parseYear = (y?: number | string): number | undefined => {
+    if (y === undefined || y === null || y === "") return undefined;
+    const n = typeof y === "number" ? y : parseInt(String(y), 10);
+    return Number.isFinite(n) ? n : undefined;
   };
 
-  fetchEbooks();
-}, []);
+  const isWithinYearRange = (itemYear?: number | string): boolean => {
+    const y = parseYear(itemYear);
+    if (startYear === null && endYear === null) return true;
+    if (y === undefined) return false;
+    if (startYear !== null && y < startYear) return false;
+    if (endYear !== null && y > endYear) return false;
+    return true;
+  };
 
-
-  // Group books by section for display
   const groupedBooks = useMemo(() => {
-    const lowerSearch = searchTerm.trim().toLowerCase();
+    const lowerSearch = searchTerm.toLowerCase();
     const filteredBooks = books.filter((book) => {
+      const bookYear = parseYear(book.year);
+
+      let matchesSearch = false;
       if (searchFilter === "All") {
-        return (
+        matchesSearch =
           book.title.toLowerCase().includes(lowerSearch) ||
           String(book.isbn || "").toLowerCase().includes(lowerSearch) ||
           book.author.toLowerCase().includes(lowerSearch) ||
-          book.section?.section_name.toLowerCase().includes(lowerSearch)
-        );
+          (book.section?.section_name ?? "").toLowerCase().includes(lowerSearch);
       } else if (searchFilter === "Title") {
-        return book.title.toLowerCase().includes(lowerSearch);
-      } 
-      else if (searchFilter === "ISBN") {
-        return book.isbn?.toLowerCase().includes(lowerSearch);
-      }
-      else if (searchFilter === "Author") {
-        return book.author.toLowerCase().includes(lowerSearch);
+        matchesSearch = book.title.toLowerCase().includes(lowerSearch);
+      } else if (searchFilter === "Isbn") {
+        return String(book.isbn || "").toLowerCase().includes(lowerSearch);
+      } else if (searchFilter === "Author") {
+        matchesSearch = book.author.toLowerCase().includes(lowerSearch);
       } else if (searchFilter === "Section") {
-        return book.section?.section_name.toLowerCase().includes(lowerSearch);
+        matchesSearch = (book.section?.section_name ?? "")
+          .toLowerCase()
+          .includes(lowerSearch);
       }
-      return false;
+
+      const matchesYear = isWithinYearRange(bookYear);
+      return matchesSearch && matchesYear;
     });
 
     const groups: Record<string, Book[]> = {};
@@ -161,7 +177,18 @@ export default function Welcome() {
     });
 
     return groups;
-  }, [books, sections, searchTerm, searchFilter]);
+  }, [books, sections, searchTerm, searchFilter, startYear, endYear]);
+
+  const filteredEbooks = useMemo(() => {
+    return ebooks.filter((ebook) => {
+      const ebookYear = parseYear(ebook.year);
+      const matchesSearch =
+        ebook.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ebook.author.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesYear = isWithinYearRange(ebookYear);
+      return matchesSearch && matchesYear;
+    });
+  }, [ebooks, searchTerm, startYear, endYear]);
 
   const sectionNames = sections.map((section) => section.section_name);
 
@@ -182,26 +209,26 @@ export default function Welcome() {
           </div>
         </header>
 
-        {/* Welcome Message */}
+        {/* Welcome */}
         <div className="text-center mt-24">
-          <h1 className="lilitaOneFont royalPurple text-2xl sm:text-3xl font-bold">
+          <h1 className="lilitaOneFont text-purple-900 text-2xl sm:text-3xl font-bold">
             Welcome to Online Public Access Catalog
           </h1>
-          <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
+          <p className="lilitaOneFont text-purple-900 text-md sm:text-lg font-semibold">
             PhilCST Library: Your Gateway to Knowledge and Discovery
           </p>
         </div>
 
-        {/* Search Inputs */}
-        <div className="flex space-x-2 mt-6">
+        {/* Search + Year + Flying Book Inline */}
+        <div className="flex items-center gap-2 mt-6 flex-wrap sm:flex-nowrap">
           <Select
             value={searchFilter}
             onChange={(e: any) => setSearchFilter(e.target.value)}
-            className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500 w-32"
           >
             <option value="All">All</option>
             <option value="Title">Title</option>
-            <option value="ISBN">ISBN</option>
+            <option value="Isbn">Isbn</option>
             <option value="Author">Author</option>
             <option value="Section">Section</option>
           </Select>
@@ -209,10 +236,39 @@ export default function Welcome() {
           <input
             type="text"
             placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-            className="border rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
+
+          <input
+            type="number"
+            placeholder="Start Year"
+            className="border rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            value={startYear ?? ""}
+            onChange={(e) =>
+              setStartYear(e.target.value === "" ? null : parseInt(e.target.value, 10))
+            }
+          />
+          <input
+            type="number"
+            placeholder="End Year"
+            className="border rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+            value={endYear ?? ""}
+            onChange={(e) =>
+              setEndYear(e.target.value === "" ? null : parseInt(e.target.value, 10))
+            }
+          />
+
+          {/* Flying Help Book Button */}
+        <button
+          onClick={() => setIsHelpOpen(!isHelpOpen)}
+          className={`flying-book ${isHelpOpen ? "flying-book-open" : "flying-book-closed"} text-5xl`}
+          title="How to Use the Library"
+        >
+          📖
+        </button>
+
         </div>
 
         {/* Book Sections */}
@@ -234,41 +290,44 @@ export default function Welcome() {
                           href={route("books.bySection", { section: sectionId })}
                           className="text-blue-500 text-sm hover:underline"
                         >
-                          See All
+                          see all
                         </Link>
                       ) : null}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {groupedBooks[sectionName]?.slice(0, 5).map((book) => (
-                        <Link
-                          href={route("books.show", { book: book.id })}
-                          key={book.id}
-                          className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
-                        >
-                          <img
-                            src={book.book_cover || "/placeholder-book.png"}
-                            alt={book.title}
-                            className="w-50 h-65 object-cover rounded"
-                          />
-                          <div className="mt-2 w-full text-center">
-                            <h3 className="text-sm font-semibold truncate">
-                              {book.title}
-                            </h3>
-                            <p className="text-s text-gray-600">
-                              By: {book.author}
-                            </p>
-                            <span
-                              className={`px-2 py-1 rounded text-white text-sm ${
-                                book.status === "Available"
-                                  ? "bg-green-600"
-                                  : "bg-red-600"
-                              }`}
-                            >
-                              {book.status}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
+                      {groupedBooks[sectionName]
+                        ?.slice(0, 5)
+                        .map((book) => (
+                          <Link
+                            href={route("books.show", { book: book.id })}
+                            key={book.id}
+                            className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                          >
+                            <img
+                              src={book.book_cover || "/placeholder-book.png"}
+                              alt={book.title}
+                              className="w-50 h-65 object-cover rounded"
+                            />
+                            <div className="mt-2 w-full text-center">
+                              <h3 className="text-sm font-semibold truncate">
+                                {book.title}
+                              </h3>
+                              <p className="text-s text-gray-600">By: {book.author}</p>
+                              {book.year && (
+                                <p className="text-xs text-gray-500">Year: {book.year}</p>
+                              )}
+                              <span
+                                className={`px-2 py-1 rounded text-white text-sm ${
+                                  book.status === "Available"
+                                    ? "bg-green-600"
+                                    : "bg-red-600"
+                                }`}
+                              >
+                                {book.status}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
                     </div>
                   </div>
                 );
@@ -282,19 +341,16 @@ export default function Welcome() {
         <div className="mt-12">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Free eBooks</h2>
-            <Link
-              href={route("ebooks.index")}
-              className="text-blue-500 hover:underline"
-            >
+            <Link href={route("ebooks.index")} className="text-blue-500 hover:underline">
               See All
             </Link>
           </div>
 
           {loadingEbooks ? (
             <p className="text-gray-500">Loading eBooks...</p>
-          ) : ebooks.length > 0 ? (
+          ) : filteredEbooks.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {ebooks.slice(0, 5).map((ebook) => (
+              {filteredEbooks.slice(0, 5).map((ebook) => (
                 <div
                   key={ebook.id}
                   className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
@@ -305,16 +361,11 @@ export default function Welcome() {
                     className="w-40 h-56 object-cover rounded"
                   />
                   <div className="mt-2 w-full text-center">
-                    <h3 className="text-sm font-semibold truncate">
-                      {ebook.title}
-                    </h3>
+                    <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
                     <p className="text-s text-gray-600">By: {ebook.author}</p>
-                    <span className="text-xs text-gray-500">
-                      Published: {ebook.year}
-                    </span>
+                    <span className="text-xs text-gray-500">Published: {ebook.year}</span>
                   </div>
 
-                  {/* Download Button */}
                   <a
                     href={ebook.file_url}
                     target="_blank"
@@ -358,6 +409,11 @@ export default function Welcome() {
               <p className="text-sm text-gray-700 mb-1">
                 <strong>Section:</strong> {selectedBook.section?.section_name}
               </p>
+              {selectedBook.year && (
+                <p className="text-sm text-gray-700 mb-1">
+                  <strong>Year:</strong> {selectedBook.year}
+                </p>
+              )}
               <p className="text-sm text-gray-700 mb-1">
                 <strong>Status:</strong> {selectedBook.status}
               </p>
@@ -370,7 +426,38 @@ export default function Welcome() {
           </div>
         </div>
       )}
+
+      {/* Help Modal */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center  bg-black/50 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full animate-fadeIn relative">
+            <button
+              onClick={() => setIsHelpOpen(false)}
+              className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-purple-800">📖 How to Use the System</h2>
+            <ol className="list-decimal list-inside space-y-2 text-gray-700">
+              <li>Use the <strong>Search bar</strong> to find books by title, author, or section.</li>
+              <li>Apply <strong>Year filters</strong> to narrow results by publication year.</li>
+              <li>Click a book cover to <strong>view details</strong> (author, publisher, section, status).</li>
+              <li>For eBooks, click <strong>Download</strong> to read online for free.</li>
+            </ol>
+
+            <h2 className="text-xl font-bold mt-6 mb-4 text-purple-800">🏫 How to Borrow a Book</h2>
+            <ol className="list-decimal list-inside space-y-2 text-gray-700">
+              <li>Search and locate the book you want in this OPAC system.</li>
+              <li>Go to the <strong>PhilCST Library counter</strong> with the book title or ID.</li>
+              <li>Present your <strong>student ID</strong> to the librarian.</li>
+              <li>The librarian will check availability and issue the book to you.</li>
+              <li>Return the book on or before the due date to avoid penalties.</li>
+            </ol>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
+//with isbn searching

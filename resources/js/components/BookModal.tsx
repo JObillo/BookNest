@@ -116,10 +116,12 @@ export default function BookModal({
     }
 
     if (name === "call_number") {
-      if (value && !/^\d+$/.test(value)) {
-        error = "Call Number must contain only numbers.";
+      if (value && !/^[A-Za-z\d .\-\/]+$/.test(value)) {
+        error =
+          "Call Number can contain letters, numbers, spaces, dots (.), - or / only.";
       }
     }
+
 
     setErrors((prev) => ({ ...prev, [name]: error }));
     return error;

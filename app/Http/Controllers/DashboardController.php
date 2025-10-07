@@ -9,10 +9,11 @@ use App\Models\IssuedBook;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\SearchLog;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // Books that are currently issued (not yet returned)
         $issuedBookIds = IssuedBook::where('status', 'issued')->pluck('book_id');
@@ -65,10 +66,14 @@ class DashboardController extends Controller
                 ]),
         ];
 
+        //notifications
+        $notifications = $request->user()->unreadNotifications;
+
         return Inertia::render('dashboard', [
             'stats' => $stats,
             'mostBorrowed' =>$stats['mostBorrowed'],
             'leastBorrowed' =>$stats['leastBorrowed'],
+            'notifications' => $notifications,
         ]);
     }
 }

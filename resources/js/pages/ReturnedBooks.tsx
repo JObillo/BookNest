@@ -27,22 +27,28 @@ export type IssuedBook = {
     department: string | null;
     patron_type: string;
   };
-    book: {
-      id: number;
-      title: string;
-      author: string;
-      isbn: string;
-      accession_number?: string;
-      call_number: string;
-      year?: string;
-      publication_place?: string;
-    };
+  book: {
+    id: number;
+    title: string;
+    author: string;
+    isbn: string;
+    accession_number?: string;
+    call_number: string;
+    year?: string;
+    publication_place?: string;
+  };
 };
 
 export default function ReturnedBooks() {
   const { issuedbooks } = usePage<{ issuedbooks: IssuedBook[] }>().props;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookToReturn, setBookToReturn] = useState<IssuedBook | null>(null);
+
+  // For search & pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const booksPerPage = 5;
 
   // Open modal when returning a book
   const openReturnModal = (book: IssuedBook) => {
@@ -53,61 +59,61 @@ export default function ReturnedBooks() {
   // Handle returning of the book
   const handleReturnBook = async (bookId: number, issuedId: number) => {
     try {
-      // Fetch CSRF token from meta tag in the HTML
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const csrfToken =
+        document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-      // Make the API request to return the book, sending CSRF token in headers
       await axios.put(`/issuedbooks/${issuedId}/return`, {}, {
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,  // Include CSRF token in the header
-        },
+        headers: { 'X-CSRF-TOKEN': csrfToken },
       });
 
       toast.success("Book returned successfully!");
       setIsModalOpen(false);
       setBookToReturn(null);
-      router.reload(); // Reload the page to reflect changes
+      router.reload();
     } catch (error) {
       console.error(error);
       toast.error("Failed to return book.");
     }
   };
-  
-  //pagination and seach
-    const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [searchQuery]);
-    const booksPerPage = 10;
-      const filteredBooks = issuedbooks.filter((issuedbooks) =>
-        (issuedbooks.patron.name).toUpperCase().startsWith(searchQuery.toUpperCase())
+
+  // Search filter by patron
+  const filteredBooks = issuedbooks.filter((record) => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return true;
+
+    return (
+      record.patron.name.toLowerCase().includes(term) ||
+      record.patron.school_id.toLowerCase().includes(term)
     );
-  
-    const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-    const startIndex = (currentPage - 1) * booksPerPage;
-    const endIndex = startIndex + booksPerPage;
-    const displayedBooks = filteredBooks.slice(startIndex, endIndex);
+  });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+  const startIndex = (currentPage - 1) * booksPerPage;
+  const displayedBooks = filteredBooks.slice(startIndex, startIndex + booksPerPage);
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Returned Books" />
+      <Head title="Not Returned Books" />
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        {/* Search Bar on the Left */}
+        {/* Search Bar */}
         <div>
           <Input
             className="border rounded px-2 py-1 w-100"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by Name or School ID"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
 
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
@@ -160,7 +166,6 @@ export default function ReturnedBooks() {
                           })
                         : "N/A"}
                     </td>
-
                     <td className="p-3">
                       {record.due_date
                         ? new Date(record.due_date).toLocaleDateString("en-US", {
@@ -198,7 +203,7 @@ export default function ReturnedBooks() {
               ) : (
                 <tr>
                   <td colSpan={8} className="text-center p-4 text-gray-600">
-                    Empty.
+                    No matching patrons found.
                   </td>
                 </tr>
               )}
@@ -207,35 +212,35 @@ export default function ReturnedBooks() {
         </div>
       </div>
 
-        {/* Pagination */}
-    <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
-      <span>
-        Page {currentPage} — {displayedBooks.length} book
-        {displayedBooks.length !== 1 && "s"} on this page
-      </span>
-
-      <div className="flex items-center gap-1">
-        <button
-          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-
-        <span className="px-3 py-1 bg-purple-700 text-white rounded">
-          {currentPage}
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+        <span>
+          Page {currentPage} — {displayedBooks.length} book
+          {displayedBooks.length !== 1 && "s"} on this page
         </span>
 
-        <button
-          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+
+          <span className="px-3 py-1 bg-purple-700 text-white rounded">
+            {currentPage}
+          </span>
+
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
-    </div>
 
       <ReturnBookModal
         isOpen={isModalOpen}

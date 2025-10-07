@@ -14,6 +14,11 @@ class IssuedBook extends Model
         'status',
     ];
 
+    protected $casts = [
+        'issued_date' => 'date',
+        'due_date'    => 'date',
+    ];
+
     public function patron()
     {
         return $this->belongsTo(Patron::class, 'patron_id');

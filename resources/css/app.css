@@ -157,3 +157,27 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Floating animation */
+@keyframes floatBook {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+.flying-book {
+  animation: floatBook 2s ease-in-out infinite;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.5s ease-in-out;
+}
+
+/* Closed state (default) */
+.flying-book-closed {
+  transform: scale(1) rotateY(0deg); /* normal size, closed */
+}
+
+/* Open state (when clicked) */
+.flying-book-open {
+  transform: scale(1.3) rotateY(15deg); /* bigger and slightly tilted */
+}

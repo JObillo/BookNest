@@ -1,15 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import {
-  BookOpen,
-  Layers,
-  Library,
-  Archive,
-  Undo2,
-  BookX
-} from 'lucide-react';
+import { Bell, BookOpen, Library, Archive, Undo2, BookX } from 'lucide-react';
+import axios from 'axios';
 
 import {
   BarChart,
@@ -46,6 +40,13 @@ type Props = {
     author: string;
     borrow_count: number;
   }[];
+  notifications: {
+    id: string;
+    data: {
+      message: string;
+      due_date: string;
+    };
+  }[];
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -53,13 +54,101 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Dashboard({ stats }: StatsProps) {
-  const { mostBorrowed = [], leastBorrowed = [] } = usePage<Props>().props;
+  const { mostBorrowed = [], leastBorrowed = [], notifications = [] } =
+    usePage<Props>().props;
+
+  const [open, setOpen] = useState(false);
+  const [localNotifications, setLocalNotifications] = useState(notifications);
+  const [loadingIds, setLoadingIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setLocalNotifications(notifications);
+  }, [notifications]);
+
+  // Added markAsRead function
+  const markAsRead = async (id: string) => {
+    try {
+      setLoadingIds((prev) => [...prev, id]);
+
+      await axios.post(`/notifications/${id}/read`);
+
+      setLocalNotifications((prev) =>
+        prev.filter((n) => n.id !== id)
+      );
+    } catch (error) {
+      console.error('Failed to mark notification as read', error);
+    } finally {
+      setLoadingIds((prev) => prev.filter((x) => x !== id));
+    }
+  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
+
       <div className="flex h-screen">
         <div className="flex-1 p-6 space-y-6">
+
+          {/* Bell aligned to the right */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setOpen(!open)}
+              className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              <Bell className="w-6 h-6 text-gray-700 dark:text-white" />
+              {localNotifications.length > 0 && (
+                <span className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                  {localNotifications.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Notification Drawer (half-screen right side) */}
+          {open && (
+            <>
+              {/* Background overlay */}
+              <div
+                onClick={() => setOpen(false)} // Close drawer when clicking outside
+                className="fixed inset-0 bg-black/50 z-40"
+              ></div>
+
+              {/* Drawer */}
+              <div className="fixed top-0 right-0 w-150 h-screen bg-white dark:bg-gray-800 shadow-xl z-50 transition-transform">
+                <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="font-bold text-lg">Notifications</h2>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="text-gray-500 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
+                  {localNotifications.length === 0 ? (
+                    <p className="text-gray-500">No notifications</p>
+                  ) : (
+                    localNotifications.map((n) => (
+                      <button
+                        key={n.id}
+                        onClick={() => markAsRead(n.id)}
+                        disabled={loadingIds.includes(n.id)}
+                        className="w-full text-left p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <p className="text-sm text-gray-800 dark:text-white">
+                          {n.data.message}
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          Due date: {n.data.due_date} 
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Total Books */}
@@ -69,7 +158,9 @@ export default function Dashboard({ stats }: StatsProps) {
                   <BookOpen className="w-6 h-6 text-black dark:text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Total Books</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Total Books
+                  </p>
                   <p className="text-2xl font-bold">{stats.total_books}</p>
                 </div>
               </div>
@@ -82,7 +173,9 @@ export default function Dashboard({ stats }: StatsProps) {
                   <Library className="w-6 h-6 text-black dark:text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Total Sections</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Total Sections
+                  </p>
                   <p className="text-2xl font-bold">{stats.total_sections}</p>
                 </div>
               </div>
@@ -95,7 +188,9 @@ export default function Dashboard({ stats }: StatsProps) {
                   <Archive className="w-6 h-6 text-black dark:text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Total Books Dewey</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Total Books Dewey
+                  </p>
                   <p className="text-2xl font-bold">{stats.deweys}</p>
                 </div>
               </div>
@@ -108,7 +203,9 @@ export default function Dashboard({ stats }: StatsProps) {
                   <Undo2 className="w-6 h-6 text-black dark:text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Issued Books</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Issued Books
+                  </p>
                   <p className="text-2xl font-bold">{stats.issued_books}</p>
                 </div>
               </div>
@@ -132,7 +229,10 @@ export default function Dashboard({ stats }: StatsProps) {
                 </div>
 
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={mostBorrowed.slice(0, 5)} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                  <BarChart
+                    data={mostBorrowed.slice(0, 5)}
+                    margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                     <XAxis dataKey="title" tick={{ fontSize: 12 }} />
                     <YAxis allowDecimals={false} />
@@ -152,7 +252,10 @@ export default function Dashboard({ stats }: StatsProps) {
                 </div>
 
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={leastBorrowed.slice(0, 5)} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                  <BarChart
+                    data={leastBorrowed.slice(0, 5)}
+                    margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                     <XAxis dataKey="title" tick={{ fontSize: 12 }} />
                     <YAxis allowDecimals={false} />

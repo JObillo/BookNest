@@ -12,6 +12,7 @@ use App\Http\Controllers\{
     EbookController,
     ReportController,
     SemesterController,
+    NotificationController,
 };
 
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,7 @@ use App\Models\Book;
 use App\Models\Patron;
 use App\Models\Section;
 use App\Models\Ebook;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +47,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
 });
 
 // Books

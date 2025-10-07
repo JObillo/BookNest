@@ -7,27 +7,34 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
+    protected $commands = [
+        \App\Console\Commands\SendOverdueNotifications::class,
+    ];
+
     protected function schedule(Schedule $schedule): void
     {
-        // test schedule
+        \Log::info('✅ Custom App\Console\Kernel schedule() is being used!');
         $schedule->command('inspire')->everyMinute();
 
-        // your overdue command
         $schedule->command('overdue:send')
             ->everyMinute()
             ->appendOutputTo(storage_path('logs/schedule.log'));
+
+        $schedule->command('overdue:notify-admin')
+        ->everyMinute()
+        ->appendOutputTo(storage_path('logs/notifications.log'))
+        ->before(function () {
+            \Log::info("✅ Running overdue:notify-admin...");
+        })
+        ->after(function () {
+            \Log::info("✅ Finished overdue:notify-admin!");
+        });
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
-
         require base_path('routes/console.php');
     }
 }
+

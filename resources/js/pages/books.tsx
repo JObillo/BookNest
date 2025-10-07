@@ -90,20 +90,20 @@ export default function Books() {
     if (!term) return true;
 
     if (searchFilter === "Title") {
-      return book.title.toLowerCase().includes(term);
-    } else if (searchFilter === "ISBN") {
-      return book.isbn?.toLowerCase().includes(term);
-    } else if (searchFilter === "Author") {
-      return book.author.toLowerCase().includes(term);
-    } else {
-      // Default "All"
-      return (
-        book.title.toLowerCase().includes(term) ||
-        book.isbn?.toLowerCase().includes(term) ||
-        book.author.toLowerCase().includes(term)
-      );
-    }
-  });
+        return book.title.toLowerCase().includes(term);
+      } else if (searchFilter === "ISBN") {
+        return book.isbn?.toLowerCase().includes(term);
+      } else if (searchFilter === "Author") {
+        return book.author.toLowerCase().includes(term);
+      } else {
+        // Default "All"
+        return (
+          book.title.toLowerCase().includes(term) ||
+          book.isbn?.toLowerCase().includes(term) ||
+          book.author.toLowerCase().includes(term)
+        );
+      }
+    });
 
   
 
