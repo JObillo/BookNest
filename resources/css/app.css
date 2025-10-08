@@ -185,3 +185,104 @@
 .flying-book-open {
   transform: scale(1.3) rotateY(15deg); /* bigger and slightly tilted */
 }
+
+/* Container */
+.print-container {
+  font-family: Arial, sans-serif;
+  color: #1a1a1a;
+  padding: 20px;
+}
+
+/* Header */
+.print-header {
+  display: flex;
+  align-items: center;
+  /* border-bottom: 3px solid #4B0082; deep purple */
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+
+.school-logo {
+  width: 80px;
+  height: 80px;
+  margin-right: 15px;
+}
+
+/* .school-name {
+  margin: 0;
+  color: #4B0082;
+}
+
+.school-address {
+  margin: 0;
+  font-weight: normal;
+} */
+
+/* .library-name {
+  margin: 5px 0 0 0;
+  color: #6A0DAD;
+}
+
+.report-title {
+  margin: 2px 0;
+  color: #4B0082;
+} */
+
+.report-date {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* Table */
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.print-table thead tr {
+  /* background-color: #4B0082; */
+  color: black;
+}
+
+.print-table th,
+.print-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.print-table td {
+  padding: 6px;
+}
+
+.print-table td.author {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.print-table td.catalog-info {
+  font-size: 0.9rem;
+}
+
+.print-table td.borrow-count {
+  text-align: center;
+  color: #6A0DAD;
+  font-weight: bold;
+}
+
+.print-table td:first-child {
+  text-align: center;
+}
+
+.print-hidden {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+}
+
+.chart-container {
+  width: 60%;
+  margin: 30px auto;
+}

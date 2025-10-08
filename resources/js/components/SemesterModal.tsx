@@ -1,5 +1,6 @@
 import { Input, Select } from "@headlessui/react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 type Props = {
   isOpen: boolean;
@@ -46,9 +47,18 @@ export default function SemesterModal({ isOpen, semester, onClose, onSave }: Pro
 
   if (!isOpen) return null;
 
-  const toggleStatus = () => {
-    setStatus(status === "Active" ? "Inactive" : "Active");
-  };
+const toggleStatus = () => {
+  const today = new Date();
+  const end = new Date(endDate);
+
+  // Block activation if semester already ended
+  if (end < today && status === "Inactive") {
+    toast.warning("You cannot activate a semester that has already ended.");
+    return;
+  }
+
+  setStatus(status === "Active" ? "Inactive" : "Active");
+};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,22 +114,28 @@ export default function SemesterModal({ isOpen, semester, onClose, onSave }: Pro
         />
 
         {/* Status Button */}
-        <button
+       <button
           type="button"
           onClick={toggleStatus}
-          className={`w-full py-1 mb-4 rounded font-semibold ${
-            status === "Active" ? "bg-green-600 text-white" : "bg-gray-400 text-black"
+          disabled={status === "Inactive" && new Date(endDate) < new Date()} // disable if expired
+          className={`w-full py-1 mb-4 rounded font-semibold flex items-center justify-center gap-2 ${
+            status === "Active"
+              ? "bg-green-600 text-white"
+              : new Date(endDate) < new Date()
+              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+              : "bg-gray-400 text-black"
           }`}
         >
-          {semester
-            ? status === "Active"
-              ? "Deactivate"
-              : "Activate"
-            : status === "Active"
-            ? "Active"
-            : "Inactive"}
+          {new Date(endDate) < new Date() && status === "Inactive" ? (
+            <>
+              <span>🔒 Inactive (Expired)</span>
+            </>
+          ) : status === "Active" ? (
+            "Deactivate"
+          ) : (
+            "Activate"
+          )}
         </button>
-
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="px-4 py-1 border rounded">
             Cancel
