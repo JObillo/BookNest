@@ -8,6 +8,7 @@ use App\Models\IssuedBook;
 use Illuminate\Support\Facades\DB;
 use App\Models\Section;
 use App\Models\Semester;
+use App\Models\Patron;
 
 class ReportController extends Controller
 {
@@ -122,36 +123,43 @@ public function mostBorrowed(Request $request)
     // ------------------------------
     // Top Borrowers
     // ------------------------------
-    public function topBorrowers(Request $request)
-    {
-        $limit = $request->input('limit', 10);
-        $semesterId = $request->input('semester_id');
+   public function topBorrowers(Request $request)
+{
+    $limit = $request->input('limit', 10);
+    $semesterId = $request->input('semester_id');
 
-        $semesters = $this->getSemesters();
-        $semester = $this->resolveSemester($semesterId);
+    $semesters = $this->getSemesters();
+    $semester = $this->resolveSemester($semesterId);
 
-        $startDate = $semester !== 'All' ? $semester?->start_date : null;
-        $endDate   = $semester !== 'All' ? $semester?->end_date : null;
+    $startDate = $semester !== 'All' ? $semester?->start_date : null;
+    $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-        $query = IssuedBook::select('patron_id', DB::raw('COUNT(*) as borrow_count'))
-            ->when($semester && $startDate && $endDate, fn($q) =>
-                $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
-            )
-            ->groupBy('patron_id')
-            ->orderByDesc('borrow_count')
-            ->limit($limit)
-            ->with('patron')
-            ->get();
+    // Query top borrowers
+    $query = IssuedBook::select('patron_id', DB::raw('COUNT(*) as borrow_count'))
+        ->when($semester !== 'All' && $startDate && $endDate, fn($q) =>
+            $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
+        )
+        ->groupBy('patron_id')
+        ->orderByDesc('borrow_count')
+        ->limit($limit)
+        ->with('patron')
+        ->get();
 
-        return Inertia::render('Reports/TopBorrowed', [
-            'borrowers' => $query,
-            'semesters' => $semesters,
-            'selectedSemester' => $semesterId ?? 'Active',
-            'filters' => [
-                'limit' => $limit,
-            ],
-        ]);
-    }
+    // Determine what to send as selectedSemester
+    $selectedSemesterId = $semester === 'All' 
+        ? 'All' 
+        : ($semester?->id ?? 'All'); // fallback just in case
+
+    return Inertia::render('Reports/TopBorrowed', [
+        'borrowers' => $query,
+        'semesters' => $semesters,
+        'selectedSemester' => $selectedSemesterId,
+        'filters' => [
+            'limit' => $limit,
+        ],
+    ]);
+}
+
 
     // ------------------------------
     // Manage Semester Page
@@ -167,48 +175,64 @@ public function mostBorrowed(Request $request)
     // ------------------------------
     // Store new semester
     // ------------------------------
-    public function storeSemester(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'school_year' => 'required|string|max:9',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|in:Active,Inactive',
-        ]);
+public function storeSemester(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'school_year' => 'required|string|max:9',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'status' => 'required|in:Active,Inactive',
+    ]);
 
-        if ($request->status === 'Active') {
-            Semester::where('status', 'Active')->update(['status' => 'Inactive']);
-        }
-
-        Semester::create($request->all());
-        return redirect()->back()->with('success', 'Semester added successfully!');
+    // 🚫 Prevent creating as Active if already expired
+    if (now()->greaterThan($request->end_date) && $request->status === 'Active') {
+        return back()->with('error', '⚠️ You cannot create an expired semester as Active.');
     }
+
+    if ($request->status === 'Active') {
+        Semester::where('status', 'Active')->update(['status' => 'Inactive']);
+    }
+
+    Semester::create($request->all());
+    return redirect()->back()->with('success', 'Semester added successfully!');
+}
+
 
     // ------------------------------
     // Update semester
     // ------------------------------
-    public function updateSemester(Request $request, Semester $semester)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'school_year' => 'required|string|max:9',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|in:Active,Inactive',
-        ]);
+public function updateSemester(Request $request, Semester $semester)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'school_year' => 'required|string|max:9',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'status' => 'required|in:Active,Inactive',
+    ]);
 
-        if ($request->status === 'Active') {
-            Semester::where('id', '!=', $semester->id)->update(['status' => 'Inactive']);
-        }
-
-        if ($request->status === 'Inactive' && Semester::where('status', 'Active')->count() === 1 && $semester->status === 'Active') {
-            return back()->with('error', '⚠️ You must have at least one active semester.');
-        }
-
-        $semester->update($request->all());
-        return redirect()->back()->with('success', 'Semester updated successfully!');
+    // 🚫 Prevent re-activating expired semesters
+    if (now()->greaterThan($request->end_date) && $request->status === 'Active') {
+        return back()->with('error', '⚠️ You cannot set an expired semester as Active.');
     }
+
+    if ($request->status === 'Active') {
+        Semester::where('id', '!=', $semester->id)->update(['status' => 'Inactive']);
+    }
+
+    if (
+        $request->status === 'Inactive' &&
+        Semester::where('status', 'Active')->count() === 1 &&
+        $semester->status === 'Active'
+    ) {
+        return back()->with('error', '⚠️ You must have at least one active semester.');
+    }
+
+    $semester->update($request->all());
+    return redirect()->back()->with('success', 'Semester updated successfully!');
+}
+
 
     // ------------------------------
     // Delete semester
@@ -222,4 +246,29 @@ public function mostBorrowed(Request $request)
         $semester->delete();
         return redirect()->back()->with('success', 'Semester deleted successfully!');
     }
+
+
+    public function borrowerBooks($patronId)
+{
+    $patron = Patron::findOrFail($patronId);
+
+    $borrowedBooks = IssuedBook::with('book')
+        ->where('patron_id', $patronId)
+        ->get()
+        ->map(function ($record) {
+            return [
+                'id' => $record->id,
+                'title' => $record->book->title,
+                'author' => $record->book->author,
+                'borrowed_at' => $record->borrowed_at,
+                'returned_at' => $record->returned_at,
+            ];
+        });
+
+    return response()->json([
+        'patron' => $patron,
+        'borrowedBooks' => $borrowedBooks,
+    ]);
+}
+
 }

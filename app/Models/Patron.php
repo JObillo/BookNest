@@ -19,6 +19,9 @@ class Patron extends Model
         'department',
         'patron_type',
         'email',
+        'contact_number',
+        'address',
+        'purpose',
     ];
 
     protected $casts = [

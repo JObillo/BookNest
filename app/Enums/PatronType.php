@@ -2,11 +2,9 @@
 
 namespace App\Enums;
 
-use BenSampo\Enum\Enum;
-
-final class PatronType extends Enum
+enum PatronType: string
 {
-    const Student = 'Student';
-    const Faculty = 'Faculty';
+    case Student = 'Student';
+    case Faculty = 'Faculty';
+    case Guest = 'Guest';
 }
-

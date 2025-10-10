@@ -63,6 +63,9 @@ Route::get('/books/isbn/{isbn}', function ($isbn) {
     return response()->json($book);
 });
 
+// Borrowers
+Route::resource('borrowers', PatronController::class);
+
 // Issued Books
 Route::resource('issuedbooks', IssuedBookController::class);
 
@@ -164,6 +167,8 @@ Route::prefix('reports')->group(function () {
     Route::put('/managesemester/{semester}', [ReportController::class, 'updateSemester'])->name('reports.semester.update');
     Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 });
+
+Route::get('/reports/top-borrowers/{patron}/books', [ReportController::class, 'borrowerBooks']);
     // Semester Contorller
     
 // Route::post('/semesters/start', [SemesterController::class, 'start']);

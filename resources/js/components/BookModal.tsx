@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Select } from "@headlessui/react";
 
@@ -248,7 +248,7 @@ export default function BookModal({
             { label: "Publisher", name: "publisher" },
             { label: "Accession Number", name: "accession_number" },
             { label: "Call Number", name: "call_number" },
-            { label: "Publication Place", name: "publication_place" },
+            { label: "Place of Publication", name: "publication_place" },
           ].map(({ label, name }) => (
             <div className="mb-3" key={name}>
               <label className="block text-sm font-medium">{label}</label>
@@ -280,7 +280,7 @@ export default function BookModal({
           </div>
 
           <div className="mb-3">
-            <label className="block text-sm font-medium">Year</label>
+            <label className="block text-sm font-medium">Copyright Year</label>
             <Input
               type="date"
               name="year"

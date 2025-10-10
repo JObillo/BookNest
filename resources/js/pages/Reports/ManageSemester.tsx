@@ -81,14 +81,14 @@ export default function ManageSemester() {
       <Toaster position="top-right" richColors />
 
       {/* Top controls */}
-      <div className="flex justify-between items-center mt-10 mb-4">
-        <button
-          onClick={handleAddSemester}
-          className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
-        >
-          Add New Semester
-        </button>
-      </div>
+    <div className="flex justify-end items-center mt-10 mb-4">
+          <button
+            onClick={handleAddSemester}
+            className="bg-green-600 text-white font-medium rounded-lg px-4 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 mr-5"
+          >
+            Add New Semester
+          </button>
+        </div>
 
       {/* Table */}
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
@@ -127,12 +127,12 @@ export default function ManageSemester() {
                       >
                         Edit
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => handleDelete(semester.id)}
                         className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                       >
                         Delete
-                      </button>
+                      </button> */}
                     </td>
                   </tr>
                 ))
