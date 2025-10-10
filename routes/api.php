@@ -32,3 +32,4 @@ Route::prefix('sections')->group(function () {
 });
 
 Route::get('/books/{book}', [BookApiController::class, 'show']);
+// no api dsa

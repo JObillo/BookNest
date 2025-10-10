@@ -25,6 +25,11 @@ export type Book = {
   book_cover?: string;
   section_id?: number;
   dewey_id?: number;
+  dewey?: string;
+  dewey_relation?: { id: number; dewey_classification: string } | null;
+  subject?: string;
+  date_purchase?: string;
+  book_price?: string;
   description?: string;
   section?: {id: number; section_name: string};
 };
@@ -177,6 +182,7 @@ export default function Books() {
                   "Author",
                   "Publisher",
                   "Catalog Info",
+                  "Other Info",
                   "Book Copies",
                   "Actions",
                 ].map((header) => (
@@ -212,8 +218,18 @@ export default function Books() {
                     <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {book.accession_number}</div>
                       <div>Call #: {book.call_number}</div>
+                      <div>DDC: {book.dewey}</div>
                       <div>Year: {book.year?.toString() || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
+                    </td>
+                    <td className="p-3 text-sm text-gray-800">
+                      <div>Section: {book.section?.section_name || "N/A"}</div>
+                      <div>
+                        Dewey Class: {book.dewey_relation?.dewey_classification || "N/A"}
+                      </div>
+                      <div>Subject #: {book.subject}</div>
+                      <div>Date purchase: {book.date_purchase?.toString() || "N/A"}</div>
+                      <div>Book Price: {book.book_price}</div>
                     </td>
                     <td className="p-3 text-sm text-gray-800">
                       <div>Copies: {book.book_copies}</div>

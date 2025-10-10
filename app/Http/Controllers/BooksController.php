@@ -20,7 +20,7 @@ class BooksController extends Controller
     public function index(): Response
     {
         return Inertia::render('Books', [
-            'books' => Book::with(['section', 'dewey'])->latest()->get(),
+            'books' => Book::with(['section', 'deweyRelation'])->latest()->get(),
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
             'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')
@@ -28,6 +28,7 @@ class BooksController extends Controller
             ->take(5) // remove this if you want all, keep it if you only want the newest 5
             ->get(),
         ]);
+
     }
 
     /**
@@ -47,6 +48,10 @@ class BooksController extends Controller
             'publication_place' => 'nullable|string|max:255',
             'section_id' => 'nullable|integer|exists:sections,id',
             'dewey_id' => 'nullable|integer|exists:deweys,id',
+            'dewey' => 'nullable|string|max:255',
+            'subject' => 'nullable|string|max:255',
+            'date_purchase' => 'nullable|date',
+            'book_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:500', // Keep as is
             'book_cover' => 'nullable|image|max:2048',
         ]);
@@ -98,10 +103,14 @@ class BooksController extends Controller
             'book_copies' => 'required|integer|min:1',
             'accession_number' => 'nullable|string|max:255',
             'call_number' => 'required|string|max:255',
-            'year' => 'nullable|string|max:255',  // Allow null or string year
+            'year' => 'nullable|string|max:255', 
             'publication_place' => 'nullable|string|max:255',
             'section_id' => 'nullable|exists:sections,id',
             'dewey_id' => 'nullable|exists:deweys,id',
+            'dewey' => 'nullable|string|max:255',
+            'subject' => 'nullable|string|max:255',
+            'date_purchase' => 'nullable|date',
+            'book_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:500',
             'book_cover' => 'nullable|image|max:2048',
         ]);
@@ -121,6 +130,10 @@ class BooksController extends Controller
             'publication_place',
             'section_id',
             'dewey_id',
+            'dewey',
+            'subject',
+            'date_purchase',
+            'book_price',
         ]);
     
         // Ensure description is handled properly - convert empty string to space to avoid null
@@ -184,8 +197,7 @@ class BooksController extends Controller
 
     public function show(Book $book)
     {
-        $book->load('section','dewey');
-
+        $book->load('section','deweyRelation'); // <-- correct relationship name
         return Inertia::render('BookDetail', [
             'book' => $book,
         ]);
@@ -193,3 +205,5 @@ class BooksController extends Controller
 
 
 }
+
+//no api dsadsadasdasd

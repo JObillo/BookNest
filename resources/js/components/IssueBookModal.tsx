@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
-import { useForm } from "@inertiajs/react";
-import { router } from '@inertiajs/react';
+import { useForm, router } from "@inertiajs/react";
 
 export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [patron, setPatron] = useState<any>(null);
   const [book, setBook] = useState<any>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
 
   const { data, setData, post, processing, reset, errors } = useForm({
     school_id: "",
@@ -14,28 +14,49 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
     due_date: "",
   });
 
+  // Fetch patron by school_id
   const fetchPatron = async () => {
     try {
       const res = await axios.get(`/patrons/school/${data.school_id}`);
       setPatron(res.data);
+      setDuplicateWarning(false); // reset warning on patron change
     } catch {
       setPatron(null);
     }
   };
-  
 
+  // Fetch book by ISBN
   const fetchBook = async () => {
     if (!data.isbn.trim()) return;
     try {
       const res = await axios.get(`/books/isbn/${data.isbn}`);
       setBook(res.data);
+      setDuplicateWarning(false); // reset warning on book change
     } catch {
       setBook(null);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Check if the patron already has this book issued
+  const checkDuplicateIssue = async () => {
+    if (!patron || !book) return false;
+    try {
+      const res = await axios.get(`/issuedbooks/check/${patron.school_id}/${book.isbn}`);
+      return res.data.exists;
+    } catch (error) {
+      console.error("Error checking duplicate issue", error);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isDuplicate = await checkDuplicateIssue();
+    if (isDuplicate) {
+      setDuplicateWarning(true);
+      return;
+    }
 
     post("/issuedbooks", {
       preserveScroll: true,
@@ -43,15 +64,42 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
         reset();
         setPatron(null);
         setBook(null);
+        setDuplicateWarning(false);
         onClose();
         router.reload({ only: ['issuedbooks'] });
       },
-      onError: (errors) => {
-        console.error("Validation errors:", errors);
-        // Optional: show a popup too
-        // alert("Validation failed: " + JSON.stringify(errors, null, 2));
-      },
     });
+  };
+
+  const renderPatronInfo = (patron: any) => {
+    switch (patron.patron_type) {
+      case "Student":
+        return (
+          <>
+            <p><strong>School ID:</strong> {patron.school_id}</p>
+            <p><strong>Department:</strong> {patron.department || "—"}</p>
+            <p><strong>Course:</strong> {patron.course || "—"}</p>
+            <p><strong>Year:</strong> {patron.year || "—"}</p>
+          </>
+        );
+      case "Faculty":
+        return (
+          <>
+            <p><strong>School ID:</strong> {patron.school_id}</p>
+            <p><strong>Department:</strong> {patron.department || "—"}</p>
+          </>
+        );
+      case "Guest":
+        return (
+          <>
+            <p><strong>Guest ID:</strong> {patron.school_id}</p>
+            <p><strong>Contact:</strong> {patron.contact_number || "—"}</p>
+            <p><strong>Address:</strong> {patron.address || "—"}</p>
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -59,12 +107,19 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
       <div className="max-w-xl mx-auto mt-20 bg-white rounded-2xl shadow p-6 space-y-4">
         <Dialog.Title className="text-xl font-bold">Issue Book</Dialog.Title>
 
-        {/* Global Error Display */}
+        {/* Validation errors */}
         {Object.keys(errors).length > 0 && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
             {Object.entries(errors).map(([field, msg]) => (
               <p key={field}>{msg}</p>
             ))}
+          </div>
+        )}
+
+        {/* Duplicate warning */}
+        {duplicateWarning && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
+            This patron already has this book issued. Cannot borrow again until returned.
           </div>
         )}
 
@@ -79,15 +134,12 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
               className="w-full p-2 border rounded"
               required
             />
-            {errors.school_id && <p className="text-sm text-red-500">{errors.school_id}</p>}
           </div>
 
           {patron && (
             <div className="text-sm p-2 bg-gray-100 rounded">
               <p><strong>Name:</strong> {patron.name}</p>
-              <p><strong>Course:</strong> {patron.course || "—"}</p>
-              <p><strong>Year:</strong> {patron.year || "—"}</p>
-              <p><strong>Department:</strong> {patron.department || "—"}</p>
+              {renderPatronInfo(patron)}
               <p><strong>Type:</strong> {patron.patron_type}</p>
             </div>
           )}
@@ -102,7 +154,6 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
               className="w-full p-2 border rounded"
               required
             />
-            {errors.isbn && <p className="text-sm text-red-500">{errors.isbn}</p>}
           </div>
 
           {book && (
@@ -128,11 +179,14 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
               className="w-full p-2 border rounded"
               required
             />
-            {errors.due_date && <p className="text-sm text-red-500">{errors.due_date}</p>}
           </div>
 
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 cursor-pointer">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 cursor-pointer"
+            >
               Cancel
             </button>
             <button
@@ -148,6 +202,3 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
     </Dialog>
   );
 }
-
-
-//this is working but no copies a

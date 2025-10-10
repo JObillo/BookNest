@@ -1,34 +1,26 @@
 import { Head, Link, usePage } from "@inertiajs/react";
 import { FaHome } from "react-icons/fa";
 
-// type Dewey = {
-//   id: number;
-//   dewey_number: string;
-//   description?: string;
-// };
-
-type Book = {
+export type Book = {
   id: number;
   title: string;
   author: string;
-  publisher: string;
-  status: string;
-  book_cover?: string;
-  description?: string;
-  section?: {
-    id: number;
-    section_name: string;
-  };
-  published_date?: string;
-  edition?: string;
-  pages?: number;
   isbn?: string;
-  isbn_10?: string;
-  isbn_13?: string;
+  publisher: string;
+  publication_place?: string;
+  year?: string;
   accession_number?: string;
   call_number?: string;
-  dewey_classifiaction?: string;
+  section_id?: number;
+  section?: {id: number; section_name: string};
+  dewey_id?: number;
+  dewey?: string;
+  dewey_relation?: { id: number; dewey_classification: string } | null;
+  subject?: string;
+  book_copies?: number;
   copies_available?: number;
+  status: string;
+  book_cover?: string;
 };
 
 export default function BookDetail() {
@@ -43,7 +35,8 @@ export default function BookDetail() {
         <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white shadow-md">
           <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
         </header>
-        <div className="max-w-5xl mx-auto bg-white rounded shadow p-6 mt-15">
+
+        <div className="max-w-5xl mx-auto bg-white rounded shadow p-6 mt-20">
           <Link
             href={route("home")}
             className="text-black text-xl sm:text-2xl hover:text-purple-900 inline-flex items-center gap-2 font-bold"
@@ -71,51 +64,50 @@ export default function BookDetail() {
                 >
                   {book.status}
                 </p>
-                <p className="text-sm mt-1">
+                {/* <p className="text-sm mt-1">
                   Copies Available: {book.copies_available ?? "N/A"}
                 </p>
+                <p className="text-sm">
+                  Total Copies: {book.book_copies ?? "N/A"}
+                </p> */}
               </div>
             </div>
 
             {/* Right: Details */}
-            <div className="w-full md:w-2/3">
-              <div className="space-y-2">
-                {[
-                  { label: "Author", value: book.author },
-                  { label: "Publisher", value: book.publisher },
-                  { label: "Published", value: book.published_date },
-                  { label: "Edition", value: book.edition },
-                  { label: "Pages", value: book.pages },
-                  { label: "ISBN", value: book.isbn },
-                  { label: "Accession No", value: book.accession_number },
-                  { label: "Call No", value: book.call_number },
-                  { label: "Dewey Classification", value: book.dewey_classifiaction },
-                  {
-                    label: "Shelf Section",
-                    value: `${book.section?.section_name}`,
-                  },
-                ].map(
-                  (item) =>
-                    item.value && (
-                      <div
-                        key={item.label}
-                        className="flex justify-between border-b py-1"
-                      >
-                        <span className="font-medium text-gray-700">
-                          {item.label}
-                        </span>
-                        <span className="text-gray-900">{item.value}</span>
-                      </div>
-                    )
-                )}
-              </div>
+            <div className="w-full md:w-2/3 space-y-2 text-gray-900">
+              {[
+                { label: "Author", value: book.author },
+                { label: "ISBN", value: book.isbn },
+                { label: "Publisher", value: book.publisher },
+                { label: "Place of publication", value: book.publication_place },
+                { label: "Copyright year", value: book.year },
+                { label: "Accession Number", value: book.accession_number },
+                { label: "Call Number", value: book.call_number },
+                { label: "Dewey Decimal Values", value: book.dewey || "N/A" },
+                { label: "Dewey Classification", value: book.dewey_relation?.dewey_classification || "N/A" },
+                { label: "Section", value: book.section?.section_name || "N/A" },
+                { label: "Subject", value: book.subject || "N/A" },
+              ].map(
+                (item) =>
+                  item.value && (
+                    <div
+                      key={item.label}
+                      className="flex justify-between border-b py-1"
+                    >
+                      <span className="font-medium text-gray-700">
+                        {item.label}
+                      </span>
+                      <span>{item.value}</span>
+                    </div>
+                  )
+              )}
             </div>
           </div>
 
           {/* Description */}
-          <div className="mt-8">
+          {/* <div className="mt-8">
             <h2 className="text-lg font-semibold mb-2">Description:</h2>
-            {book.description && book.description.trim() !== "" && book.description !== " " ? (
+            {book.description && book.description.trim() !== "" ? (
               <p className="text-justify whitespace-pre-wrap text-gray-800">
                 {book.description}
               </p>
@@ -124,7 +116,7 @@ export default function BookDetail() {
                 No description available for this book.
               </p>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </>

@@ -53,7 +53,17 @@ class IssuedBookController extends Controller
         $patron = Patron::where('school_id', $request->school_id)->firstOrFail();
         $book = Book::where('isbn', $request->isbn)->firstOrFail();
 
-        if ($book->copies_available < 2) {
+        // Check if patron already has this book issued and not returned
+        $alreadyIssued = IssuedBook::where('patron_id', $patron->id)
+            ->where('book_id', $book->id)
+            ->where('status', 'Issued')
+            ->exists();
+
+        if ($alreadyIssued) {
+            return back()->withErrors(['isbn' => 'This borrower already has this book issued.']);
+        }
+
+        if ($book->copies_available < 1) {
             return back()->withErrors(['isbn' => 'No available copies to issue.']);
         }
 
@@ -67,8 +77,6 @@ class IssuedBookController extends Controller
 
         $book->decrement('copies_available');
         $book->status = $book->copies_available > 1 ? 'Available' : 'Not Available';
-        // $book->status = $book->copies_available > 0 ? 'Available' : 'Not Available';
-
         $book->save();
 
         return redirect()->route('issuedbooks.index')->with('success', 'Book successfully issued.');
@@ -95,4 +103,21 @@ class IssuedBookController extends Controller
         return response()->json(['message' => 'Book successfully returned.']);
 
     }
+
+// app/Http/Controllers/IssuedBooksController.php
+    public function checkDuplicate($school_id, $isbn)
+    {
+        // Check if the patron already has this book issued and not yet returned
+        $exists = \DB::table('issued_books')
+            ->join('books', 'issued_books.book_id', '=', 'books.id')
+            ->join('patrons', 'issued_books.patron_id', '=', 'patrons.id')
+            ->where('patrons.school_id', $school_id)
+            ->where('books.isbn', $isbn)
+            ->where('issued_books.status', 'Issued') // only count books still issued
+            ->exists();
+
+        return response()->json(['exists' => $exists]);
+    }
+
+
 }

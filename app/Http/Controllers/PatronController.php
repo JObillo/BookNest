@@ -23,7 +23,7 @@ class PatronController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($request) {
-                    if (in_array($request->patron_type, ['Student', 'Faculty']) && !preg_match('/^\d{6}$/', $value)) {
+                    if (in_array($request->patron_type, ['Student', 'Faculty']) && !preg_match('/^\d{5}$/', $value)) {
                         $fail('School ID must be 6 digits.');
                     }
                     if ($request->patron_type === 'Guest' && !preg_match('/^G-\d+$/', $value)) {
@@ -70,7 +70,7 @@ class PatronController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($request) {
-                    if (in_array($request->patron_type, ['Student', 'Faculty']) && !preg_match('/^\d{6}$/', $value)) {
+                    if (in_array($request->patron_type, ['Student', 'Faculty']) && !preg_match('/^\d{5}$/', $value)) {
                         $fail('School ID must be 6 digits.');
                     }
                     if ($request->patron_type === 'Guest' && !preg_match('/^G-\d+$/', $value)) {

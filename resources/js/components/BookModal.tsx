@@ -19,6 +19,10 @@ type Book = {
   section_id?: number;
   dewey_id?: number;
   description?: string;
+  dewey?: string;
+  subject?: string;
+  date_purchase?: string;
+  book_price?: string;
 };
 
 interface Props {
@@ -49,13 +53,15 @@ export default function BookModal({
     book_cover: "",
     section_id: undefined,
     dewey_id: undefined,
+    dewey: "",
+    subject: "",
+    date_purchase: "",
+    book_price: "",
     description: "",
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
-
-  //validation and setting form data if editing
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -74,7 +80,11 @@ export default function BookModal({
           book_cover: book.book_cover || "",
           section_id: book.section_id,
           dewey_id: book.dewey_id,
-          description: book.description || "", 
+          dewey: book.dewey || "",
+          subject: book.subject || "",
+          date_purchase: book.date_purchase || "",
+          book_price: book.book_price || "",
+          description: book.description || "",
         });
         setPreview(book.book_cover || "");
         setSelectedFile(null);
@@ -92,7 +102,11 @@ export default function BookModal({
           book_cover: "",
           section_id: undefined,
           dewey_id: undefined,
-          description: "", 
+          dewey: "",
+          subject: "",
+          date_purchase: "",
+          book_price: "",
+          description: "",
         });
         setPreview("");
         setSelectedFile(null);
@@ -100,11 +114,30 @@ export default function BookModal({
     }
   }, [isOpen, book]);
 
+  // Format ISBN automatically as user types
+  const formatIsbn = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    if (digits.length <= 9)
+      return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4)}`;
+    if (digits.length <= 12)
+      return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(
+        4,
+        9
+      )}-${digits.slice(9)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(
+      4,
+      9
+    )}-${digits.slice(9, 12)}-${digits.slice(12, 13)}`;
+  };
+
   const validateField = (name: string, value: string) => {
     let error = "";
 
     if (name === "isbn") {
-      if (!/^\d{13}$/.test(value)) {
+      const digitsOnly = value.replace(/\D/g, "");
+      if (digitsOnly.length !== 13) {
         error = "ISBN must be exactly 13 digits.";
       }
     }
@@ -122,29 +155,61 @@ export default function BookModal({
       }
     }
 
+    if (name === "book_price") {
+      if (!value || isNaN(Number(value)) || Number(value) < 0) {
+        error = "Book Price must be a positive number.";
+      }
+    }
+
+    if (name === "dewey") {
+      if (!value) {
+        error = "Dewey is required.";
+      }
+    }
+
+    if (name === "subject") {
+      if (!value) {
+        error = "Subject is required.";
+      }
+    }
+
+    if (name === "date_purchase") {
+      if (!value) {
+        error = "Date of Purchase is required.";
+      }
+    }
 
     setErrors((prev) => ({ ...prev, [name]: error }));
     return error;
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
+    let newValue = value;
+
+    // 📘 Automatically format ISBN
+    if (name === "isbn") {
+      newValue = formatIsbn(value);
+    }
+
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value
+      [name]: newValue
         ? name === "section_id" || name === "dewey_id"
-          ? parseInt(value, 10)
+          ? parseInt(newValue, 10)
           : name === "book_copies"
-          ? Number(value)
-          : value
-        : name === "description" 
-          ? "" 
-          : undefined,
+          ? Number(newValue)
+          : newValue
+        : name === "description"
+        ? ""
+        : undefined,
     }));
 
-    validateField(name, value);
+    validateField(name, newValue);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,25 +223,17 @@ export default function BookModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Final validation before submission
     const validationErrors: { [key: string]: string } = {};
 
-    ["isbn", "accession_number", "call_number"].forEach((field) => {
-      const error = validateField(field, (formData as any)[field] || "");
-      if (error) validationErrors[field] = error;
-    });
+    ["isbn", "accession_number", "call_number", "book_price", "dewey", "subject", "date_purchase"].forEach(
+      (field) => {
+        const error = validateField(field, (formData as any)[field] || "");
+        if (error) validationErrors[field] = error;
+      }
+    );
 
-    if (Object.keys(validationErrors).length > 0) {
-      toast.error("Please fix validation errors before submitting.");
-      return;
-    }
-
-    if (!formData.section_id) {
-    validationErrors.section_id = "Section is required.";
-    }
-    if (!formData.dewey_id) {
-      validationErrors.dewey_id = "Dewey classification is required.";
-    }
+    if (!formData.section_id) validationErrors.section_id = "Section is required.";
+    if (!formData.dewey_id) validationErrors.dewey_id = "Dewey classification is required.";
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -196,14 +253,25 @@ export default function BookModal({
     data.append("publication_place", formData.publication_place || "");
     data.append("section_id", String(formData.section_id || ""));
     data.append("dewey_id", String(formData.dewey_id || ""));
-    data.append("description", formData.description !== undefined ? formData.description : "");
+    data.append("dewey", formData.dewey || "");
+    data.append("subject", formData.subject || "");
+    data.append("date_purchase", formData.date_purchase || "");
+    data.append("book_price", formData.book_price || "");
+    data.append(
+      "description",
+      formData.description !== undefined ? formData.description : ""
+    );
 
     if (selectedFile) {
       data.append("book_cover", selectedFile);
     }
 
-    const successMessage = book?.id ? "Book updated successfully." : "Book added successfully.";
-    const errorMessage = book?.id ? "Failed to update book." : "Failed to add book.";
+    const successMessage = book?.id
+      ? "Book updated successfully."
+      : "Book added successfully.";
+    const errorMessage = book?.id
+      ? "Failed to update book."
+      : "Failed to add book.";
 
     if (book?.id) {
       data.append("_method", "PUT");
@@ -237,157 +305,205 @@ export default function BookModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center border border-black rounded-lg overflow-y-auto bg-black/50 z-50">
-      <div className="relative w-full max-w-4xl mx:auto p-8 bg-white rounded-md shadow-xl transition-all">
-        <h2 className="text-lg font-semibold mb-4">{book ? "Edit Book" : "Add Book"}</h2>
+      <div className="relative w-full max-w-4xl p-8 bg-white rounded-md shadow-xl transition-all">
+        <h2 className="text-lg font-semibold mb-4">
+          {book ? "Edit Book" : "Add Book"}
+        </h2>
+
         <form onSubmit={handleSubmit} encType="multipart/form-data">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> 
-          {[
-            { label: "Title", name: "title" },
-            { label: "Author", name: "author" },
-            { label: "ISBN", name: "isbn" },
-            { label: "Publisher", name: "publisher" },
-            { label: "Accession Number", name: "accession_number" },
-            { label: "Call Number", name: "call_number" },
-            { label: "Place of Publication", name: "publication_place" },
-          ].map(({ label, name }) => (
-            <div className="mb-3" key={name}>
-              <label className="block text-sm font-medium">{label}</label>
-              <Input
-                type="text"
-                name={name}
-                value={(formData as any)[name] || ""}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
-              />
-              {errors[name] && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[ 
+              { label: "Title", name: "title" },
+              { label: "Author", name: "author" },
+              { label: "ISBN", name: "isbn" },
+              { label: "Publisher", name: "publisher" },
+              { label: "Accession Number", name: "accession_number" },
+              { label: "Call Number", name: "call_number" },
+              { label: "Place of Publication", name: "publication_place" },
+            ].map(({ label, name }) => (
+              <div className="mb-3" key={name}>
+                <label className="block text-sm font-medium">{label}</label>
+                <Input
+                  type="text"
+                  name={name}
+                  value={(formData as any)[name] || ""}
+                  onChange={handleChange}
+                  className="w-full border rounded p-2"
+                  required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
+                />
+                {errors[name] && (
                   <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
                 )}
-            </div>
-          ))}
+              </div>
+            ))}
 
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Book Copies</label>
-            <Input
-              type="number"
-              name="book_copies"
-              value={formData.book_copies}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              required
-              min={1}
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Copyright Year</label>
-            <Input
-              type="date"
-              name="year"
-              value={formData.year || ""}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Book Cover</label>
-            <Input
-              type="file"
-              name="book_cover"
-              onChange={handleFileChange}
-              accept="image/*"
-              className="w-full border rounded p-2"
-            />
-            {preview && (
-              <img
-                src={preview}
-                alt="Book cover preview"
-                className="mt-2 w-20 h-28 object-cover"
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Book Copies</label>
+              <Input
+                type="number"
+                name="book_copies"
+                value={formData.book_copies}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+                min={1}
               />
-            )}
-          </div>
+            </div>
 
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Section</label>
-            <Select
-              name="section_id"
-              value={formData.section_id || ""}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-            >
-              <option value="">Select Section</option>
-              {sections.length > 0 ? (
-                sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.section_name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No sections available</option>
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Copyright Year</label>
+              <Input
+                type="number"
+                name="year"
+                value={formData.year || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                min="1000"
+                max="9999"
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Book Cover</label>
+              <Input
+                type="file"
+                name="book_cover"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="w-full border rounded p-2"
+              />
+              {preview && (
+                <img
+                  src={preview}
+                  alt="Book cover preview"
+                  className="mt-2 w-20 h-28 object-cover"
+                />
               )}
-            </Select>
-            {errors.section_id && (
-              <p className="text-xs text-red-500 mt-1">{errors.section_id}</p>
-            )}
-          </div>
+            </div>
 
-          <div className="mb-3">
-            <label className="block text-sm font-medium">Dewey ID</label>
-            <Select
-              name="dewey_id"
-              value={formData.dewey_id || ""}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-            >
-              <option value="">Select Dewey</option>
-              {deweys.length > 0 ? (
-                deweys.map((dewey) => (
-                  <option key={dewey.id} value={dewey.id}>
-                    {dewey.dewey_classification}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No Dewey classifications available</option>
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Section</label>
+              <Select
+                name="section_id"
+                value={formData.section_id || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+              >
+                <option value="">Select Section</option>
+                {sections.length > 0 ? (
+                  sections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.section_name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No sections available</option>
+                )}
+              </Select>
+              {errors.section_id && (
+                <p className="text-xs text-red-500 mt-1">{errors.section_id}</p>
               )}
-            </Select>
-            {errors.dewey_id && (
-              <p className="text-xs text-red-500 mt-1">{errors.dewey_id}</p>
-            )}
-          </div>
+            </div>
 
-          <div className="mb-3 md:col-span-3">
-            <label className="block text-sm font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description || ""}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
-              placeholder="Enter book description..."
-              rows={1}
-            ></textarea>
-          </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Dewey Classification</label>
+              <Select
+                name="dewey_id"
+                value={formData.dewey_id || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+              >
+                <option value="">Select Dewey</option>
+                {deweys.length > 0 ? (
+                  deweys.map((dewey) => (
+                    <option key={dewey.id} value={dewey.id}>
+                      {dewey.dewey_classification}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No Dewey classifications available</option>
+                )}
+              </Select>
+              {errors.dewey_id && (
+                <p className="text-xs text-red-500 mt-1">{errors.dewey_id}</p>
+              )}
+            </div>
 
-          <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer"
-            >
-              {book ? "Update" : "Add"} Book
-            </button>
-          </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Dewey</label>
+              <Input
+                type="text"
+                name="dewey"
+                value={formData.dewey || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+              />
+              {errors.dewey && <p className="text-xs text-red-500 mt-1">{errors.dewey}</p>}
+            </div>
 
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Subject</label>
+              <Input
+                type="text"
+                name="subject"
+                value={formData.subject || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+              />
+              {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject}</p>}
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Date of Purchase</label>
+              <Input
+                type="date"
+                name="date_purchase"
+                value={formData.date_purchase || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+              />
+              {errors.date_purchase && <p className="text-xs text-red-500 mt-1">{errors.date_purchase}</p>}
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Book Price (₱)</label>
+              <Input
+                type="number"
+                name="book_price"
+                value={formData.book_price || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                min="0"
+                step="0.01"
+                required
+              />
+              {errors.book_price && <p className="text-xs text-red-500 mt-1">{errors.book_price}</p>}
+            </div>
+
+            <br />
+            <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer"
+              >
+                {book ? "Update" : "Add"} Book
+              </button>
+            </div>
           </div>
         </form>
       </div>
-      
     </div>
   );
 }
+
+//working but no api

@@ -51,7 +51,7 @@ export default function EditBorrowerModal({ isOpen, onClose, patron }: Props) {
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.push("Email is invalid.");
 
     if (formData.patron_type === "Student" || formData.patron_type === "Faculty") {
-      if (!/^\d{6}$/.test(formData.school_id || "")) errors.push("School ID must be 6 digits.");
+      if (!/^\d{5}$/.test(formData.school_id || "")) errors.push("School ID must be 6 digits.");
     } else if (formData.patron_type === "Guest") {
       if (!/^G-\d+$/.test(formData.school_id || "")) errors.push("Guest ID must be in format G-xxxxx.");
       if (!/^\d+$/.test(formData.contact_number || "")) errors.push("Contact Number must contain numbers only.");

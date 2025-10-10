@@ -68,6 +68,9 @@ Route::resource('borrowers', PatronController::class);
 
 // Issued Books
 Route::resource('issuedbooks', IssuedBookController::class);
+Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBooksController::class, 'checkDuplicate']);
+
+
 
 // Returned books
 Route::get('/returnedbooks', [IssuedBookController::class, 'returnedBooks'])->name('returnedbooks.index');
@@ -127,15 +130,15 @@ Route::get('/books/{book}', [BooksController::class, 'show'])->name('books.show'
 
 // Route::get('/ebooks', [EbookController::class, 'index'])->name('ebooks.index');
 
-// 1️⃣ Inertia page route — renders your React component
+// 1 Inertia page route — renders your React component
 Route::get('/ebooks', function () {
     return Inertia::render('Ebooks');
 })->name('ebooks.index');
 
-// 2️⃣ API route — returns JSON data for fetching
+// 2 API route — returns JSON data for fetching
 Route::get('/api/ebooks', [EbookController::class, 'index']);
 
-// 3️⃣ Manage ebooks (admin)
+// 3 Manage ebooks (admin)
 Route::get('/ebooks/manage', [EbookController::class, 'manage'])->name('ebooks.manage');
 
 // 4️⃣ Download, show, delete routes
