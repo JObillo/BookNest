@@ -31,7 +31,7 @@ class PatronController extends Controller
                     }
                 },
             ],
-            'name' => ['required', 'string', 'regex:/^[a-zA-Z\s]+$/'],
+            'name' => ['required', 'string', 'regex:/^[a-zA-Z\s.\'-]+$/'],
             'email' => 'required|email|unique:patrons,email',
             'course' => function ($attribute, $value, $fail) use ($request) {
                 if ($request->patron_type === 'Student' && empty($value)) $fail('Course is required.');
@@ -78,7 +78,7 @@ class PatronController extends Controller
                     }
                 },
             ],
-            'name' => ['required', 'string', 'regex:/^[a-zA-Z\s]+$/'],
+            'name' => ['required', 'string', 'regex:/^[a-zA-Z\s.\'-]+$/'],
             'email' => 'required|email|unique:patrons,email,' . $patron->id,
             'course' => function ($attribute, $value, $fail) use ($request) {
                 if ($request->patron_type === 'Student' && empty($value)) $fail('Course is required.');

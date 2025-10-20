@@ -121,8 +121,8 @@ export default function ReturnedBooks() {
                 {[
                   "Patron Info",
                   "Book",
-                  "Author",
-                  "Catalog Info",
+                  // "Author",
+                  // "Catalog Info",
                   "Issued Date",
                   "Due Date",
                   "Status",
@@ -150,13 +150,13 @@ export default function ReturnedBooks() {
                       <div className="font-semibold">{record.book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {record.book.isbn}</div>
                     </td>
-                    <td className="p-3">{record.book.author}</td>
-                    <td className="p-3 text-sm text-gray-800">
+                    {/* <td className="p-3">{record.book.author}</td> */}
+                    {/* <td className="p-3 text-sm text-gray-800">
                       <div>Accession #: {record.book.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
                       <div>Place: {record.book.publication_place || "N/A"}</div>
-                    </td>
+                    </td> */}
                     <td className="p-3">
                       {record.issued_date
                         ? new Date(record.issued_date).toLocaleDateString("en-US", {

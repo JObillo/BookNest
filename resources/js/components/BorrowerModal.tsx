@@ -77,7 +77,8 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
 
     const errors: string[] = [];
 
-    if (!/^[a-zA-Z\s]+$/.test(formData.name)) errors.push("Name must contain letters only.");
+    if (!/^[a-zA-Z\s.'-]+$/.test(formData.name)) errors.push("Name contains invalid characters.");
+
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.push("Email is invalid.");
 
     if (formData.patron_type === "Student" || formData.patron_type === "Faculty") {

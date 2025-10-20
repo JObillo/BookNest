@@ -77,6 +77,9 @@ Route::get('/returnedbooks', [IssuedBookController::class, 'returnedBooks'])->na
 // Return a book
 Route::put('/issuedbooks/{id}/return', [IssuedBookController::class, 'returnBook'])->name('issuedbooks.return');
 
+// Update overdue fines
+Route::get('/update-fines', [IssuedBookController::class, 'updateOverdueFines']);
+
 
 // Sections
 Route::resource('section', SectionController::class);

@@ -64,12 +64,12 @@ export default function BookDetail() {
                 >
                   {book.status}
                 </p>
-                {/* <p className="text-sm mt-1">
+                <p className="text-sm mt-1">
                   Copies Available: {book.copies_available ?? "N/A"}
                 </p>
                 <p className="text-sm">
                   Total Copies: {book.book_copies ?? "N/A"}
-                </p> */}
+                </p>
               </div>
             </div>
 

@@ -13,7 +13,6 @@ class SendOverdueEmails extends Command
 
     public function handle()
     {
-        // Find overdue books by due_date (more reliable than status text)
         $overdueBooks = IssuedBook::where('due_date', '<', now())
             ->where('status', '!=', 'Returned')
             ->get();
@@ -22,12 +21,15 @@ class SendOverdueEmails extends Command
             $patron = $issuedBook->patron;
             $book   = $issuedBook->book;
 
-            if (!$patron || !$book) {
-                continue; // skip if relationships missing
-            }
+            if (!$patron || !$book) continue;
+
+            // Use fine from database
+            $fine = $issuedBook->fine_amount;
 
             $data = [
                 'title' => $book->title,
+                'due_date' => $issuedBook->due_date->format('F d, Y h:i A'),
+                'fine_amount' => number_format($fine, 2),
             ];
 
             $patron->notify(new OverdueBooks($data));
@@ -35,4 +37,5 @@ class SendOverdueEmails extends Command
 
         $this->info('Overdue emails sent successfully!');
     }
+
 }
