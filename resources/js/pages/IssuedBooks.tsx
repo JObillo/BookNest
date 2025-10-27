@@ -36,6 +36,9 @@ export type IssuedBook = {
     year?: string;
     publication_place?: string;
   };
+  copy?: {
+    accession_number: string;
+  };
 };
 
 export default function IssuedBooks() {
@@ -133,7 +136,7 @@ export default function IssuedBooks() {
                     </td>
                     <td className="p-3">{record.book.author}</td>
                     <td className="p-3 text-sm text-gray-800">
-                      <div>Accession #: {record.book.accession_number || "N/A"}</div>
+                      <div>Accession #: {record.copy?.accession_number || "N/A"}</div>
                       <div>Call #: {record.book.call_number || "N/A"}</div>
                       <div>Year: {record.book.year || "N/A"}</div>
                       <div>Place: {record.book.publication_place || "N/A"}</div>

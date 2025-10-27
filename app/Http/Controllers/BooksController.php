@@ -71,16 +71,19 @@ class BooksController extends Controller
             'book_cover' => $bookCoverPath,
         ]);
 
-        foreach ($validated['accession_numbers'] as $number) {
-            BookCopy::create([
+        // Create book copies
+        foreach ($validated['accession_numbers'] as $index => $number) {
+            \App\Models\BookCopy::create([
                 'book_id' => $book->id,
                 'accession_number' => $number,
-                'status' => 'Available',
+                // If only 1 copy in total, mark as "Reserve"
+                'status' => $validated['book_copies'] === 1 ? 'Reserve' : 'Available',
             ]);
         }
 
         return back()->with('success', 'Book and copies added successfully!');
     }
+
 
     public function update(Request $request, $id)
     {

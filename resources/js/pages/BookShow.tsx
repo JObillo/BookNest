@@ -89,13 +89,17 @@ export default function BookShow() {
                       </td>
                       <td className="p-3 border">
                         <span
-                          className={`font-semibold ${
+                        className={`font-semibold ${
                             copy.status === "Available"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
+                            ? "text-green-600"
+                            : copy.status === "Borrowed"
+                            ? "text-yellow-600"
+                            : copy.status === "Reserve"
+                            ? "text-orange-500"
+                            : "text-gray-600"
+                        }`}
                         >
-                          {copy.status}
+                        {copy.status}
                         </span>
                       </td>
                     </tr>

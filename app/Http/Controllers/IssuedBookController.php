@@ -14,7 +14,7 @@ class IssuedBookController extends Controller
     // Show all issued books (Issued, Returned and Overdue)
     public function index()
     {
-        $issuedBooks = IssuedBook::with(['book', 'patron'])->latest()->get();
+        $issuedBooks = IssuedBook::with(['book', 'patron', 'copy'])->latest()->get();
 
         foreach ($issuedBooks as $issuedBook) {
             // Only touch non-returned records
@@ -67,97 +67,130 @@ class IssuedBookController extends Controller
     }
 
     // Issue a book
-public function store(Request $request)
-{
-    $request->validate([
-        'school_id'        => 'required|exists:patrons,school_id',
-        'isbn'             => 'required|exists:books,isbn',
-        'accession_number' => 'required|exists:book_copies,accession_number',
-        'due_date'         => 'required|date|after:now',
-    ]);
-
-    $patron = Patron::where('school_id', $request->school_id)->firstOrFail();
-    $book   = Book::where('isbn', $request->isbn)->firstOrFail();
-
-    // 🔍 Find the specific book copy by accession number
-    $copy = \App\Models\BookCopy::where('accession_number', $request->accession_number)
-        ->where('book_id', $book->id)
-        ->firstOrFail();
-
-    // 🛑 Prevent duplicate issue (borrower already has one)
-    $hasActiveBorrow = IssuedBook::where('patron_id', $patron->id)
-        ->whereIn('status', ['Issued', 'Overdue'])
-        ->exists();
-
-    if ($hasActiveBorrow) {
-        return back()->withErrors([
-            'school_id' => 'This borrower already has a borrowed book. Please return it first.',
+    public function store(Request $request)
+    {
+        $request->validate([
+            'school_id'        => 'required|exists:patrons,school_id',
+            'isbn'             => 'required|exists:books,isbn',
+            'accession_number' => 'required|exists:book_copies,accession_number',
+            'due_date'         => 'required|date|after:now',
         ]);
-    }
 
-    // 🛑 Prevent issuing an unavailable copy
-    if ($copy->status !== 'Available') {
-        return back()->withErrors([
-            'accession_number' => 'This book copy is not available.',
+        $patron = Patron::where('school_id', $request->school_id)->firstOrFail();
+        $book   = Book::where('isbn', $request->isbn)->firstOrFail();
+        $copy   = \App\Models\BookCopy::where('accession_number', $request->accession_number)
+                    ->where('book_id', $book->id)
+                    ->firstOrFail();
+
+        // Prevent duplicate active borrow
+        $hasActiveBorrow = IssuedBook::where('patron_id', $patron->id)
+            ->whereIn('status', ['Issued', 'Overdue'])
+            ->exists();
+
+        if ($hasActiveBorrow) {
+            return back()->withErrors([
+                'school_id' => 'This borrower already has a borrowed book. Please return it first.',
+            ]);
+        }
+
+        // Prevent issuing unavailable or reserved copy
+        if (!in_array($copy->status, ['Available'])) {
+            return back()->withErrors([
+                'accession_number' => 'This book copy is not available for borrowing.',
+            ]);
+        }
+
+        // Create issued record
+        IssuedBook::create([
+            'patron_id'   => $patron->id,
+            'book_id'     => $book->id,
+            'copy_id'     => $copy->id,
+            'issued_date' => now('Asia/Manila')->setSeconds(0),
+            'due_date'    => Carbon::parse($request->due_date)->setSeconds(0),
+            'status'      => 'Issued',
+            'fine_amount' => 0,
+            'fine_status' => 'no fine',
         ]);
+
+        // Update copy & book availability
+        $copy->update(['status' => 'Borrowed']);
+
+        $book->decrement('copies_available');
+
+        // If now only one copy remains, reserve it
+        if ($book->copies_available === 1) {
+            $remainingCopy = \App\Models\BookCopy::where('book_id', $book->id)
+                ->where('status', 'Available')
+                ->first();
+
+            if ($remainingCopy) {
+                $remainingCopy->update(['status' => 'Reserve']);
+            }
+        }
+
+        $book->status = $book->copies_available <= 1 ? 'Not Available' : 'Available';
+        $book->save();
+
+        return redirect()
+            ->route('issuedbooks.index')
+            ->with('success', 'Book successfully issued.');
     }
-
-    // ✅ Create issued record
-    IssuedBook::create([
-        'patron_id'   => $patron->id,
-        'book_id'     => $book->id,
-        'copy_id'     => $copy->id, // link the specific copy
-        'issued_date' => now('Asia/Manila')->setSeconds(0),
-        'due_date'    => Carbon::parse($request->due_date)->setSeconds(0),
-        'status'      => 'Issued',
-        'fine_amount' => 0,
-        'fine_status' => 'no fine',
-    ]);
-
-    // ✅ Update copy status
-    $copy->update(['status' => 'Borrowed']);
-
-    // ✅ Update book availability
-    $book->decrement('copies_available');
-    $book->status = $book->copies_available <= 1 ? 'Not Available' : 'Available';
-    $book->save();
-
-    return redirect()
-        ->route('issuedbooks.index')
-        ->with('success', 'Book successfully issued.');
-}
-
-
-
 
     // Return a book
-public function returnBook(Request $request, $id)
-{
-    $issuedBook = IssuedBook::findOrFail($id);
-    $book = $issuedBook->book;
+    public function returnBook(Request $request, $id)
+    {
+        $issuedBook = IssuedBook::with(['book', 'copy'])->findOrFail($id);
+        $book = $issuedBook->book;
+        $copy = $issuedBook->copy;
 
-    // Calculate fine
-    $fine = $issuedBook->calculateFine();
+        // Calculate fine
+        $fine = $issuedBook->calculateFine();
 
-    // If the book is overdue and the user can choose fine status, get it from request
-    $fineStatus = $fine > 0
-        ? ($request->input('fine_status') ?? 'unpaid') // Default unpaid if not selected
-        : 'cleared'; // Default cleared for non-overdue
+        // Determine fine status
+        $fineStatus = $fine > 0
+            ? ($request->input('fine_status') ?? 'unpaid')
+            : 'cleared';
 
-    $issuedBook->update([
-        'status'        => 'Returned',
-        'fine_amount'   => $fine,
-        'fine_status'   => $fineStatus,
-        'returned_date' => now('Asia/Manila')->setSeconds(0),
-    ]);
+        // Update issued book record
+        $issuedBook->update([
+            'status'        => 'Returned',
+            'fine_amount'   => $fine,
+            'fine_status'   => $fineStatus,
+            'returned_date' => now('Asia/Manila')->setSeconds(0),
+        ]);
 
-    // Update book stock
-    $book->increment('copies_available');
-    $book->status = 'Available';
-    $book->save();
+        // Mark the returned copy as available
+        if ($copy) {
+            $copy->update(['status' => 'Available']);
+        }
 
-    return response()->json(['message' => 'Book returned successfully!']);
-}
+        // Increase available copy count
+        $book->increment('copies_available');
+
+        // After updating count, check current availability
+        $availableCopies = \App\Models\BookCopy::where('book_id', $book->id)
+            ->where('status', 'Available')
+            ->count();
+
+        // If at least 1 available copy, unreserve the reserved copy (if any)
+        if ($availableCopies >= 1) {
+            $reservedCopy = \App\Models\BookCopy::where('book_id', $book->id)
+                ->where('status', 'Reserve')
+                ->first();
+
+            if ($reservedCopy) {
+                $reservedCopy->update(['status' => 'Available']);
+            }
+        }
+
+        // Update book status based on copies available
+        $book->status = $book->copies_available > 0 ? 'Available' : 'Not Available';
+        $book->save();
+
+        return response()->json(['message' => 'Book returned successfully!']);
+    }
+
+
 
 
     // Check for duplicate issue (same as before)
@@ -176,31 +209,31 @@ public function returnBook(Request $request, $id)
 
 
     public function fines()
-{
-    $fines = IssuedBook::with(['book', 'patron'])
-        ->whereNotNull('fine_amount')
-        ->where('fine_amount', '>', 0)
-        ->whereIn('fine_status', ['unpaid', 'cleared'])
-        ->latest()
-        ->get();
+    {
+        $fines = IssuedBook::with(['book', 'patron'])
+            ->whereNotNull('fine_amount')
+            ->where('fine_amount', '>', 0)
+            ->whereIn('fine_status', ['unpaid', 'cleared'])
+            ->latest()
+            ->get();
 
-    return inertia('FineList', [
-        'fines' => $fines,
-    ]);
-}
+        return inertia('FineList', [
+            'fines' => $fines,
+        ]);
+    }
 
-public function updateFineStatus(Request $request, $id)
-{
-    $request->validate([
-        'fine_status' => 'required|in:cleared,unpaid',
-    ]);
+    public function updateFineStatus(Request $request, $id)
+    {
+        $request->validate([
+            'fine_status' => 'required|in:cleared,unpaid',
+        ]);
 
-    $issuedBook = IssuedBook::findOrFail($id);
-    $issuedBook->update([
-        'fine_status' => $request->fine_status,
-    ]);
+        $issuedBook = IssuedBook::findOrFail($id);
+        $issuedBook->update([
+            'fine_status' => $request->fine_status,
+        ]);
 
-    return response()->json(['message' => 'Fine status updated successfully']);
-}
+        return response()->json(['message' => 'Fine status updated successfully']);
+    }
 
 }

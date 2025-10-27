@@ -33,7 +33,6 @@ export type Book = {
   description?: string;
   section?: {id: number; section_name: string};
   copies?: { id: number; accession_number: string; status: string }[];
-
 };
 
 type Section = {
@@ -210,10 +209,9 @@ export default function Books() {
                     <td className="p-3">{book.publisher}</td>
                     <td className="p-3 text-sm text-gray-800">
                       <div>
-  Accession #:{" "}
-  {book.copies?.length ? book.copies[0].accession_number : "N/A"}
-</div>
-
+                        Accession #:{" "}
+                        {book.copies?.length ? book.copies[0].accession_number : "N/A"}
+                      </div>
                       <div>Call #: {book.call_number}</div>
                       <div>DDC: {book.dewey}</div>
                       <div>Year: {book.year?.toString() || "N/A"}</div>
