@@ -19,10 +19,10 @@ type Book = {
   section_id?: number;
   dewey_id?: number;
   description?: string;
-  dewey?: string;
   subject?: string;
   date_purchase?: string;
   book_price?: string;
+  other_info?: string;
 };
 
 interface Props {
@@ -53,10 +53,10 @@ export default function BookModal({
     book_cover: "",
     section_id: undefined,
     dewey_id: undefined,
-    dewey: "",
     subject: "",
     date_purchase: "",
     book_price: "",
+    other_info: "",
     description: "",
   });
 
@@ -80,10 +80,10 @@ export default function BookModal({
           book_cover: book.book_cover || "",
           section_id: book.section_id,
           dewey_id: book.dewey_id,
-          dewey: book.dewey || "",
           subject: book.subject || "",
           date_purchase: book.date_purchase || "",
           book_price: book.book_price || "",
+          other_info: book.other_info || "",
           description: book.description || "",
         });
         setPreview(book.book_cover || "");
@@ -102,10 +102,10 @@ export default function BookModal({
           book_cover: "",
           section_id: undefined,
           dewey_id: undefined,
-          dewey: "",
           subject: "",
           date_purchase: "",
           book_price: "",
+          other_info: "",
           description: "",
         });
         setPreview("");
@@ -161,13 +161,13 @@ export default function BookModal({
       }
     }
 
-    if (name === "dewey") {
+    if (name === "other_info") {
       if (!value) {
-        error = "Dewey is required.";
+        error = "Other info is required.";
       }
     }
 
-    if (name === "subject") {
+    if (name === "other_info") {
       if (!value) {
         error = "Subject is required.";
       }
@@ -225,7 +225,7 @@ export default function BookModal({
 
     const validationErrors: { [key: string]: string } = {};
 
-    ["isbn", "accession_number", "call_number", "book_price", "dewey", "subject", "date_purchase"].forEach(
+    ["isbn", "accession_number", "call_number", "book_price", "other_info", "subject", "date_purchase"].forEach(
       (field) => {
         const error = validateField(field, (formData as any)[field] || "");
         if (error) validationErrors[field] = error;
@@ -253,10 +253,10 @@ export default function BookModal({
     data.append("publication_place", formData.publication_place || "");
     data.append("section_id", String(formData.section_id || ""));
     data.append("dewey_id", String(formData.dewey_id || ""));
-    data.append("dewey", formData.dewey || "");
     data.append("subject", formData.subject || "");
     data.append("date_purchase", formData.date_purchase || "");
     data.append("book_price", formData.book_price || "");
+    data.append("other_info", formData.other_info || "");
     data.append(
       "description",
       formData.description !== undefined ? formData.description : ""
@@ -430,19 +430,6 @@ export default function BookModal({
             </div>
 
             <div className="mb-3">
-              <label className="block text-sm font-medium">Dewey</label>
-              <Input
-                type="text"
-                name="dewey"
-                value={formData.dewey || ""}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                required
-              />
-              {errors.dewey && <p className="text-xs text-red-500 mt-1">{errors.dewey}</p>}
-            </div>
-
-            <div className="mb-3">
               <label className="block text-sm font-medium">Subject</label>
               <Input
                 type="text"
@@ -481,6 +468,19 @@ export default function BookModal({
                 required
               />
               {errors.book_price && <p className="text-xs text-red-500 mt-1">{errors.book_price}</p>}
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Other Info</label>
+              <Input
+                type="text"
+                name="other_info"
+                value={formData.other_info || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+              />
+              {errors.other_info && <p className="text-xs text-red-500 mt-1">{errors.other_info}</p>}
             </div>
 
             <br />

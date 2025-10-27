@@ -26,10 +26,10 @@ class Book extends Model
     'book_cover',
     'section_id',
     'dewey_id',
-    'dewey',
     'subject',
     'date_purchase',
     'book_price',
+    'other_info',
     'is_ebook',
     'ebook_file'
 ];

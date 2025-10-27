@@ -104,7 +104,7 @@ const fetchBook = async () => {
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/30">
+    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/50">
       <div className="max-w-xl mx-auto mt-20 bg-white rounded-2xl shadow p-6 space-y-4">
         <Dialog.Title className="text-xl font-bold">Issue Book</Dialog.Title>
 

@@ -22,7 +22,7 @@ export default function ReturnBookModal({
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       {/* background shadow only (not black) */}
-      <div className="fixed inset-0 bg-gray-800/20 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50">
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="w-full max-w-md bg-white rounded-xl shadow-xl p-6">
           <div className="flex justify-between items-center mb-4">
@@ -66,6 +66,7 @@ export default function ReturnBookModal({
             </button>
           </div>
         </Dialog.Panel>
+      </div>
       </div>
     </Dialog>
   );

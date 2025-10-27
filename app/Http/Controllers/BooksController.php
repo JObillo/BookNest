@@ -52,6 +52,7 @@ class BooksController extends Controller
             'subject' => 'nullable|string|max:255',
             'date_purchase' => 'nullable|date',
             'book_price' => 'nullable|numeric|min:0',
+            'other_info' => 'nullable|string|max:1000',
             'description' => 'nullable|string|max:500', // Keep as is
             'book_cover' => 'nullable|image|max:2048',
         ]);
@@ -111,6 +112,7 @@ class BooksController extends Controller
             'subject' => 'nullable|string|max:255',
             'date_purchase' => 'nullable|date',
             'book_price' => 'nullable|numeric|min:0',
+            'other_info' => 'nullable|string|max:1000',
             'description' => 'nullable|string|max:500',
             'book_cover' => 'nullable|image|max:2048',
         ]);
@@ -134,6 +136,7 @@ class BooksController extends Controller
             'subject',
             'date_purchase',
             'book_price',
+            'other_info',
         ]);
     
         // Ensure description is handled properly - convert empty string to space to avoid null
