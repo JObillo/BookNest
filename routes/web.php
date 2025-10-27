@@ -69,6 +69,8 @@ Route::resource('borrowers', PatronController::class);
 // Issued Books
 Route::resource('issuedbooks', IssuedBookController::class);
 Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBooksController::class, 'checkDuplicate']);
+Route::post('/issued-books/{id}/return', [IssuedBookController::class, 'returnBook']);
+
 
 
 
@@ -79,6 +81,11 @@ Route::put('/issuedbooks/{id}/return', [IssuedBookController::class, 'returnBook
 
 // Update overdue fines
 Route::get('/update-fines', [IssuedBookController::class, 'updateOverdueFines']);
+
+// Fines management
+Route::get('/fines', [IssuedBookController::class, 'fines'])->name('fines.index');
+Route::put('/fines/{id}/status', [IssuedBookController::class, 'updateFineStatus']);
+
 
 
 // Sections

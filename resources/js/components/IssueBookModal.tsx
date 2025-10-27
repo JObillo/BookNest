@@ -14,30 +14,31 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
     due_date: "",
   });
 
-  // Fetch patron by school_id
   const fetchPatron = async () => {
     try {
       const res = await axios.get(`/patrons/school/${data.school_id}`);
       setPatron(res.data);
-      setDuplicateWarning(false); // reset warning on patron change
+      setDuplicateWarning(false);
     } catch {
       setPatron(null);
     }
   };
 
-  // Fetch book by ISBN
-  const fetchBook = async () => {
-    if (!data.isbn.trim()) return;
-    try {
-      const res = await axios.get(`/books/isbn/${data.isbn}`);
-      setBook(res.data);
-      setDuplicateWarning(false); // reset warning on book change
-    } catch {
-      setBook(null);
-    }
-  };
+const fetchBook = async () => {
+  const isbn = data.isbn.trim(); // remove leading/trailing spaces
+  if (!isbn) return;
 
-  // Check if the patron already has this book issued
+  try {
+    const res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
+    setBook(res.data);
+    setDuplicateWarning(false);
+  } catch (err) {
+    console.error("Error fetching book:", err);
+    setBook(null);
+  }
+};
+
+
   const checkDuplicateIssue = async () => {
     if (!patron || !book) return false;
     try {
@@ -66,7 +67,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
         setBook(null);
         setDuplicateWarning(false);
         onClose();
-        router.reload({ only: ['issuedbooks'] });
+        router.reload({ only: ["issuedbooks"] });
       },
     });
   };
@@ -129,7 +130,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
             <input
               type="text"
               value={data.school_id}
-              onChange={(e) => setData("school_id", e.target.value)}
+              onChange={(e) => setData("school_id", e.target.value.trim())}
               onBlur={fetchPatron}
               className="w-full p-2 border rounded"
               required
@@ -149,7 +150,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
             <input
               type="text"
               value={data.isbn}
-              onChange={(e) => setData("isbn", e.target.value)}
+              onChange={(e) => setData("isbn", e.target.value.trim())}
               onBlur={fetchBook}
               className="w-full p-2 border rounded"
               required
@@ -167,6 +168,13 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
               <p><strong>Pub Place:</strong> {book.publication_place}</p>
               <p><strong>Copies Available:</strong> {book.copies_available}</p>
               <p><strong>Status:</strong> {book.status}</p>
+
+              {/* 🚫 Warn user when book is reserved */}
+              {book.copies_available <= 1 && (
+                <p className="text-red-600 font-semibold mt-2">
+                  ⚠️ This book is reserved. It cannot be issued.
+                </p>
+              )}
             </div>
           )}
 
@@ -191,8 +199,8 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
             </button>
             <button
               type="submit"
-              disabled={processing}
-              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 cursor-pointer"
+              disabled={processing || (book && book.copies_available <= 1)}
+              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {processing ? "Issuing..." : "Issue Book"}
             </button>
