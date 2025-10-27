@@ -13,6 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  LabelList,
 } from 'recharts';
 
 interface StatsProps {
@@ -65,16 +66,11 @@ export default function Dashboard({ stats }: StatsProps) {
     setLocalNotifications(notifications);
   }, [notifications]);
 
-  // Added markAsRead function
   const markAsRead = async (id: string) => {
     try {
       setLoadingIds((prev) => [...prev, id]);
-
       await axios.post(`/notifications/${id}/read`);
-
-      setLocalNotifications((prev) =>
-        prev.filter((n) => n.id !== id)
-      );
+      setLocalNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (error) {
       console.error('Failed to mark notification as read', error);
     } finally {
@@ -86,11 +82,10 @@ export default function Dashboard({ stats }: StatsProps) {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
 
-      <div className="flex h-screen">
+      <div className="flex min-h-screen overflow-x-hidden">
         <div className="flex-1 p-6 space-y-6">
-
-          {/* Bell aligned to the right */}
-          <div className="flex justify-end mb-4">
+          {/* Bell beside breadcrumb title */}
+          <div className="absolute top-3 left-30 flex items-center gap-3">
             <button
               onClick={() => setOpen(!open)}
               className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -104,16 +99,13 @@ export default function Dashboard({ stats }: StatsProps) {
             </button>
           </div>
 
-          {/* Notification Drawer (half-screen right side) */}
+          {/* Notification Drawer */}
           {open && (
             <>
-              {/* Background overlay */}
               <div
-                onClick={() => setOpen(false)} // Close drawer when clicking outside
+                onClick={() => setOpen(false)}
                 className="fixed inset-0 bg-black/50 z-40"
               ></div>
-
-              {/* Drawer */}
               <div className="fixed top-0 right-0 w-150 h-screen bg-white dark:bg-gray-800 shadow-xl z-50 transition-transform">
                 <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="font-bold text-lg">Notifications</h2>
@@ -139,7 +131,7 @@ export default function Dashboard({ stats }: StatsProps) {
                           {n.data.message}
                         </p>
                         <span className="text-xs text-gray-500">
-                          Due date: {n.data.due_date} 
+                          Due date: {n.data.due_date}
                         </span>
                       </button>
                     ))
@@ -151,7 +143,6 @@ export default function Dashboard({ stats }: StatsProps) {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Total Books */}
             <a href="/books">
               <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                 <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
@@ -166,7 +157,6 @@ export default function Dashboard({ stats }: StatsProps) {
               </div>
             </a>
 
-            {/* Total Sections */}
             <a href="/section">
               <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                 <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
@@ -181,7 +171,6 @@ export default function Dashboard({ stats }: StatsProps) {
               </div>
             </a>
 
-            {/* Total Books Dewey */}
             <a href="/deweys">
               <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                 <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
@@ -196,7 +185,6 @@ export default function Dashboard({ stats }: StatsProps) {
               </div>
             </a>
 
-            {/* Issued Books */}
             <a href="/issuedbooks">
               <div className="bg-gray-200 dark:bg-gray-700 text-black dark:text-white p-4 rounded-lg shadow-md flex items-center gap-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
                 <div className="w-12 h-12 bg-gray-300 rounded-sm flex items-center justify-center">
@@ -218,51 +206,93 @@ export default function Dashboard({ stats }: StatsProps) {
               Borrowing Report
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Most Borrowed */}
-              <div className="p-4 bg-green-100 dark:bg-green-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <BookOpen className="w-8 h-8 text-green-700 dark:text-green-300" />
-                  <h3 className="text-md font-bold text-gray-800 dark:text-white">
-                    Most Borrowed Books
-                  </h3>
+              <div className="flex flex-col justify-between p-4 bg-green-100 dark:bg-green-800 rounded-lg h-[400px]">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <BookOpen className="w-8 h-8 text-green-700 dark:text-green-300" />
+                    <h3 className="text-md font-bold text-gray-800 dark:text-white">
+                      Most Borrowed Books
+                    </h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={mostBorrowed.filter((b) => b.borrow_count > 1)}
+                      margin={{ top: 30, right: 20, left: 10, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="title"
+                        tick={{ fontSize: 12, fill: "#374151" }}
+                        interval={0}
+                        tickFormatter={(value) =>
+                          value.length > 12
+                            ? value.slice(0, 12) + '…'
+                            : value
+                        }
+                      />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="borrow_count"
+                        fill="#16a34a"
+                        radius={[6, 6, 0, 0]}
+                      >
+                        <LabelList
+                          dataKey="borrow_count"
+                          position="top"
+                          fill="#111827"
+                          fontSize={12}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart
-                    data={mostBorrowed.slice(0, 5)}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                    <XAxis dataKey="title" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="borrow_count" fill="#16a34a" />
-                  </BarChart>
-                </ResponsiveContainer>
               </div>
 
               {/* Least Borrowed */}
-              <div className="p-4 bg-red-100 dark:bg-red-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <BookX className="w-8 h-8 text-red-700 dark:text-red-300" />
-                  <h3 className="text-md font-bold text-gray-800 dark:text-white">
-                    Least Borrowed Books
-                  </h3>
+              <div className="flex flex-col justify-between p-4 bg-red-100 dark:bg-red-800 rounded-lg h-[400px]">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <BookX className="w-8 h-8 text-red-700 dark:text-red-300" />
+                    <h3 className="text-md font-bold text-gray-800 dark:text-white">
+                      Least Borrowed Books
+                    </h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={leastBorrowed.filter((b) => b.borrow_count <= 2)}
+                      margin={{ top: 30, right: 20, left: 10, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="title"
+                        tick={{ fontSize: 12, fill: '#374151' }}
+                        interval={0}
+                        tickFormatter={(value) =>
+                          value.length > 12
+                            ? value.slice(0, 12) + '…'
+                            : value
+                        }
+                      />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip />
+                      <Bar
+                        dataKey="borrow_count"
+                        fill="#dc2626"
+                        radius={[6, 6, 0, 0]}
+                      >
+                        <LabelList
+                          dataKey="borrow_count"
+                          position="top"
+                          fill="#111827"
+                          fontSize={12}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart
-                    data={leastBorrowed.slice(0, 5)}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
-                    <XAxis dataKey="title" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="borrow_count" fill="#dc2626" />
-                  </BarChart>
-                </ResponsiveContainer>
               </div>
             </div>
           </div>

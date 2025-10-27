@@ -7,7 +7,7 @@ import { useReactToPrint } from "react-to-print";
 import PrintMostBorrowed from "./PrintMostBorrowed";
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: "Report - Most Borrowed Books", href: "/reports/most-borrowed" },
+  { title: "Report - Most Borrowed Books", href: "/reports/most-borrowed" }
 ];
 
 export type Book = {
@@ -91,7 +91,7 @@ export default function MostBorrowed() {
 
       {/* Filters and Print Button */}
       <div className="flex flex-wrap items-center gap-4 mt-10">
-        <label className="flex items-center">
+        {/* <label className="flex items-center">
           Limit
           <select
             value={limit}
@@ -107,7 +107,7 @@ export default function MostBorrowed() {
             <option value={50}>Top 50</option>
             <option value={100}>Top 100</option>
           </select>
-        </label>
+        </label> */}
 
         <label className="flex items-center">
           Category

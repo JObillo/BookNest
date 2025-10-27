@@ -68,7 +68,7 @@ Route::resource('borrowers', PatronController::class);
 
 // Issued Books
 Route::resource('issuedbooks', IssuedBookController::class);
-Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBooksController::class, 'checkDuplicate']);
+Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBookController::class, 'checkDuplicate']);
 
 
 

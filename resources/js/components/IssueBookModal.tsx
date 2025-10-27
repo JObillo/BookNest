@@ -125,7 +125,7 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label>School ID:</label>
+            <label>Student ID:</label>
             <input
               type="text"
               value={data.school_id}

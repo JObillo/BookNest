@@ -429,18 +429,6 @@ export default function BookModal({
               )}
             </div>
 
-            <div className="mb-3">
-              <label className="block text-sm font-medium">Dewey</label>
-              <Input
-                type="text"
-                name="dewey"
-                value={formData.dewey || ""}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                required
-              />
-              {errors.dewey && <p className="text-xs text-red-500 mt-1">{errors.dewey}</p>}
-            </div>
 
             <div className="mb-3">
               <label className="block text-sm font-medium">Subject</label>
@@ -481,6 +469,18 @@ export default function BookModal({
                 required
               />
               {errors.book_price && <p className="text-xs text-red-500 mt-1">{errors.book_price}</p>}
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Other Info.</label>
+              <Input
+                type="text"
+                name="dewey"
+                value={formData.dewey || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+              />
+              {errors.dewey && <p className="text-xs text-red-500 mt-1">{errors.dewey}</p>}
             </div>
 
             <br />

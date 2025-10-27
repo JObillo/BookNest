@@ -4,6 +4,7 @@ import BookModal from "@/components/BookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
+import { Select } from "@headlessui/react";
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -127,31 +128,31 @@ export default function Books() {
           {/* Search + Section Filter */}
           <div className="flex space-x-2">
             {/* Search Filter Dropdown */}
-            <select
+            <Select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
             >
               <option value="All">All</option>
               <option value="Title">Title</option>
               <option value="ISBN">ISBN</option>
               <option value="Author">Author</option>
-            </select>
+            </Select>
 
             {/* Search Input */}
             <input
               type="text"
               placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-              className="border rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
             {/* Section Filter Dropdown (moved here, next to search) */}
-            <select
+            <Select
               value={sectionFilter}
               onChange={(e) => setSectionFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
             >
               <option value="All">All Sections</option>
               {sections.map((section) => (
@@ -159,13 +160,13 @@ export default function Books() {
                   {section.section_name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Add Book Button */}
           <button
             onClick={() => openModal()}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
+            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg ml-5 px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
           >
             Add Book
           </button>

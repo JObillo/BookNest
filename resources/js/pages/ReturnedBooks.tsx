@@ -106,7 +106,7 @@ export default function ReturnedBooks() {
         {/* Search Bar */}
         <div>
           <Input
-            className="border rounded px-2 py-1 w-100"
+            className="border border-black rounded px-2 py-1 w-100"
             placeholder="Search by Name or School ID"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
