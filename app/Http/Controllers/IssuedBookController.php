@@ -70,48 +70,43 @@ class IssuedBookController extends Controller
 public function store(Request $request)
 {
     $request->validate([
-        'school_id' => 'required|exists:patrons,school_id',
-        'isbn' => 'required|exists:books,isbn',
-        'due_date' => 'required|date|after:now',
+        'school_id'        => 'required|exists:patrons,school_id',
+        'isbn'             => 'required|exists:books,isbn',
+        'accession_number' => 'required|exists:book_copies,accession_number',
+        'due_date'         => 'required|date|after:now',
     ]);
 
     $patron = Patron::where('school_id', $request->school_id)->firstOrFail();
-    $book = Book::where('isbn', $request->isbn)->firstOrFail();
+    $book   = Book::where('isbn', $request->isbn)->firstOrFail();
 
-    //  1. Check if borrower already has ANY active (Issued or Overdue) book
+    // 🔍 Find the specific book copy by accession number
+    $copy = \App\Models\BookCopy::where('accession_number', $request->accession_number)
+        ->where('book_id', $book->id)
+        ->firstOrFail();
+
+    // 🛑 Prevent duplicate issue (borrower already has one)
     $hasActiveBorrow = IssuedBook::where('patron_id', $patron->id)
         ->whereIn('status', ['Issued', 'Overdue'])
         ->exists();
 
     if ($hasActiveBorrow) {
         return back()->withErrors([
-            'school_id' => 'This borrower already has a borrowed book. Please return it first before issuing another.'
+            'school_id' => 'This borrower already has a borrowed book. Please return it first.',
         ]);
     }
 
-    //  2. Prevent duplicate issue of same book
-    $alreadyIssued = IssuedBook::where('patron_id', $patron->id)
-        ->where('book_id', $book->id)
-        ->whereIn('status', ['Issued', 'Overdue'])
-        ->exists();
-
-    if ($alreadyIssued) {
+    // 🛑 Prevent issuing an unavailable copy
+    if ($copy->status !== 'Available') {
         return back()->withErrors([
-            'isbn' => 'This borrower already has this book issued.'
+            'accession_number' => 'This book copy is not available.',
         ]);
     }
 
-    //  3. Prevent issuing if copies <= 1 (since 1 is reserved)
-    if ($book->copies_available <= 1) {
-        return back()->withErrors([
-            'isbn' => 'This book is reserved. Cannot issue when only 1 copy is available.'
-        ]);
-    }
-
-    //  4. Create issued record
+    // ✅ Create issued record
     IssuedBook::create([
         'patron_id'   => $patron->id,
         'book_id'     => $book->id,
+        'copy_id'     => $copy->id, // link the specific copy
         'issued_date' => now('Asia/Manila')->setSeconds(0),
         'due_date'    => Carbon::parse($request->due_date)->setSeconds(0),
         'status'      => 'Issued',
@@ -119,7 +114,10 @@ public function store(Request $request)
         'fine_status' => 'no fine',
     ]);
 
-    //  5. Update book availability
+    // ✅ Update copy status
+    $copy->update(['status' => 'Borrowed']);
+
+    // ✅ Update book availability
     $book->decrement('copies_available');
     $book->status = $book->copies_available <= 1 ? 'Not Available' : 'Available';
     $book->save();
@@ -128,6 +126,7 @@ public function store(Request $request)
         ->route('issuedbooks.index')
         ->with('success', 'Book successfully issued.');
 }
+
 
 
 

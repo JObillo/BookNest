@@ -3,7 +3,13 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { useForm, router } from "@inertiajs/react";
 
-export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function IssueBookModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const [patron, setPatron] = useState<any>(null);
   const [book, setBook] = useState<any>(null);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
@@ -11,10 +17,12 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
   const { data, setData, post, processing, reset, errors } = useForm({
     school_id: "",
     isbn: "",
+    accession_number: "",
     due_date: "",
   });
 
   const fetchPatron = async () => {
+    if (!data.school_id.trim()) return;
     try {
       const res = await axios.get(`/patrons/school/${data.school_id}`);
       setPatron(res.data);
@@ -24,25 +32,25 @@ export default function IssueBookModal({ isOpen, onClose }: { isOpen: boolean; o
     }
   };
 
-const fetchBook = async () => {
-  const isbn = data.isbn.trim(); // remove leading/trailing spaces
-  if (!isbn) return;
-
-  try {
-    const res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
-    setBook(res.data);
-    setDuplicateWarning(false);
-  } catch (err) {
-    console.error("Error fetching book:", err);
-    setBook(null);
-  }
-};
-
+  const fetchBook = async () => {
+    const isbn = data.isbn.trim();
+    if (!isbn) return;
+    try {
+      const res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
+      setBook(res.data);
+      setDuplicateWarning(false);
+    } catch (err) {
+      console.error("Error fetching book:", err);
+      setBook(null);
+    }
+  };
 
   const checkDuplicateIssue = async () => {
     if (!patron || !book) return false;
     try {
-      const res = await axios.get(`/issuedbooks/check/${patron.school_id}/${book.isbn}`);
+      const res = await axios.get(
+        `/issuedbooks/check/${patron.school_id}/${book.isbn}`
+      );
       return res.data.exists;
     } catch (error) {
       console.error("Error checking duplicate issue", error);
@@ -104,7 +112,11 @@ const fetchBook = async () => {
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/50">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/50"
+    >
       <div className="max-w-xl mx-auto mt-20 bg-white rounded-2xl shadow p-6 space-y-4">
         <Dialog.Title className="text-xl font-bold">Issue Book</Dialog.Title>
 
@@ -125,6 +137,7 @@ const fetchBook = async () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Patron lookup */}
           <div>
             <label>School ID:</label>
             <input
@@ -145,6 +158,7 @@ const fetchBook = async () => {
             </div>
           )}
 
+          {/* Book lookup */}
           <div>
             <label>ISBN:</label>
             <input
@@ -162,14 +176,13 @@ const fetchBook = async () => {
               <p><strong>Title:</strong> {book.title}</p>
               <p><strong>Author:</strong> {book.author}</p>
               <p><strong>Publisher:</strong> {book.publisher}</p>
-              <p><strong>ACC:</strong> {book.accession_number}</p>
-              <p><strong>Call no:</strong> {book.call_number}</p>
+              <p><strong>Accession:</strong> {book.accession_number}</p>
+              <p><strong>Call No.:</strong> {book.call_number}</p>
               <p><strong>Year:</strong> {book.year}</p>
-              <p><strong>Pub Place:</strong> {book.publication_place}</p>
+              <p><strong>Place:</strong> {book.publication_place}</p>
               <p><strong>Copies Available:</strong> {book.copies_available}</p>
               <p><strong>Status:</strong> {book.status}</p>
 
-              {/* 🚫 Warn user when book is reserved */}
               {book.copies_available <= 1 && (
                 <p className="text-red-600 font-semibold mt-2">
                   ⚠️ This book is reserved. It cannot be issued.
@@ -178,6 +191,22 @@ const fetchBook = async () => {
             </div>
           )}
 
+          {/* Accession input */}
+          <div>
+            <label>Accession Number:</label>
+            <input
+              type="text"
+              value={data.accession_number}
+              onChange={(e) =>
+                setData("accession_number", e.target.value.trim())
+              }
+              className="w-full p-2 border rounded"
+              placeholder="Enter accession number"
+              required
+            />
+          </div>
+
+          {/* Due Date */}
           <div>
             <label>Due Date:</label>
             <input

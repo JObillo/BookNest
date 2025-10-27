@@ -10,6 +10,7 @@ class IssuedBook extends Model
     protected $fillable = [
         'patron_id',
         'book_id',
+        'copy_id',  
         'issued_date',
         'due_date',
         'returned_date',
@@ -25,6 +26,7 @@ class IssuedBook extends Model
         'fine_amount' => 'float',
     ];
 
+
     public function patron()
     {
         return $this->belongsTo(Patron::class, 'patron_id');
@@ -34,6 +36,12 @@ class IssuedBook extends Model
     {
         return $this->belongsTo(Book::class, 'book_id');
     }
+
+    public function copy()
+    {
+        return $this->belongsTo(BookCopy::class, 'copy_id');
+    }
+
 
     // Helper to check if book can be issued
     public static function canIssue($bookId): bool

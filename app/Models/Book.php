@@ -34,6 +34,12 @@ class Book extends Model
     'ebook_file'
 ];
 
+public function copies()
+{
+    return $this->hasMany(\App\Models\BookCopy::class);
+}
+
+
     // Relationships
     public function section()
     {
@@ -67,3 +73,5 @@ class Book extends Model
     return url($path);
 }
 }
+
+//wokring code

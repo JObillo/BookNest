@@ -3,112 +3,102 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Inertia\Response;
 use App\Models\Book;
 use App\Models\Section;
 use App\Models\Dewey;
-use App\Models\Ebook;
-
+use App\Models\BookCopy;
 
 class BooksController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): Response
+    public function index()
     {
+        $books = Book::with(['section', 'deweyRelation', 'copies'])->latest()->get();
+
         return Inertia::render('Books', [
-            'books' => Book::with(['section', 'deweyRelation'])->latest()->get(),
+            'books' => $books,
             'sections' => Section::select('id', 'section_name')->get(),
             'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
-            'ebooks' => Ebook::select('id', 'title', 'author', 'year', 'cover', 'publisher', 'file_url')
-            ->latest()
-            ->take(5) // remove this if you want all, keep it if you only want the newest 5
-            ->get(),
         ]);
-
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:255|unique:books',
-            'publisher' => 'required|string|max:255',
-            'book_copies' => 'required|integer',
-            'accession_number' => 'nullable|string|max:255',
-            'call_number' => 'required|string|max:255',
-            'year' => 'nullable|string|max:255',
-            'publication_place' => 'nullable|string|max:255',
-            'section_id' => 'nullable|integer|exists:sections,id',
-            'dewey_id' => 'nullable|integer|exists:deweys,id',
-            'dewey' => 'nullable|string|max:255',
-            'subject' => 'nullable|string|max:255',
-            'date_purchase' => 'nullable|date',
-            'book_price' => 'nullable|numeric|min:0',
-            'other_info' => 'nullable|string|max:1000',
-            'description' => 'nullable|string|max:500', // Keep as is
+            'title' => 'required|string',
+            'author' => 'required|string',
+            'isbn' => 'required|string|unique:books,isbn',
+            'publisher' => 'required|string',
+            'book_copies' => 'required|integer|min:1',
+            'call_number' => 'required|string',
+            'section_id' => 'required|integer',
+            'dewey_id' => 'required|integer',
+            'accession_numbers' => 'required|array',
+            'accession_numbers.*' => 'required|string|distinct',
+            'subject' => 'required|string',
+            'date_purchase' => 'required|date',
+            'book_price' => 'required',
+            'other_info' => 'required|string',
             'book_cover' => 'nullable|image|max:2048',
         ]);
-    
-        // Log the incoming description for debugging
-        Log::info('Incoming description: ' . $request->description);
-    
-        // Handle file upload
+
+        $bookCoverPath = null;
         if ($request->hasFile('book_cover')) {
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
-            $validated['book_cover'] = '/storage/' . $path;
+            $bookCoverPath = '/storage/' . $path;
         }
-    
-        // Ensure description is handled properly - convert empty string to space to avoid null
-        $validated['description'] = $request->input('description', '');
-        if (trim($validated['description']) === '') {
-            $validated['description'] = ' '; // Use a space instead of empty string
+
+        $book = Book::create([
+            'title' => $validated['title'],
+            'author' => $validated['author'],
+            'isbn' => $validated['isbn'],
+            'publisher' => $validated['publisher'],
+            'book_copies' => $validated['book_copies'],
+            'copies_available' => $validated['book_copies'],
+            'call_number' => $validated['call_number'],
+            'year' => $request->year,
+            'publication_place' => $request->publication_place,
+            'section_id' => $validated['section_id'],
+            'dewey_id' => $validated['dewey_id'],
+            'subject' => $validated['subject'],
+            'date_purchase' => $validated['date_purchase'],
+            'book_price' => $validated['book_price'],
+            'other_info' => $validated['other_info'],
+            'description' => $request->description,
+            'status' => 'Available',
+            'book_cover' => $bookCoverPath,
+        ]);
+
+        foreach ($validated['accession_numbers'] as $number) {
+            BookCopy::create([
+                'book_id' => $book->id,
+                'accession_number' => $number,
+                'status' => 'Available',
+            ]);
         }
-    
-        // 👇 Set copies_available based on book_copies
-        $validated['copies_available'] = $validated['book_copies'];
-    
-        // (Optional) Set default status as 'Available'
-        $validated['status'] = 'Available';
-    
-        $book = Book::create($validated);
-    
-        Log::info('Book saved with description: ' . $book->description);
-    
-        return redirect()->route('books.index')->with('success', 'Book Added successfully.');
+
+        return back()->with('success', 'Book and copies added successfully!');
     }
-    
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, $id)
     {
-        // Find the book to update
         $book = Book::findOrFail($id);
-    
-        // Validate the input
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id,  // Skip current book's ISBN for uniqueness
+            'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id,
             'publisher' => 'required|string|max:255',
             'book_copies' => 'required|integer|min:1',
-            'accession_number' => 'nullable|string|max:255',
+            'accession_numbers' => 'required|array',
+            'accession_numbers.*' => 'required|string|distinct',
             'call_number' => 'required|string|max:255',
-            'year' => 'nullable|string|max:255', 
+            'year' => 'nullable|string|max:255',
             'publication_place' => 'nullable|string|max:255',
             'section_id' => 'nullable|exists:sections,id',
             'dewey_id' => 'nullable|exists:deweys,id',
-            'dewey' => 'nullable|string|max:255',
             'subject' => 'nullable|string|max:255',
             'date_purchase' => 'nullable|date',
             'book_price' => 'nullable|numeric|min:0',
@@ -116,97 +106,62 @@ class BooksController extends Controller
             'description' => 'nullable|string|max:500',
             'book_cover' => 'nullable|image|max:2048',
         ]);
-    
-        Log::info('Update request data:', $request->all());
-        
-        // Only pick fields that should be updated
+
         $data = $request->only([
-            'title',
-            'author',
-            'isbn',
-            'publisher',
-            'book_copies',
-            'accession_number',
-            'call_number',
-            'year',
-            'publication_place',
-            'section_id',
-            'dewey_id',
-            'dewey',
-            'subject',
-            'date_purchase',
-            'book_price',
-            'other_info',
+            'title','author','isbn','publisher','book_copies','call_number',
+            'year','publication_place','section_id','dewey_id','subject',
+            'date_purchase','book_price','other_info','description'
         ]);
-    
-        // Ensure description is handled properly - convert empty string to space to avoid null
-        $data['description'] = $request->input('description', '');
-        if (trim($data['description']) === '') {
-            $data['description'] = ' '; // Use a space instead of empty string
-        }
-    
-        // Handle the book cover if a new one is uploaded
+
         if ($request->hasFile('book_cover')) {
-            // Delete the old cover if it exists
             if ($book->book_cover && file_exists(public_path($book->book_cover))) {
                 unlink(public_path($book->book_cover));
             }
-    
-            // Store the new cover image
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
             $data['book_cover'] = '/storage/' . $path;
         }
-    
-        // Update the book
-        if ($book->update($data)) {
-            // Log successful update for debugging
-            Log::info('Book updated with description: ' . $book->description);
-        } else {
-            // Log failure to update
-            Log::error('Failed to update book:', $book->toArray());
+
+        $book->update($data);
+
+        $existingCopies = $book->copies()->get();
+
+        foreach ($request->accession_numbers as $index => $number) {
+            if (isset($existingCopies[$index])) {
+                $existingCopies[$index]->update(['accession_number' => $number]);
+            } else {
+                BookCopy::create([
+                    'book_id' => $book->id,
+                    'accession_number' => $number,
+                    'status' => 'Available',
+                ]);
+            }
         }
-    
-        // Redirect back with a success message
+
         return redirect()->route('books.index')->with('success', 'Book updated successfully.');
     }
 
-    /**
-     * Display books by section.
-     */
-    public function booksBySection(Section $section)
-    {
-        if (!$section) {
-            abort(404, 'Section not found');
-        }
-
-        $books = $section->books()->with('section')->get(); // eager load section
-
-        return Inertia::render('BySection', [
-            'section' => $section,
-            'books' => $books
-        ]);
-    }
-    
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Book $book)
     {
         $book->delete();
         return redirect()->route('books.index')->with('success', 'Book deleted successfully.');
     }
 
-    public function show(Book $book)
+    public function show($id)
     {
-        $book->load('section','deweyRelation'); // <-- correct relationship name
-        return Inertia::render('BookDetail', [
+        $book = Book::with(['section', 'deweyRelation', 'copies'])->findOrFail($id);
+
+        return Inertia::render('BookShow', [
             'book' => $book,
         ]);
     }
 
+    public function getCopies(Book $book)
+    {
+        return response()->json(
+            $book->copies()->select('id', 'accession_number', 'status')->get()
+        );
+    }
 
 }
-
-//no api dsadsadasdasd

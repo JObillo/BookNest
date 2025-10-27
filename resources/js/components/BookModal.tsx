@@ -11,7 +11,6 @@ type Book = {
   isbn: string;
   publisher: string;
   book_copies: number;
-  accession_number?: string;
   call_number: string;
   year?: string;
   publication_place?: string;
@@ -23,6 +22,7 @@ type Book = {
   date_purchase?: string;
   book_price?: string;
   other_info?: string;
+  copies?: { accession_number: string }[]; // Important for editing
 };
 
 interface Props {
@@ -46,7 +46,6 @@ export default function BookModal({
     isbn: "",
     publisher: "",
     book_copies: 1,
-    accession_number: "",
     call_number: "",
     year: "",
     publication_place: "",
@@ -58,12 +57,15 @@ export default function BookModal({
     book_price: "",
     other_info: "",
     description: "",
+    copies: [],
   });
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [accessionNumbers, setAccessionNumbers] = useState<string[]>([""]);
 
+  // Populate form when editing a book
   useEffect(() => {
     if (isOpen) {
       if (book) {
@@ -73,7 +75,6 @@ export default function BookModal({
           isbn: book.isbn,
           publisher: book.publisher,
           book_copies: book.book_copies,
-          accession_number: book.accession_number || "",
           call_number: book.call_number,
           year: book.year || "",
           publication_place: book.publication_place || "",
@@ -85,17 +86,26 @@ export default function BookModal({
           book_price: book.book_price || "",
           other_info: book.other_info || "",
           description: book.description || "",
+          copies: book.copies || [],
         });
+
         setPreview(book.book_cover || "");
         setSelectedFile(null);
+
+        // Populate accession numbers dynamically
+        if (book.copies && book.copies.length > 0) {
+          setAccessionNumbers(book.copies.map((copy) => copy.accession_number));
+        } else {
+          setAccessionNumbers(Array(book.book_copies).fill(""));
+        }
       } else {
+        // Reset for adding new book
         setFormData({
           title: "",
           author: "",
           isbn: "",
           publisher: "",
           book_copies: 1,
-          accession_number: "",
           call_number: "",
           year: "",
           publication_place: "",
@@ -107,14 +117,15 @@ export default function BookModal({
           book_price: "",
           other_info: "",
           description: "",
+          copies: [],
         });
         setPreview("");
         setSelectedFile(null);
+        setAccessionNumbers([""]);
       }
     }
   }, [isOpen, book]);
 
-  // Format ISBN automatically as user types
   const formatIsbn = (value: string) => {
     const digits = value.replace(/\D/g, "");
     if (digits.length <= 3) return digits;
@@ -161,22 +172,16 @@ export default function BookModal({
       }
     }
 
-    if (name === "other_info") {
-      if (!value) {
-        error = "Other info is required.";
-      }
+    if (name === "other_info" && !value) {
+      error = "Other info is required.";
     }
 
-    if (name === "other_info") {
-      if (!value) {
-        error = "Subject is required.";
-      }
+    if (name === "subject" && !value) {
+      error = "Subject is required.";
     }
 
-    if (name === "date_purchase") {
-      if (!value) {
-        error = "Date of Purchase is required.";
-      }
+    if (name === "date_purchase" && !value) {
+      error = "Date of Purchase is required.";
     }
 
     setErrors((prev) => ({ ...prev, [name]: error }));
@@ -191,25 +196,42 @@ export default function BookModal({
     const { name, value } = e.target;
     let newValue = value;
 
-    // 📘 Automatically format ISBN
     if (name === "isbn") {
       newValue = formatIsbn(value);
     }
 
     setFormData((prevData) => ({
       ...prevData,
-      [name]: newValue
-        ? name === "section_id" || name === "dewey_id"
-          ? parseInt(newValue, 10)
-          : name === "book_copies"
-          ? Number(newValue)
-          : newValue
-        : name === "description"
-        ? ""
-        : undefined,
+      [name]:
+        newValue !== ""
+          ? name === "section_id" || name === "dewey_id"
+            ? parseInt(newValue, 10)
+            : name === "book_copies"
+            ? Number(newValue)
+            : newValue
+          : "",
     }));
 
+    if (name === "book_copies") {
+      const copies = Number(newValue);
+      setAccessionNumbers((prev) => {
+        const updated = [...prev];
+        if (copies > prev.length) {
+          for (let i = prev.length; i < copies; i++) updated.push("");
+        } else {
+          updated.length = copies;
+        }
+        return updated;
+      });
+    }
+
     validateField(name, newValue);
+  };
+
+  const handleAccessionChange = (index: number, value: string) => {
+    const updated = [...accessionNumbers];
+    updated[index] = value;
+    setAccessionNumbers(updated);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,7 +246,6 @@ export default function BookModal({
     e.preventDefault();
 
     const validationErrors: { [key: string]: string } = {};
-
     ["isbn", "accession_number", "call_number", "book_price", "other_info", "subject", "date_purchase"].forEach(
       (field) => {
         const error = validateField(field, (formData as any)[field] || "");
@@ -247,7 +268,6 @@ export default function BookModal({
     data.append("isbn", formData.isbn);
     data.append("publisher", formData.publisher);
     data.append("book_copies", String(formData.book_copies));
-    data.append("accession_number", formData.accession_number || "");
     data.append("call_number", formData.call_number);
     data.append("year", formData.year || "");
     data.append("publication_place", formData.publication_place || "");
@@ -257,10 +277,11 @@ export default function BookModal({
     data.append("date_purchase", formData.date_purchase || "");
     data.append("book_price", formData.book_price || "");
     data.append("other_info", formData.other_info || "");
-    data.append(
-      "description",
-      formData.description !== undefined ? formData.description : ""
-    );
+    data.append("description", formData.description || "");
+
+    accessionNumbers.forEach((num, i) => {
+      data.append(`accession_numbers[${i}]`, num);
+    });
 
     if (selectedFile) {
       data.append("book_cover", selectedFile);
@@ -304,7 +325,7 @@ export default function BookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center border border-black rounded-lg overflow-y-auto bg-black/50 z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 overflow-auto">
       <div className="relative w-full max-w-4xl p-8 bg-white rounded-md shadow-xl transition-all">
         <h2 className="text-lg font-semibold mb-4">
           {book ? "Edit Book" : "Add Book"}
@@ -312,12 +333,12 @@ export default function BookModal({
 
         <form onSubmit={handleSubmit} encType="multipart/form-data">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[ 
+            {/* Standard fields */}
+            {[
               { label: "Title", name: "title" },
               { label: "Author", name: "author" },
               { label: "ISBN", name: "isbn" },
               { label: "Publisher", name: "publisher" },
-              { label: "Accession Number", name: "accession_number" },
               { label: "Call Number", name: "call_number" },
               { label: "Place of Publication", name: "publication_place" },
             ].map(({ label, name }) => (
@@ -331,12 +352,31 @@ export default function BookModal({
                   className="w-full border rounded p-2"
                   required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
                 />
-                {errors[name] && (
-                  <p className="text-xs text-red-500 mt-1">{errors[name]}</p>
-                )}
+                {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
               </div>
             ))}
 
+            {/* Dynamic Accession Numbers */}
+            {formData.book_copies > 0 && (
+              <div className="mb-3 md:col-span-3">
+                <label className="block text-sm font-medium">Accession Numbers</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {Array.from({ length: formData.book_copies }).map((_, index) => (
+                    <Input
+                      key={index}
+                      type="text"
+                      value={accessionNumbers[index] || ""}
+                      onChange={(e) => handleAccessionChange(index, e.target.value)}
+                      placeholder={`Accession #${index + 1}`}
+                      className="w-full border rounded p-2"
+                      required
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Remaining fields (Book Copies, Year, Cover, Section, Dewey, etc.) */}
             <div className="mb-3">
               <label className="block text-sm font-medium">Book Copies</label>
               <Input
@@ -372,13 +412,7 @@ export default function BookModal({
                 accept="image/*"
                 className="w-full border rounded p-2"
               />
-              {preview && (
-                <img
-                  src={preview}
-                  alt="Book cover preview"
-                  className="mt-2 w-20 h-28 object-cover"
-                />
-              )}
+              {preview && <img src={preview} alt="Book cover preview" className="mt-2 w-20 h-28 object-cover" />}
             </div>
 
             <div className="mb-3">
@@ -390,19 +424,13 @@ export default function BookModal({
                 className="w-full border rounded p-2"
               >
                 <option value="">Select Section</option>
-                {sections.length > 0 ? (
-                  sections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.section_name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No sections available</option>
-                )}
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.section_name}
+                  </option>
+                ))}
               </Select>
-              {errors.section_id && (
-                <p className="text-xs text-red-500 mt-1">{errors.section_id}</p>
-              )}
+              {errors.section_id && <p className="text-xs text-red-500 mt-1">{errors.section_id}</p>}
             </div>
 
             <div className="mb-3">
@@ -414,19 +442,13 @@ export default function BookModal({
                 className="w-full border rounded p-2"
               >
                 <option value="">Select Dewey</option>
-                {deweys.length > 0 ? (
-                  deweys.map((dewey) => (
-                    <option key={dewey.id} value={dewey.id}>
-                      {dewey.dewey_classification}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No Dewey classifications available</option>
-                )}
+                {deweys.map((dewey) => (
+                  <option key={dewey.id} value={dewey.id}>
+                    {dewey.dewey_classification}
+                  </option>
+                ))}
               </Select>
-              {errors.dewey_id && (
-                <p className="text-xs text-red-500 mt-1">{errors.dewey_id}</p>
-              )}
+              {errors.dewey_id && <p className="text-xs text-red-500 mt-1">{errors.dewey_id}</p>}
             </div>
 
             <div className="mb-3">
@@ -483,20 +505,19 @@ export default function BookModal({
               {errors.other_info && <p className="text-xs text-red-500 mt-1">{errors.other_info}</p>}
             </div>
 
-            <br />
             <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
               <button
                 type="button"
                 onClick={closeModal}
-                className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition cursor-pointer"
+                className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition cursor-pointer"
+                className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
               >
-                {book ? "Update" : "Add"} Book
+                {book ? "Update Book" : "Add Book"}
               </button>
             </div>
           </div>
@@ -505,5 +526,3 @@ export default function BookModal({
     </div>
   );
 }
-
-//working but no api
