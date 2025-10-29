@@ -201,7 +201,6 @@ export default function IssueBookModal({
                 setData("accession_number", e.target.value.trim())
               }
               className="w-full p-2 border rounded"
-              placeholder="Enter accession number"
               required
             />
           </div>
