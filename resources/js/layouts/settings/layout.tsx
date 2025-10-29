@@ -22,6 +22,12 @@ const sidebarNavItems: NavItem[] = [
         href: '/settings/appearance',
         icon: null,
     },
+    {
+        title: 'Backup and Restore',
+        href: '/settings/backup-restore',
+        icon: null,
+    },
+
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {

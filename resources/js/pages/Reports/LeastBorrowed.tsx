@@ -82,7 +82,7 @@ export default function LeastBorrowed() {
       {/* Filters */}
       <div className="flex gap-4 mt-10">
         {/* Limit */}
-        <label>
+        {/* <label>
           Limit
           <select
             value={limit}
@@ -98,7 +98,7 @@ export default function LeastBorrowed() {
             <option value={50}>Top 50</option>
             <option value={100}>Top 100</option>
           </select>
-        </label>
+        </label> */}
 
         {/* Category */}
         <label>

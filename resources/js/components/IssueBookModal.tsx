@@ -139,7 +139,7 @@ export default function IssueBookModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Patron lookup */}
           <div>
-            <label>School ID:</label>
+            <label>Student ID:</label>
             <input
               type="text"
               value={data.school_id}

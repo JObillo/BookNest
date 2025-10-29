@@ -69,14 +69,13 @@ export default function Borrowers() {
           <input
             type="text"
             placeholder="Search by name or school ID"
-            className="border px-3 py-1 rounded w-1/3"
+            className="border border-black px-3 py-1 rounded w-1/3"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-green-600 text-white rounded px-3 py-1 text-sm hover:bg-green-700 transition cursor-pointer"
+           className="cursor-pointer bg-green-600 text-white font-medium rounded-lg ml-5 px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
           >
             Add Borrower
           </button>
@@ -86,7 +85,7 @@ export default function Borrowers() {
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {["School ID", "Borrower Info", "Department", "Borrower Type", "Actions"].map(
+                {["Student ID", "Borrower Info", "Department", "Borrower Type", "Actions"].map(
                   (header) => (
                     <th key={header} className="border p-3 text-left">{header}</th>
                   )
