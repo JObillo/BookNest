@@ -51,6 +51,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/backups/delete/{filename}', [BackupController::class, 'delete']);
 
 });
+// ✅ Public route (no auth)
+Route::get('/settings/restore-status', [BackupController::class, 'restoreStatus']);
+Route::post('/settings/backups/upload-restore', [BackupController::class, 'uploadRestore']);
+
 
 
 
