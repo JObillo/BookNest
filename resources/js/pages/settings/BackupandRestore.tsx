@@ -6,6 +6,9 @@ import AppLayout from "@/layouts/app-layout";
 import HeadingSmall from "@/components/heading-small";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+import RestoreModal from "@/components/RestoreModal"
+import ConfirmRestoreModal from "@/components/ConfirmRestoreModal";
+
 
 // 🧠 Context for progress
 interface ProgressContextType {
@@ -59,19 +62,7 @@ export default function BackupRestore() {
   const fetchBackups = useCallback(async () => {
     try {
       const res = await axios.get<Backup[]>("/settings/backups");
-      const formatted = res.data.map((b) => ({
-        ...b,
-        created_at: new Date(b.created_at + " UTC").toLocaleString("en-PH", {
-          timeZone: "Asia/Manila",
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-      }));
-      setBackups(formatted);
+      setBackups(res.data);
     } catch {
       toast.error("❌ Failed to fetch backups");
     }
@@ -220,7 +211,7 @@ export default function BackupRestore() {
   return (
     <ProgressContext.Provider value={{ progress, setProgress }}>
       <AppLayout>
-        <Head title="Backup & Restore" />
+        <Head title="Backup and Restore" />
         <SettingsLayout>
           <div className="space-y-6">
             <HeadingSmall
@@ -232,19 +223,18 @@ export default function BackupRestore() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3">
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={openRestoreModal}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  ♻️ Restore
-                </Button>
-
-                <Button
                   onClick={createBackup}
                   disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                 >
                   {isLoading ? "Processing..." : "💾 Create Backup"}
+                </Button>
+                <Button
+                  onClick={openRestoreModal}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                >
+                   Restore
                 </Button>
               </div>
             </div>
@@ -294,119 +284,24 @@ export default function BackupRestore() {
             {/* -------------------------
                 Restore Modal
                ------------------------- */}
-            {isRestoreModalOpen && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center px-4"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="restore-modal-title"
-              >
-                <div
-                  className="fixed inset-0 bg-black/50"
-                  onClick={closeRestoreModal}
-                />
+            <RestoreModal
+              isOpen={isRestoreModalOpen}
+              isLoading={isLoading}
+              restoreFile={restoreFile}
+              adminPassword={adminPassword}
+              onFileChange={setRestoreFile}
+              onPasswordChange={setAdminPassword}
+              onClose={closeRestoreModal}
+              onStartRestore={handleRestoreUpload}
+            />
 
-                <div className="relative z-60 max-w-xl w-full bg-white rounded-xl shadow-lg p-6">
-                  <h3 id="restore-modal-title" className="text-lg font-semibold mb-2">
-                    ♻️ Restore Backup
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Upload a <strong>.sql</strong> or <strong>.zip</strong> file and enter the admin
-                    password to start the restore. This will overwrite the current database.
-                  </p>
-
-                  <div className="space-y-3">
-                    <label className="block text-sm">
-                      <span className="text-xs text-gray-600">Select backup file</span>
-                      <input
-                        type="file"
-                        accept=".sql,.zip"
-                        onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
-                        className="mt-2 block w-full text-sm border px-3 py-2"
-                      />
-                      {restoreFile && (
-                        <div className="mt-2 text-xs text-gray-700">Selected: {restoreFile.name}</div>
-                      )}
-                    </label>
-
-                    <label className="block text-sm">
-                      <span className="text-xs text-gray-600">Admin password</span>
-                      <input
-                        type="password"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        placeholder="Enter admin password"
-                        className="mt-2 block w-full rounded-md border px-3 py-2"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-6 flex justify-end gap-3">
-                    <Button
-                      onClick={closeRestoreModal}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
-                      disabled={isLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleRestoreUpload}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Restoring..." : "Start Restore"}
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 text-xs text-gray-500">
-                    Tip: Use a recent backup file. Large files may take time to upload and process.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* -------------------------
-                Confirm Restore Modal
-               ------------------------- */}
-            {isConfirmModalOpen && (
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center px-4"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="confirm-modal-title"
-              >
-                <div
-                  className="fixed inset-0 bg-black/50"
-                  onClick={() => setIsConfirmModalOpen(false)}
-                />
-                <div className="relative z-60 max-w-md w-full bg-white rounded-xl shadow-lg p-6">
-                  <h3 id="confirm-modal-title" className="text-lg font-semibold mb-3">
-                    ⚠️ Confirm Restore
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-5">
-                    Restoring will <strong>overwrite your current database</strong>. Are you sure you
-                    want to continue?
-                  </p>
-
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      onClick={() => setIsConfirmModalOpen(false)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800"
-                      disabled={isLoading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={confirmRestore}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      disabled={isLoading || pendingRestore}
-                    >
-                      {pendingRestore ? "Restoring..." : "Yes, Continue"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <ConfirmRestoreModal
+              isOpen={isConfirmModalOpen}
+              isLoading={isLoading}
+              pendingRestore={pendingRestore}
+              onClose={() => setIsConfirmModalOpen(false)}
+              onConfirm={confirmRestore}
+            />
           </div>
         </SettingsLayout>
       </AppLayout>
