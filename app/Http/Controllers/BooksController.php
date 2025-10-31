@@ -160,17 +160,14 @@ class BooksController extends Controller
         ]);
     }
 
-public function publicShow(Book $book)
-{
-    $book->load(['section', 'copies']); // 👈 load copies relationship
+    public function publicShow(Book $book)
+    {
+        $book->load(['section', 'copies']); 
 
-    return Inertia::render('BookDetail', [
-        'book' => $book,
-    ]);
-}
-
-
-
+        return Inertia::render('BookDetail', [
+            'book' => $book,
+        ]);
+    }
 
     public function getCopies(Book $book)
     {

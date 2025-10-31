@@ -217,7 +217,7 @@ export default function Welcome() {
           <Select
             value={searchFilter}
             onChange={(e: any) => setSearchFilter(e.target.value)}
-            className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-32"
+            className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-32"
           >
             <option value="All">All</option>
             <option value="Title">Title</option>

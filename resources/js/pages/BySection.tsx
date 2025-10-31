@@ -25,20 +25,16 @@ type Props = {
 };
 
 export default function BySection({ section, books }: Props) {
-  // Pagination and search
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchCategory, setSearchCategory] = useState('All'); // default to All
+  const [searchCategory, setSearchCategory] = useState('All');
 
-  // Reset to page 1 when query or category changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, searchCategory]);
 
-  //  Filter books by search
   const filteredBooks = useMemo(() => {
     const lowerQuery = searchQuery.trim().toLowerCase();
-
     return books.filter((book) => {
       if (searchCategory === "All") {
         return (
@@ -47,23 +43,17 @@ export default function BySection({ section, books }: Props) {
           book.author.toLowerCase().includes(lowerQuery)
         );
       }
-
       const value = book[searchCategory as keyof typeof book];
-      return (
-      typeof value === "string" &&
-      value.trim().toLowerCase().includes(lowerQuery)
-    );
+      return typeof value === "string" && value.trim().toLowerCase().includes(lowerQuery);
     });
   }, [books, searchQuery, searchCategory]);
 
-  // Pagination
   const booksPerPage = 5;
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
   const endIndex = startIndex + booksPerPage;
   const displayedBooks = filteredBooks.slice(startIndex, endIndex);
 
-  // Adjust current page if out of bounds
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages || 1);
@@ -79,7 +69,7 @@ export default function BySection({ section, books }: Props) {
           <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
         </header>
 
-        {/* Title */}
+        {/* Title Section */}
         <div className="mt-20 text-center">
           <h1 className="lilitaOneFont royalPurple text-2xl sm:text-3xl font-bold">
             Welcome to Online Public Access Catalog
@@ -87,46 +77,49 @@ export default function BySection({ section, books }: Props) {
           <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
             PhilCST Library: Your Gateway to Knowledge and Discovery
           </p>
-          <div className="flex items-center space-x-2">
-            <Link
-              href={route("home")}
-              className="text-black text-xl sm:text-2xl hover:text-purple-900"
-            >
-              <FaHome />
-            </Link>
-            <h1 className="font-bold text-xl">
-              Books in {section.section_name}
-            </h1>
-          </div>
+        </div>
 
-          {/* Search */}
-          <div className="flex items-center justify-between mt-4 px-2 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 px-2 sm:px-6">
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Select
-                  className="border rounded px-2 py-1 text-sm text-gray-700"
-                  value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
-                >
-                  <option value="All">All</option>
-                  <option value="title">Title</option>
-                  <option value="author">Author</option>
-                  <option value="isbn">ISBN</option>
-                </Select>
+        {/* Section Name - now left aligned */}
+        <div className="mt-8 px-2 sm:px-6">
+          <h1 className="font-bold text-2xl royalPurple text-left">
+            Books in {section.section_name}
+          </h1>
+        </div>
 
-                <Input
-                  className="border rounded px-2 py-1 w-full placeholder-italic"
-                  placeholder={`Search by ${searchCategory}`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Controls: FaHome + Filter + Search */}
+        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-start gap-3 mt-4 px-2 sm:px-6">
+          {/* FaHome */}
+          <Link
+            href={route("home")}
+            className="px-4 py-2 bg-purple-700 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-800 transform hover:scale-105 transition"
+            title="Back to Home"
+          >
+            <FaHome /> Home
+          </Link>
+
+          {/* Filter Dropdown */}
+          <select
+            className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-32"
+            value={searchCategory}
+            onChange={(e) => setSearchCategory(e.target.value)}
+          >
+            <option value="All">All</option>
+            <option value="title">Title</option>
+            <option value="author">Author</option>
+            <option value="isbn">ISBN</option>
+          </select>
+
+          {/* Search Input (same height as filter) */}
+          <input
+            className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-100"
+            placeholder={`Search by ${searchCategory}`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         {/* Table */}
-        <div className="mt-3 w-full px-2 sm:px-6 overflow-x-auto">
+        <div className="mt-6 w-full px-2 sm:px-6 overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
@@ -150,7 +143,7 @@ export default function BySection({ section, books }: Props) {
                   <tr key={book.id} className="border-b hover:bg-gray-100">
                     {/* Book Cover */}
                     <td className="p-3 hidden lg:table-cell">
-                      <Link href={route("books.show", { book: book.id })}>
+                      <Link href={route("books.publicShow", { book: book.id })}>
                         {book.book_cover ? (
                           <img
                             src={book.book_cover}
@@ -165,7 +158,7 @@ export default function BySection({ section, books }: Props) {
 
                     {/* Title */}
                     <td className="p-3">
-                      <Link href={route("books.show", { book: book.id })}>
+                      <Link href={route("books.publicShow", { book: book.id })}>
                         <div className="font-semibold">{book.title}</div>
                         <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
                       </Link>
@@ -205,35 +198,35 @@ export default function BySection({ section, books }: Props) {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
-        <span>
-          Page {currentPage} — {displayedBooks.length} book
-          {displayedBooks.length !== 1 && "s"} on this page
-        </span>
-
-        <div className="flex items-center gap-1">
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-
-          <span className="px-3 py-1 bg-purple-700 text-white rounded">
-            {currentPage}
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
+          <span>
+            Page {currentPage} — {displayedBooks.length} book
+            {displayedBooks.length !== 1 && "s"} on this page
           </span>
 
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+
+            <span className="px-3 py-1 bg-purple-700 text-white rounded">
+              {currentPage}
+            </span>
+
+            <button
+              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </>
