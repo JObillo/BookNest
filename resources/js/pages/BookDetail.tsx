@@ -9,18 +9,19 @@ export type Book = {
   publisher: string;
   publication_place?: string;
   year?: string;
-  accession_number?: string;
   call_number?: string;
   section_id?: number;
-  section?: {id: number; section_name: string};
-  dewey_id?: number;
-  dewey?: string;
-  dewey_relation?: { id: number; dewey_classification: string } | null;
+  section?: { id: number; section_name: string };
   subject?: string;
   book_copies?: number;
   copies_available?: number;
   status: string;
   book_cover?: string;
+  copies?: {
+    id: number;
+    accession_number: string;
+    status: string;
+  }[];
 };
 
 export default function BookDetail() {
@@ -64,12 +65,6 @@ export default function BookDetail() {
                 >
                   {book.status}
                 </p>
-                <p className="text-sm mt-1">
-                  Copies Available: {book.copies_available ?? "N/A"}
-                </p>
-                <p className="text-sm">
-                  Total Copies: {book.book_copies ?? "N/A"}
-                </p>
               </div>
             </div>
 
@@ -81,22 +76,14 @@ export default function BookDetail() {
                 { label: "Publisher", value: book.publisher },
                 { label: "Place of publication", value: book.publication_place },
                 { label: "Copyright year", value: book.year },
-                { label: "Accession Number", value: book.accession_number },
                 { label: "Call Number", value: book.call_number },
-                { label: "Dewey Decimal Values", value: book.dewey || "N/A" },
-                { label: "Dewey Classification", value: book.dewey_relation?.dewey_classification || "N/A" },
                 { label: "Section", value: book.section?.section_name || "N/A" },
                 { label: "Subject", value: book.subject || "N/A" },
               ].map(
                 (item) =>
                   item.value && (
-                    <div
-                      key={item.label}
-                      className="flex justify-between border-b py-1"
-                    >
-                      <span className="font-medium text-gray-700">
-                        {item.label}
-                      </span>
+                    <div key={item.label} className="flex justify-between border-b py-1">
+                      <span className="font-medium text-gray-700">{item.label}</span>
                       <span>{item.value}</span>
                     </div>
                   )
@@ -104,21 +91,58 @@ export default function BookDetail() {
             </div>
           </div>
 
-          {/* Description */}
-          {/* <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-2">Description:</h2>
-            {book.description && book.description.trim() !== "" ? (
-              <p className="text-justify whitespace-pre-wrap text-gray-800">
-                {book.description}
-              </p>
+          {/* Copies / Accession Numbers */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold mb-2">Book Copies</h2>
+
+            {book.copies && book.copies.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse bg-white text-black shadow-md rounded-lg">
+                  <thead>
+                    <tr className="bg-purple-900 text-white">
+                      <th className="p-3 text-left border">#</th>
+                      <th className="p-3 text-left border">Accession Number</th>
+                      <th className="p-3 text-left border">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {book.copies.map((copy, index) => (
+                      <tr
+                        key={copy.id}
+                        className="border-b hover:bg-gray-100 transition"
+                      >
+                        <td className="p-3 border">{index + 1}</td>
+                        <td className="p-3 border font-medium">{copy.accession_number}</td>
+                        <td className="p-3 border">
+                          <span
+                            className={`font-semibold ${
+                              copy.status === "Available"
+                                ? "text-green-600"
+                                : copy.status === "Borrowed"
+                                ? "text-yellow-600"
+                                : copy.status === "Reserve"
+                                ? "text-orange-500"
+                                : "text-gray-600"
+                            }`}
+                          >
+                            {copy.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <p className="text-gray-500 italic">
-                No description available for this book.
-              </p>
+              <p className="text-gray-500 italic">No copies available.</p>
             )}
-          </div> */}
+          </div>
+
+          
         </div>
       </div>
     </>
   );
 }
+
+//medyo okayy

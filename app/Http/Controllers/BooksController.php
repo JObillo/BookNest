@@ -160,11 +160,42 @@ class BooksController extends Controller
         ]);
     }
 
+public function publicShow(Book $book)
+{
+    $book->load(['section', 'copies']); // 👈 load copies relationship
+
+    return Inertia::render('BookDetail', [
+        'book' => $book,
+    ]);
+}
+
+
+
+
     public function getCopies(Book $book)
     {
         return response()->json(
             $book->copies()->select('id', 'accession_number', 'status')->get()
         );
     }
+
+    public function booksBySection(Section $section)
+{
+    // Fetch all books under the given section, including their copies
+    $books = Book::with('copies')
+        ->where('section_id', $section->id)
+        ->get()
+        ->map(function ($book) {
+            // Add first accession number for display (if available)
+            $book->accession_number = $book->copies->first()->accession_number ?? 'N/A';
+            return $book;
+        });
+
+    return Inertia::render('BySection', [
+        'section' => $section,
+        'books' => $books,
+    ]);
+}
+
 
 }

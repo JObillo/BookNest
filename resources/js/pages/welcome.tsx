@@ -276,22 +276,23 @@ export default function Welcome() {
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="text-lg font-semibold">{sectionName}</h2>
                       {groupedBooks[sectionName].length >= 5 && sectionId ? (
-                        <Link
-                          href={route("books.bySection", { section: sectionId })}
-                          className="text-blue-500 text-sm hover:underline"
-                        >
-                          see all
-                        </Link>
-                      ) : null}
+                      <Link
+                        href={route("books.bySection", { section: sectionId })}
+                        className="inline-block bg-purple-700 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-purple-700 hover:bg-purple-900 transform hover:-translate-y-0.5 transition-all duration-200"
+                      >
+                        See all
+                      </Link>
+                                            ) : null}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {groupedBooks[sectionName]
                         ?.slice(0, 5)
                         .map((book) => (
                           <Link
-                            href={route("books.show", { book: book.id })}
+                            href={route("books.publicShow", { book: book.id })}
                             key={book.id}
-                            className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                            className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center 
+                            transform hover:-translate-y-1 hover:scale-105 hover:shadow-lg transition-all duration-300"
                           >
                             <img
                               src={book.book_cover || "/placeholder-book.png"}
@@ -299,12 +300,12 @@ export default function Welcome() {
                               className="w-50 h-65 object-cover rounded"
                             />
                             <div className="mt-2 w-full text-center">
-                              <h3 className="text-sm font-semibold truncate">
-                                {highlightMatch(book.title, searchTerm)}
-                              </h3>
-                              <p className="text-s text-gray-600">
-                                By: {highlightMatch(book.author, searchTerm)}
-                              </p>
+                                <h3 className="text-sm font-semibold text-gray-900 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                  {highlightMatch(book.title, searchTerm)}
+                                </h3>
+                                <p className="text-xs text-gray-600 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                  By: {highlightMatch(book.author, searchTerm)}
+                                </p>
                               {book.year && (
                                 <p className="text-xs text-gray-500">
                                   Year: {book.year}
