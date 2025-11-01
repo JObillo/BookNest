@@ -1,5 +1,5 @@
 import { Head, usePage } from "@inertiajs/react";
-import { FaHome } from "react-icons/fa";
+import { IoMdArrowRoundBack } from 'react-icons/io';
 
 export type Book = {
   id: number;
@@ -45,7 +45,7 @@ export default function BookDetail() {
             onClick={() => window.history.back()}
             className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
           >
-             <FaHome /> Home
+             <IoMdArrowRoundBack /> Back
           </button>
 
           {/* Book Section */}

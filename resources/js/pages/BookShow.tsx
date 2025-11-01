@@ -20,7 +20,7 @@ export default function BookShow() {
           <img
             src={book.book_cover || "/placeholder.jpg"}
             alt="Book Cover"
-            className="w-40 h-56 object-cover rounded-lg shadow"
+            className="w-50 h-76 object-cover rounded-lg shadow"
           />
 
           <div className="space-y-2">
@@ -34,6 +34,12 @@ export default function BookShow() {
                 <strong>ISBN:</strong> {book.isbn}
               </p>
               <p>
+                <strong>Copyright Year:</strong> {book.year || "N/A"}
+              </p>
+              <p>
+                <strong>Place of Publication:</strong>{" "} {book.publication_place || "N/A"}
+              </p>
+              <p>
                 <strong>Section:</strong> {book.section?.section_name || "N/A"}
               </p>
               <p>
@@ -44,12 +50,15 @@ export default function BookShow() {
                 <strong>Subject:</strong> {book.subject || "N/A"}
               </p>
               <p>
-                <strong>Year:</strong> {book.year || "N/A"}
+                <strong>Date Purchase:</strong> {book.date_purchase || "N/A"}
               </p>
               <p>
-                <strong>Place of Publication:</strong>{" "}
-                {book.publication_place || "N/A"}
+                <strong>Book Price:</strong> {book.book_price || "N/A"}
               </p>
+              <p>
+                <strong>Other info:</strong> {book.other_info || "N/A"}
+              </p>
+              
             </div>
           </div>
         </div>

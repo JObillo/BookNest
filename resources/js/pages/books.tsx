@@ -125,7 +125,7 @@ export default function Books() {
             <select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
             >
               <option value="All">All</option>
               <option value="Title">Title</option>
@@ -136,7 +136,7 @@ export default function Books() {
             <input
               type="text"
               placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-              className="border rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-black"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -144,7 +144,7 @@ export default function Books() {
             <select
               value={sectionFilter}
               onChange={(e) => setSectionFilter(e.target.value)}
-              className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-purple-500"
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
             >
               <option value="All">All Sections</option>
               {sections.map((section, index) => (

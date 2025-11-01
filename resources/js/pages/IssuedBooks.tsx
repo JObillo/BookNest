@@ -66,6 +66,19 @@ export default function IssuedBooks() {
   const endIndex = startIndex + booksPerPage;
   const displayedBooks = filteredBooks.slice(startIndex, endIndex);
 
+    // Format date
+  const formatDateTime = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString("en-PH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   const renderPatronInfo = (patron: IssuedBook["patron"]) => {
     switch (patron.patron_type) {
       case "Student":
@@ -104,9 +117,10 @@ export default function IssuedBooks() {
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
         <div className="flex justify-between items-center mb-2">
+          {/* Search bar */}
           <Input
             className="border border-black rounded px-2 py-2 w-120"
-            placeholder="Search"
+            placeholder="Search by Name or School ID"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -122,7 +136,7 @@ export default function IssuedBooks() {
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {["Borrower Info", "Book", "Author", "Catalog Info", "Issued Date", "Due Date", "Status"].map(header => (
+                {["Borrower Info", "Book", "Accession No", "Issued Date", "Due Date", "Status"].map(header => (
                   <th key={header} className="border p-3 text-left">{header}</th>
                 ))}
               </tr>
@@ -133,30 +147,25 @@ export default function IssuedBooks() {
                   <tr key={record.id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
-                      {renderPatronInfo(record.patron)}
-                      <div className="text-sm text-gray-600">({record.patron.patron_type})</div>
+                      <div className="text-sm text-gray-600">
+                        School ID: {record.patron.school_id}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {record.patron.course || "N/A"} | {record.patron.year || "N/A"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {record.patron.department || "N/A"} ({record.patron.patron_type})
+                      </div>
                     </td>
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {record.book.isbn}</div>
                     </td>
-                    <td className="p-3">{record.book.author}</td>
-                    <td className="p-3 text-sm text-gray-800">
-                      <div>Accession #: {record.copy?.accession_number || "N/A"}</div>
-                      <div>Call #: {record.book.call_number || "N/A"}</div>
-                      <div>Year: {record.book.year || "N/A"}</div>
-                      <div>Place: {record.book.publication_place || "N/A"}</div>
-                    </td>
-                    <td className="p-3">
-                      {record.issued_date
-                        ? new Date(record.issued_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                        : "N/A"}
-                    </td>
-                    <td className="p-3">
-                      {record.due_date
-                        ? new Date(record.due_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                        : "N/A"}
-                    </td>
+                    <td className="p-3">{record.copy?.accession_number || "N/A"}</td>
+
+                    <td className="p-3">{formatDateTime(record.issued_date)}</td>
+                    <td className="p-3">{formatDateTime(record.due_date)}</td>
+
                     <td className="p-3">
                       <span
                         className={`px-2 py-1 rounded text-white text-sm ${

@@ -206,7 +206,7 @@ export default function ReturnedBooks() {
                             : "bg-green-600"
                         }`}
                       >
-                        {record.status === "Issued" ? "Not Returned" : record.status}
+                        {record.status === "Issued" ? "Unreturned" : record.status}
                       </span>
                     </td>
 
