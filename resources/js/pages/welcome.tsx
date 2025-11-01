@@ -278,7 +278,7 @@ export default function Welcome() {
                       {groupedBooks[sectionName].length >= 5 && sectionId ? (
                       <Link
                         href={route("books.bySection", { section: sectionId })}
-                        className="inline-block bg-purple-700 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-purple-700 hover:bg-purple-900 transform hover:-translate-y-0.5 transition-all duration-200"
+                        className="inline-block bg-purple-800 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-purple-900 hover:bg-purple-900 transform hover:-translate-y-0.5 transition-all duration-200"
                       >
                         See all
                       </Link>

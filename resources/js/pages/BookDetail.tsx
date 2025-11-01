@@ -43,7 +43,7 @@ export default function BookDetail() {
           {/* Back Button */}
           <button
             onClick={() => window.history.back()}
-            className="px-4 py-2 bg-purple-700 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-800 transform hover:scale-105 transition"
+            className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
           >
              <FaHome /> Home
           </button>

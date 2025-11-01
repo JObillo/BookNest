@@ -174,7 +174,7 @@ export default function Books() {
                   "Author",
                   "Publisher",
                   "Catalog Info",
-                  "Other Info",
+                  // "Other Info",
                   "Book Copies",
                   "Actions",
                 ].map((header, index) => (
@@ -217,7 +217,7 @@ export default function Books() {
                       <div>Year: {book.year?.toString() || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
                     </td>
-                    <td className="p-3 text-sm text-gray-800">
+                    {/* <td className="p-3 text-sm text-gray-800">
                       <div>Section: {book.section?.section_name || "N/A"}</div>
                       <div>
                         Dewey Class: {book.dewey_relation?.dewey_classification || "N/A"}
@@ -225,7 +225,7 @@ export default function Books() {
                       <div>Subject #: {book.subject}</div>
                       <div>Date purchase: {book.date_purchase?.toString() || "N/A"}</div>
                       <div>Book Price: {book.book_price}</div>
-                    </td>
+                    </td> */}
                     <td className="p-3 text-sm text-gray-800">
                       <div>Copies: {book.book_copies}</div>
                       <div>Available: {book.copies_available}</div>
