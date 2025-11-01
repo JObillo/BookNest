@@ -85,12 +85,12 @@ export default function Dashboard({ stats }: StatsProps) {
       <div className="flex min-h-screen overflow-x-hidden">
         <div className="flex-1 p-6 space-y-6">
           {/* Bell beside breadcrumb title */}
-          <div className="absolute top-3 left-30 flex items-center gap-3">
+          <div className="absolute top-3 right-10 flex items-center gap-3">
             <button
               onClick={() => setOpen(!open)}
               className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
             >
-              <Bell className="w-6 h-6 text-gray-700 dark:text-white" />
+              <Bell className="w-7 h-7 text-gray-700 dark:text-white" />
               {localNotifications.length > 0 && (
                 <span className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1 rounded-full">
                   {localNotifications.length}
@@ -108,7 +108,7 @@ export default function Dashboard({ stats }: StatsProps) {
               ></div>
               <div className="fixed top-0 right-0 w-150 h-screen bg-white dark:bg-gray-800 shadow-xl z-50 transition-transform">
                 <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="font-bold text-lg">Notifications</h2>
+                  <h2 className="font-bold text-lg">Overdue Notifications</h2>
                   <button
                     onClick={() => setOpen(false)}
                     className="text-gray-500 hover:text-gray-800"
