@@ -176,7 +176,7 @@ export default function IssueBookModal({
               <p><strong>Title:</strong> {book.title}</p>
               <p><strong>Author:</strong> {book.author}</p>
               <p><strong>Publisher:</strong> {book.publisher}</p>
-              <p><strong>Accession:</strong> {book.accession_number}</p>
+              {/* <p><strong>Accession:</strong> {book.accession_number}</p> */}
               <p><strong>Call No.:</strong> {book.call_number}</p>
               <p><strong>Year:</strong> {book.year}</p>
               <p><strong>Place:</strong> {book.publication_place}</p>

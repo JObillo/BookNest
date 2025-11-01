@@ -1,5 +1,6 @@
 import { Head, usePage } from "@inertiajs/react";
 import AppLayout from "@/layouts/app-layout";
+import { IoMdArrowRoundBack } from 'react-icons/io';
 
 export default function BookShow() {
   const { book } = usePage<{ book: any }>().props;
@@ -59,12 +60,13 @@ export default function BookShow() {
             <h3 className="text-xl font-semibold text-gray-800">
               Book Copies
             </h3>
-            <a
-              href="/books"
-              className="px-4 py-2 bg-purple-700 text-white rounded hover:bg-purple-800 transition"
-            >
-              ← Back to Books
-            </a>
+          {/* Back Button */}
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
+          >
+             <IoMdArrowRoundBack /> Back
+          </button>
           </div>
 
           {book.copies.length ? (
