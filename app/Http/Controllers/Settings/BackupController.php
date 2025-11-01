@@ -50,7 +50,7 @@ public function store(Request $request)
         if (!file_exists($backupDir)) mkdir($backupDir, 0755, true);
 
         $db = config('database.connections.mysql');
-        $mysqldump = 'C:/xampp/mysql/bin/mysqldump.exe';
+        $mysqldump = $this->detectExecutable('mysqldump');
         $dbName = $db['database'];
 
         $dumpCommand = "\"{$mysqldump}\" -h {$db['host']} -u {$db['username']}";
@@ -192,28 +192,32 @@ public function uploadRestore(Request $request)
     try {
         $request->validate([
             'password' => 'required|string',
-            'file' => 'required|file|mimes:zip,sql|max:51200', // max 50MB
+            'file' => 'required|file|mimes:zip,sql|max:51200',
         ]);
 
-        // ✅ Verify admin password
+        // ✅ Check admin password
         $admin = Auth::user();
         if (!$admin || !Hash::check($request->password, $admin->password)) {
-            return response()->json(['success' => false, 'message' => '❌ Invalid admin password.'], 403);
+            return response()->json(['success' => false, 'message' => '❌ Invalid password.'], 403);
         }
 
-        // Save uploaded file
-        $uploadedFile = $request->file('file');
-        $backupDir = storage_path('app/private/PhilCST/uploads');
-        if (!file_exists($backupDir)) mkdir($backupDir, 0755, true);
-
-        $filePath = $backupDir . '/' . $uploadedFile->getClientOriginalName();
-        $uploadedFile->move($backupDir, $uploadedFile->getClientOriginalName());
-
-        // If it's a ZIP, extract it
+        $backupDir = storage_path('app/private/PhilCST');
+        $uploadDir = "{$backupDir}/uploads";
         $extractDir = "{$backupDir}/restore_temp";
+        $statusFile = storage_path('app/restore_status.txt');
+
+        if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
         if (!file_exists($extractDir)) mkdir($extractDir, 0755, true);
 
-        $sqlFile = '';
+        // Save uploaded file
+        $file = $request->file('file');
+        $filePath = "{$uploadDir}/" . $file->getClientOriginalName();
+        $file->move($uploadDir, $file->getClientOriginalName());
+
+        // Initialize status
+        file_put_contents($statusFile, 'starting');
+
+        // If ZIP, extract it
         if (pathinfo($filePath, PATHINFO_EXTENSION) === 'zip') {
             shell_exec("powershell Expand-Archive -Path \"{$filePath}\" -DestinationPath \"{$extractDir}\" -Force");
             $sqlFile = glob("{$extractDir}/*.sql")[0] ?? null;
@@ -222,30 +226,55 @@ public function uploadRestore(Request $request)
         }
 
         if (!$sqlFile || !file_exists($sqlFile)) {
+            file_put_contents($statusFile, 'error: no sql file');
             return response()->json(['success' => false, 'message' => '❌ SQL file not found in backup.'], 404);
         }
 
-        // Run restore command
+        // Run restore
         $db = config('database.connections.mysql');
-        $mysql = 'C:/xampp/mysql/bin/mysql.exe';
+        $mysql = $this->detectExecutable('mysql');
         $restoreCommand = "\"{$mysql}\" -h {$db['host']} -u {$db['username']}";
         if (!empty($db['password'])) $restoreCommand .= " -p{$db['password']}";
         $restoreCommand .= " {$db['database']} < \"{$sqlFile}\"";
 
-        $bat = "@echo off\n{$restoreCommand}\nexit";
+        // Make a .bat script for async restore
+        $bat = "@echo off\n" .
+            "echo running > \"{$statusFile}\"\n" .
+            "{$restoreCommand}\n" .
+            "echo done > \"{$statusFile}\"\n" .
+            "rmdir /s /q \"{$extractDir}\"\n" .
+            "exit";
+
         $batFile = storage_path('app/run_restore_upload.bat');
         file_put_contents($batFile, $bat);
 
+        // Run silently
         pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
 
-        return response()->json(['success' => true, 'message' => '✅ Restore started successfully!']);
+        return response()->json(['success' => true, 'message' => '✅ Restore process started.']);
     } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => '❌ Restore failed: ' . $e->getMessage(),
-        ], 500);
+        file_put_contents(storage_path('app/restore_status.txt'), 'error: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => '❌ Restore failed: ' . $e->getMessage()], 500);
     }
 }
+
+
+private function detectExecutable(string $exeName): string
+{
+    $paths = [
+        "C:/xampp/mysql/bin/{$exeName}.exe",
+        "D:/xampp/mysql/bin/{$exeName}.exe",
+        "C:/Program Files/MySQL/MySQL Server 8.0/bin/{$exeName}.exe",
+        "C:/Program Files (x86)/MySQL/MySQL Server 8.0/bin/{$exeName}.exe",
+    ];
+
+    foreach ($paths as $path) {
+        if (file_exists($path)) return $path;
+    }
+
+    return $exeName; // fallback (if in system PATH)
+}
+
 
 
 }
