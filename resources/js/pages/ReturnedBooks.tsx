@@ -65,7 +65,7 @@ export default function ReturnedBooks() {
 
       await axios.put(
         `/issuedbooks/${issuedId}/return`,
-        { fine_status: fineStatus }, // ✅ send fine status
+        { fine_status: fineStatus },
         { headers: { "X-CSRF-TOKEN": csrfToken } }
       );
 
@@ -134,8 +134,8 @@ export default function ReturnedBooks() {
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
         {/* Search Bar */}
         <div>
-          <Input
-            className="border rounded px-2 py-1 w-full"
+          <input
+            className="border border-black rounded px-2 py-2 w-120"
             placeholder="Search by Name or School ID"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

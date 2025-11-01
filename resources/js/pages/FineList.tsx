@@ -121,8 +121,8 @@ export default function FineList() {
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
         {/* Search Bar */}
-        <Input
-          className="border rounded px-2 py-1 w-full"
+        <input
+          className="border border-black rounded px-2 py-2 w-120"
           placeholder="Search by Name or School ID"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

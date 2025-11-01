@@ -11,14 +11,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export type IssuedBook = {
-  id?: number;
+  id: number;
   issued_date?: string;
   due_date?: string;
   status?: string;
   patron: {
     id: number;
     name: string;
-    school_id?: string;
+    school_id: string;
     course?: string;
     year?: string;
     department?: string;
@@ -45,15 +45,21 @@ export default function IssuedBooks() {
   const { issuedbooks } = usePage<{ issuedbooks: IssuedBook[] }>().props;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => setCurrentPage(1), [searchQuery]);
+  useEffect(() => setCurrentPage(1), [searchTerm]);
 
   const booksPerPage = 5;
-  const filteredBooks = issuedbooks.filter((b) =>
-    (b.patron.name + (b.patron.school_id || "")).toLowerCase().startsWith(searchQuery.toLowerCase())
-  );
+  const filteredBooks = issuedbooks.filter((record) => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return true;
+
+    return (
+      record.patron.name.toLowerCase().includes(term) ||
+      record.patron.school_id.toLowerCase().includes(term)
+    );
+  });
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
@@ -99,10 +105,10 @@ export default function IssuedBooks() {
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
         <div className="flex justify-between items-center mb-2">
           <Input
-            className="border border-black rounded px-2 py-1 w-100"
+            className="border border-black rounded px-2 py-2 w-120"
             placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
           <button
             onClick={() => setIsModalOpen(true)}
