@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Section;
 use App\Models\Semester;
 use App\Models\Patron;
+use App\Models\Book;
 
 class ReportController extends Controller
 {
@@ -98,7 +99,9 @@ public function mostBorrowed(Request $request)
     $startDate = $semester !== 'All' ? $semester?->start_date : null;
     $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-    $query = IssuedBook::select(
+    // ✅ Select only needed columns
+    $query = Book::query()
+        ->select([
             'books.id',
             'books.title',
             'books.author',
@@ -110,12 +113,14 @@ public function mostBorrowed(Request $request)
             'books.book_cover',
             'books.section_id',
             DB::raw('COUNT(issued_books.id) as borrow_count')
-        )
-        ->join('books', 'issued_books.book_id', '=', 'books.id')
+        ])
+        ->leftJoin('issued_books', function ($join) use ($startDate, $endDate) {
+            $join->on('books.id', '=', 'issued_books.book_id');
+            if ($startDate && $endDate) {
+                $join->whereBetween('issued_books.issued_date', [$startDate, $endDate]);
+            }
+        })
         ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
-        ->when($semester && $startDate && $endDate, fn($q) =>
-            $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
-        )
         ->groupBy(
             'books.id',
             'books.title',
@@ -128,7 +133,7 @@ public function mostBorrowed(Request $request)
             'books.book_cover',
             'books.section_id'
         )
-        ->havingRaw('COUNT(issued_books.id) = 1') // ✅ only 1 time borrowed
+        ->havingRaw('COUNT(issued_books.id) <= 1')
         ->orderBy('borrow_count', 'asc')
         ->limit($limit)
         ->get();
@@ -138,7 +143,7 @@ public function mostBorrowed(Request $request)
             'book' => $book,
             'borrow_count' => $book->borrow_count,
         ]),
-        'sections' =>Section::all(),
+        'sections' => Section::all(),
         'semesters' => $semesters,
         'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
         'filters' => [
@@ -147,6 +152,7 @@ public function mostBorrowed(Request $request)
         ],
     ]);
 }
+
 
 
     // ------------------------------

@@ -323,6 +323,51 @@ export default function BookModal({
   };
 
   if (!isOpen) return null;
+  // Fetch book info from Google Books API using ISBN
+const fetchBookByISBN = async (isbn: string) => {
+  if (!isbn) return;
+
+  const cleanIsbn = isbn.replace(/\D/g, ""); // remove dashes or spaces
+  if (cleanIsbn.length < 10) {
+    toast.error("Please enter a valid ISBN.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`);
+    const data = await res.json();
+
+    if (!data.items || data.items.length === 0) {
+      toast.error("No book found for this ISBN.");
+      return;
+    }
+
+    const info = data.items[0].volumeInfo;
+
+    setFormData((prev) => ({
+    ...prev,
+    title: info.title || prev.title,
+    author: info.authors ? info.authors.join(", ") : prev.author,
+    publisher: info.publisher || prev.publisher,
+    year: info.publishedDate ? info.publishedDate.slice(0, 4) : prev.year,
+    subject: info.categories ? info.categories.join(", ") : prev.subject,
+    description: info.description || prev.description,
+    book_cover: info.imageLinks?.thumbnail || prev.book_cover,
+    other_info: `${info.pageCount ? `${info.pageCount} pages` : ""}${
+      info.dimensions
+        ? `, Size: ${info.dimensions.height || ""} × ${info.dimensions.width || ""}`
+        : ""
+    }` || prev.other_info,
+  }));
+
+    setPreview(info.imageLinks?.thumbnail || "");
+    toast.success("Book info loaded!");
+  } catch (error) {
+    console.error("Error fetching book data:", error);
+    toast.error("Failed to fetch book info.");
+  }
+};
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 overflow-auto">
@@ -335,30 +380,33 @@ export default function BookModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Standard fields */}
             {[
-              { label: "Title", name: "title" },
-              { label: "Author", name: "author" },
-              { label: "ISBN", name: "isbn" },
-              { label: "Publisher", name: "publisher" },
-              { label: "Call Number", name: "call_number" },
-              { label: "Place of Publication", name: "publication_place" },
-            ].map(({ label, name }) => (
-              <div className="mb-3" key={name}>
-                <label className="block text-sm font-medium">{label}</label>
-                <Input
-                  type="text"
-                  name={name}
-                  value={(formData as any)[name] || ""}
-                  onChange={handleChange}
-                  className="w-full border rounded p-2"
-                  required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
-                />
-                {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
-              </div>
-            ))}
-
+            { label: "ISBN", name: "isbn" },
+            { label: "Author", name: "author" },
+            { label: "Title", name: "title" },
+            { label: "Publisher", name: "publisher" },
+            { label: "Call Number", name: "call_number" },
+            { label: "Place of Publication", name: "publication_place" },
+          ].map(({ label, name }) => (
+            <div
+              key={name}
+              className={`mb-3 ${name === "title" ? "md:col-span-3" : ""}`} // 👈 makes title span full width
+            >
+              <label className="block text-sm font-medium">{label}</label>
+              <Input
+                type="text"
+                name={name}
+                value={(formData as any)[name] || ""}
+                onChange={handleChange}
+                onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
+                className={`w-full border rounded p-2 ${name === "title" ? "text-lg" : ""}`} // 👈 slightly bigger text too
+                required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
+              />
+              {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
+            </div>
+          ))}
             {/* Dynamic Accession Numbers */}
             {formData.book_copies > 0 && (
-              <div className="mb-3 md:col-span-3">
+             <div className="mb-3 md:col-span-3">
                 <label className="block text-sm font-medium">Accession Numbers</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {Array.from({ length: formData.book_copies }).map((_, index) => (
