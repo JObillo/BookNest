@@ -20,6 +20,7 @@ use App\Models\Patron;
 use App\Models\Section;
 use App\Models\Ebook;
 
+
 // -------------------------
 // Home
 // -------------------------
@@ -72,7 +73,12 @@ Route::resource('borrowers', PatronController::class);
 // Issued Books
 // -------------------------
 Route::resource('issuedbooks', IssuedBookController::class);
-Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBooksController::class, 'checkDuplicate']);
+// Route::get('/issued-books', [IssuedBooksController::class, 'index']);
+// Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBooksController::class, 'checkDuplicate']);
+// After
+Route::get('/issued-books', [IssuedBookController::class, 'index']);
+Route::get('/issuedbooks/check/{school_id}/{isbn}', [IssuedBookController::class, 'checkDuplicate']);
+
 Route::post('/issued-books/{id}/return', [IssuedBookController::class, 'returnBook']);
 Route::get('/returnedbooks', [IssuedBookController::class, 'returnedBooks'])->name('returnedbooks.index');
 Route::put('/issuedbooks/{id}/return', [IssuedBookController::class, 'returnBook'])->name('issuedbooks.return');

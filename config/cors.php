@@ -20,8 +20,8 @@ return [
     |--------------------------------------------------------------------------
     | Allowed origins
     |--------------------------------------------------------------------------
-    | Use '*' for local development (Expo / mobile).
-    | Later, restrict to your production domain.
+    | Use '*' during local development.
+    | Later, replace with your domain names.
     */
     'allowed_origins' => ['*'],
 
@@ -37,7 +37,7 @@ return [
     | Exposed headers
     |--------------------------------------------------------------------------
     */
-    'exposed_headers' => [],
+    'exposed_headers' => ['Authorization', 'Content-Type'],
 
     /*
     |--------------------------------------------------------------------------
@@ -50,6 +50,8 @@ return [
     |--------------------------------------------------------------------------
     | Support credentials
     |--------------------------------------------------------------------------
+    | Set to true if you ever need cookies (Inertia, browser sessions).
+    | For pure token-based API auth, false is fine.
     */
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 ];
