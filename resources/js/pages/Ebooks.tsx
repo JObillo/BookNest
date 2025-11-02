@@ -140,12 +140,12 @@ const Ebooks = () => {
           />
 
           <div className="flex gap-2">
-            <button
+            {/* <button
               onClick={() => setShowModal(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2 hover:bg-blue-700"
             >
               <FaPlus /> Add eBook Manual
-            </button>
+            </button> */}
 
             <button
               onClick={fetchNewEbooks}
