@@ -69,7 +69,7 @@ export default function Borrowers() {
           <input
             type="text"
             placeholder="Search by name or school ID"
-            className="border border-black px-3 py-1 rounded w-1/3"
+            className="border border-black rounded px-2 py-2 w-120"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

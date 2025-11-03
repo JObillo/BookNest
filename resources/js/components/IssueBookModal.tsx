@@ -276,14 +276,14 @@ export default function IssueBookModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 cursor-pointer"
+              className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={processing || (book && book.copies_available <= 1)}
-              className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
             >
               {processing ? "Issuing..." : "Issue Book"}
             </button>

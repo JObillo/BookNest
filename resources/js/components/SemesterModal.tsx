@@ -56,7 +56,7 @@ export default function SemesterModal({ isOpen, semester, onClose, onSave }: Pro
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center  bg-black/50 z-50">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-lg w-96">
         <h2 className="text-xl font-bold mb-4">{semester ? "Edit Semester" : "Add Semester"}</h2>
 
@@ -121,10 +121,10 @@ export default function SemesterModal({ isOpen, semester, onClose, onSave }: Pro
         </button>
 
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-1 border rounded">
+          <button type="button" onClick={onClose} className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition">
             Cancel
           </button>
-          <button type="submit" className="px-4 py-1 bg-purple-700 text-white rounded">
+          <button type="submit" className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
             Save
           </button>
         </div>

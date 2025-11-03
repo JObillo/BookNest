@@ -28,7 +28,7 @@ const FineListModal: React.FC<FineListModalProps> = ({
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+            className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
           >
             Cancel
           </button>
@@ -37,7 +37,7 @@ const FineListModal: React.FC<FineListModalProps> = ({
               onConfirm();
               onClose();
             }}
-            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+            className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
             Confirm
           </button>

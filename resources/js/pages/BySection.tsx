@@ -144,7 +144,7 @@ export default function BySection({ section, books }: Props) {
           {/* Home Button */}
           <Link
             href={route("home")}
-            className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
+            className="px-4 py-2 bg-purple-900 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
             title="Back to Home"
           >
             <FaHome /> Home
@@ -216,7 +216,7 @@ export default function BySection({ section, books }: Props) {
         <div className="mt-6 w-full px-2 sm:px-6 overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
-              <tr className="bg-purple-800 text-white border-b">
+              <tr className="bg-purple-900 text-white border-b">
                 {["Book Cover", "Book", "Author", "Publisher", "Catalog Info", "Status"].map(
                   (header, index) => (
                     <th

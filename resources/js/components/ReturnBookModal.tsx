@@ -54,13 +54,13 @@ export default function ReturnBookModal({
           <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+              className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
             >
               Cancel
             </button>
             <button
               onClick={() => onConfirm(fineStatus)}
-              className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white text-sm"
+              className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
             >
               Return Book
             </button>

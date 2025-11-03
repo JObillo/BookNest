@@ -46,7 +46,7 @@ class BooksController extends Controller
 
         $bookCoverPath = null;
 
-        // ✅ 1. If user manually uploaded cover
+        // 1. If user manually uploaded cover
         if ($request->hasFile('book_cover')) {
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
@@ -54,7 +54,7 @@ class BooksController extends Controller
             $bookCoverPath = '/storage/' . $path;
         }
 
-        // ✅ 2. If cover is a URL (fetched from Google Books API)
+        // 2. If cover is a URL (fetched from Google Books API)
         elseif ($request->filled('book_cover') && filter_var($request->book_cover, FILTER_VALIDATE_URL)) {
             try {
                 $contents = @file_get_contents($request->book_cover);
@@ -65,11 +65,11 @@ class BooksController extends Controller
                     $bookCoverPath = '/storage/' . $path;
                 }
             } catch (\Exception $e) {
-                Log::error('❌ Failed to download book cover: ' . $e->getMessage());
+                Log::error('Failed to download book cover: ' . $e->getMessage());
             }
         }
 
-        // ✅ 3. Create the Book record
+        // 3. Create the Book record
         $book = Book::create([
             'title' => $validated['title'],
             'author' => $validated['author'],
@@ -91,7 +91,7 @@ class BooksController extends Controller
             'book_cover' => $bookCoverPath,
         ]);
 
-        // ✅ 4. Create copies of the book
+        //4. Create copies of the book
         foreach ($validated['accession_numbers'] as $number) {
             BookCopy::create([
                 'book_id' => $book->id,
@@ -100,7 +100,7 @@ class BooksController extends Controller
             ]);
         }
 
-        return back()->with('success', '✅ Book and copies added successfully!');
+        return back()->with('success', 'Book and copies added successfully!');
     }
 
     public function update(Request $request, $id)
@@ -134,7 +134,7 @@ class BooksController extends Controller
             'date_purchase','book_price','other_info','description'
         ]);
 
-        // ✅ Handle book cover update (manual upload or fetched URL)
+        // Handle book cover update (manual upload or fetched URL)
         if ($request->hasFile('book_cover')) {
             if ($book->book_cover && file_exists(public_path($book->book_cover))) {
                 unlink(public_path($book->book_cover));
@@ -153,13 +153,13 @@ class BooksController extends Controller
                     $data['book_cover'] = '/storage/' . $path;
                 }
             } catch (\Exception $e) {
-                Log::error('❌ Failed to update book cover: ' . $e->getMessage());
+                Log::error('Failed to update book cover: ' . $e->getMessage());
             }
         }
 
         $book->update($data);
 
-        // ✅ Update or create copies
+        // Update or create copies
         $existingCopies = $book->copies()->get();
 
         foreach ($request->accession_numbers as $index => $number) {
@@ -174,7 +174,7 @@ class BooksController extends Controller
             }
         }
 
-        return redirect()->route('books.index')->with('success', '✅ Book updated successfully.');
+        return redirect()->route('books.index')->with('success', 'Book updated successfully.');
     }
 
     public function destroy(Book $book)
@@ -184,7 +184,7 @@ class BooksController extends Controller
         }
 
         $book->delete();
-        return redirect()->route('books.index')->with('success', '🗑️ Book deleted successfully.');
+        return redirect()->route('books.index')->with('success', 'Book deleted successfully.');
     }
 
     public function show($id)

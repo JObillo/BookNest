@@ -41,22 +41,21 @@ export default function BookModal({
   deweys = [],
 }: Props) {
   const [formData, setFormData] = useState<Book>({
+    isbn: "",
     title: "",
     author: "",
-    isbn: "",
     publisher: "",
+    publication_place: "",
+    year: "",
     book_copies: 1,
     call_number: "",
-    year: "",
-    publication_place: "",
-    book_cover: "",
     section_id: undefined,
     dewey_id: undefined,
     subject: "",
     date_purchase: "",
     book_price: "",
     other_info: "",
-    description: "",
+    book_cover: "",
     copies: [],
   });
 
@@ -70,22 +69,21 @@ export default function BookModal({
     if (isOpen) {
       if (book) {
         setFormData({
+          isbn: book.isbn,
           title: book.title,
           author: book.author,
-          isbn: book.isbn,
           publisher: book.publisher,
+          publication_place: book.publication_place || "",
+          year: book.year || "",
           book_copies: book.book_copies,
           call_number: book.call_number,
-          year: book.year || "",
-          publication_place: book.publication_place || "",
-          book_cover: book.book_cover || "",
           section_id: book.section_id,
           dewey_id: book.dewey_id,
           subject: book.subject || "",
           date_purchase: book.date_purchase || "",
           book_price: book.book_price || "",
           other_info: book.other_info || "",
-          description: book.description || "",
+          book_cover: book.book_cover || "",
           copies: book.copies || [],
         });
 
@@ -101,22 +99,21 @@ export default function BookModal({
       } else {
         // Reset for adding new book
         setFormData({
+          isbn: "",
           title: "",
           author: "",
-          isbn: "",
           publisher: "",
+          publication_place: "",
+          year: "",
           book_copies: 1,
           call_number: "",
-          year: "",
-          publication_place: "",
-          book_cover: "",
           section_id: undefined,
           dewey_id: undefined,
           subject: "",
           date_purchase: "",
           book_price: "",
           other_info: "",
-          description: "",
+          book_cover: "",
           copies: [],
         });
         setPreview("");
@@ -263,21 +260,20 @@ export default function BookModal({
     }
 
     const data = new FormData();
+    data.append("isbn", formData.isbn);
     data.append("title", formData.title);
     data.append("author", formData.author);
-    data.append("isbn", formData.isbn);
     data.append("publisher", formData.publisher);
+    data.append("publication_place", formData.publication_place || "");
+    data.append("year", formData.year || "");
     data.append("book_copies", String(formData.book_copies));
     data.append("call_number", formData.call_number);
-    data.append("year", formData.year || "");
-    data.append("publication_place", formData.publication_place || "");
     data.append("section_id", String(formData.section_id || ""));
     data.append("dewey_id", String(formData.dewey_id || ""));
     data.append("subject", formData.subject || "");
     data.append("date_purchase", formData.date_purchase || "");
     data.append("book_price", formData.book_price || "");
     data.append("other_info", formData.other_info || "");
-    data.append("description", formData.description || "");
 
     accessionNumbers.forEach((num, i) => {
       data.append(`accession_numbers[${i}]`, num);
@@ -385,15 +381,15 @@ const fetchBookByISBN = async (isbn: string) => {
             {/* Standard fields */}
             {[
             { label: "ISBN", name: "isbn" },
-            { label: "Author", name: "author" },
             { label: "Title", name: "title" },
+            { label: "Author", name: "author" },
             { label: "Publisher", name: "publisher" },
             { label: "Call Number", name: "call_number" },
             { label: "Place of Publication", name: "publication_place" },
           ].map(({ label, name }) => (
             <div
               key={name}
-              className={`mb-3 ${name === "title" ? "md:col-span-3" : ""}`} // 👈 makes title span full width
+              className={`mb-3 ${name === "title" ? "md:col-span-3" : ""}`}
             >
               <label className="block text-sm font-medium">{label}</label>
               <Input
@@ -402,12 +398,39 @@ const fetchBookByISBN = async (isbn: string) => {
                 value={(formData as any)[name] || ""}
                 onChange={handleChange}
                 onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
-                className={`w-full border rounded p-2 ${name === "title" ? "text-lg" : ""}`} // 👈 slightly bigger text too
+                className={`w-full border rounded p-2 ${name === "title" ? "text-lg" : ""}`}
                 required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
               />
               {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
             </div>
           ))}
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Copyright Year</label>
+              <Input
+                type="number"
+                name="year"
+                value={formData.year || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                min="1000"
+                max="9999"
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Book Copies</label>
+              <Input
+                type="number"
+                name="book_copies"
+                value={formData.book_copies}
+                onChange={handleChange}
+                className="w-full border rounded p-2"
+                required
+                min={1}
+              />
+            </div>
+
             {/* Dynamic Accession Numbers */}
             {formData.book_copies > 0 && (
              <div className="mb-3 md:col-span-3">
@@ -429,43 +452,6 @@ const fetchBookByISBN = async (isbn: string) => {
             )}
 
             {/* Remaining fields (Book Copies, Year, Cover, Section, Dewey, etc.) */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium">Book Copies</label>
-              <Input
-                type="number"
-                name="book_copies"
-                value={formData.book_copies}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                required
-                min={1}
-              />
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-sm font-medium">Copyright Year</label>
-              <Input
-                type="number"
-                name="year"
-                value={formData.year || ""}
-                onChange={handleChange}
-                className="w-full border rounded p-2"
-                min="1000"
-                max="9999"
-              />
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-sm font-medium">Book Cover</label>
-              <Input
-                type="file"
-                name="book_cover"
-                onChange={handleFileChange}
-                accept="image/*"
-                className="w-full border rounded p-2"
-              />
-              {preview && <img src={preview} alt="Book cover preview" className="mt-2 w-20 h-28 object-cover" />}
-            </div>
 
             <div className="mb-3">
               <label className="block text-sm font-medium">Section</label>
@@ -557,6 +543,19 @@ const fetchBookByISBN = async (isbn: string) => {
               {errors.other_info && <p className="text-xs text-red-500 mt-1">{errors.other_info}</p>}
             </div>
 
+            <div className="mb-3">
+              <label className="block text-sm font-medium">Book Cover</label>
+              <Input
+                type="file"
+                name="book_cover"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="w-full border rounded p-2"
+              />
+              {preview && <img src={preview} alt="Book cover preview" className="mt-2 w-20 h-28 object-cover" />}
+            </div>
+
+          <div className="absolute bottom-10 right-10 flex items-center gap-3">
             <div className="mt-6 flex flex-col-reverse md:flex-row justify-end gap-4">
               <button
                 type="button"
@@ -572,6 +571,7 @@ const fetchBookByISBN = async (isbn: string) => {
                 {book ? "Update Book" : "Add Book"}
               </button>
             </div>
+          </div>
           </div>
         </form>
       </div>

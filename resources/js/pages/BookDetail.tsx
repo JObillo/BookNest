@@ -43,7 +43,7 @@ export default function BookDetail() {
           {/* Back Button */}
           <button
             onClick={() => window.history.back()}
-            className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
+            className="px-4 py-2 bg-purple-900 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
           >
              <IoMdArrowRoundBack /> Back
           </button>
@@ -123,7 +123,7 @@ export default function BookDetail() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse bg-white text-black shadow-md rounded-lg">
                   <thead>
-                    <tr className="bg-purple-800 text-white">
+                    <tr className="bg-purple-900 text-white">
                       <th className="p-3 text-left border">#</th>
                       <th className="p-3 text-left border">Accession Number</th>
                       <th className="p-3 text-left border">Status</th>

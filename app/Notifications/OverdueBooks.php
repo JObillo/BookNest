@@ -41,7 +41,7 @@ class OverdueBooks extends Notification
             ->line('')
             ->line('**Library Fine Policy:**')
             ->line('- For overnight books: ₱25.00 per day.')
-            ->line('- For hourly loans: ₱10.00 for the first hour and ₱5.00 for each succeeding hour.')
+            ->line('- For succeding hours: ₱10.00 for the first hour and ₱5.00 for each succeeding hour.')
             ->line('- Sundays and holidays are included in fine computation.')
             ->line('')
             ->line('You cannot borrow new books while any overdue items remain.')

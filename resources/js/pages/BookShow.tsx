@@ -106,7 +106,7 @@ export default function BookShow() {
                             : copy.status === "Borrowed"
                             ? "text-yellow-600"
                             : copy.status === "Reserve"
-                            ? "text-orange-500"
+                            ? "text-gray-500"
                             : "text-gray-600"
                         }`}
                         >

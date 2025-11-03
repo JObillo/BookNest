@@ -87,14 +87,14 @@ class BackupController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Backup (DB + Covers) completed successfully!',
+                'message' => 'Backup (DB + Covers) completed successfully!',
                 'file' => basename($zipFile),
             ]);
         } catch (\Exception $e) {
             Log::error('Backup failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => '❌ Backup failed: ' . $e->getMessage(),
+                'message' => 'Backup failed: ' . $e->getMessage(),
             ], 500);
         }
     }
