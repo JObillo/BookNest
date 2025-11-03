@@ -25,6 +25,11 @@ const mainNavItems: NavItem[] = [
         href: '/returnedbooks',
         icon: CornerDownLeft,
     },
+    {
+        title: 'Borrowers',
+        href: '/borrowers',
+        icon: UsersRound,
+    },
 
     {
         title: 'Fine List',
@@ -37,13 +42,16 @@ const mainNavItems: NavItem[] = [
         href: '/books',
         icon: Book,
     },
-
     {
-        title: 'Borrowers',
-        href: '/borrowers',
-        icon: UsersRound,
+         title: 'Manage Semester',
+        href: '/reports/managesemester',
+        icon: Book,
     },
-
+    {
+        title: 'Manage E-Books',
+        href: '/ebooks/manage',
+        icon: Book,
+    },
     {
         title: 'Section',
         href: '/section',
@@ -54,11 +62,6 @@ const mainNavItems: NavItem[] = [
         title: 'Dewey',
         href: '/deweys',
         icon: Layers,
-    },
-    {
-        title: 'Manage E-Books',
-        href: '/ebooks/manage',
-        icon: Book,
     },
 
     {
@@ -78,10 +81,6 @@ const mainNavItems: NavItem[] = [
                 title: 'Top Borrowers',
                 href: '/reports/top-borrowers'
             },
-            {
-                title: 'Manage Semester',
-                href: '/reports/managesemester'
-            }
         ],
     },
 ];
@@ -127,3 +126,5 @@ export function AppSidebar() {
         </Sidebar>
     );
 }
+
+//appsidebar.tsx

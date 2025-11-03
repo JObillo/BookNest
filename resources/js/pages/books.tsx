@@ -4,6 +4,7 @@ import BookModal from "@/components/BookModal";
 import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
+import { Select } from "@headlessui/react";
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -122,7 +123,7 @@ export default function Books() {
         <div className="flex justify-between items-center mb-4">
           {/* Search + Section Filter */}
           <div className="flex space-x-2">
-            <select
+            <Select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
@@ -131,7 +132,7 @@ export default function Books() {
               <option value="Title">Title</option>
               <option value="ISBN">ISBN</option>
               <option value="Author">Author</option>
-            </select>
+            </Select>
 
             <input
               type="text"
@@ -141,7 +142,7 @@ export default function Books() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            <select
+            <Select
               value={sectionFilter}
               onChange={(e) => setSectionFilter(e.target.value)}
               className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
@@ -152,7 +153,7 @@ export default function Books() {
                   {section.section_name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <button

@@ -8,6 +8,8 @@ use App\Models\Book;
 use App\Models\Section;
 use App\Models\Dewey;
 use App\Models\BookCopy;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class BooksController extends Controller
 {
@@ -39,10 +41,12 @@ class BooksController extends Controller
             'date_purchase' => 'required|date',
             'book_price' => 'required',
             'other_info' => 'required|string',
-            'book_cover' => 'nullable|image|max:2048',
+            'book_cover' => 'nullable',
         ]);
 
         $bookCoverPath = null;
+
+        // ✅ 1. If user manually uploaded cover
         if ($request->hasFile('book_cover')) {
             $file = $request->file('book_cover');
             $filename = time() . '_' . $file->getClientOriginalName();
@@ -50,6 +54,22 @@ class BooksController extends Controller
             $bookCoverPath = '/storage/' . $path;
         }
 
+        // ✅ 2. If cover is a URL (fetched from Google Books API)
+        elseif ($request->filled('book_cover') && filter_var($request->book_cover, FILTER_VALIDATE_URL)) {
+            try {
+                $contents = @file_get_contents($request->book_cover);
+                if ($contents !== false) {
+                    $filename = time() . '_' . uniqid() . '.jpg';
+                    $path = 'uploads/' . $filename;
+                    Storage::disk('public')->put($path, $contents);
+                    $bookCoverPath = '/storage/' . $path;
+                }
+            } catch (\Exception $e) {
+                Log::error('❌ Failed to download book cover: ' . $e->getMessage());
+            }
+        }
+
+        // ✅ 3. Create the Book record
         $book = Book::create([
             'title' => $validated['title'],
             'author' => $validated['author'],
@@ -71,19 +91,17 @@ class BooksController extends Controller
             'book_cover' => $bookCoverPath,
         ]);
 
-        // Create book copies
-        foreach ($validated['accession_numbers'] as $index => $number) {
-            \App\Models\BookCopy::create([
+        // ✅ 4. Create copies of the book
+        foreach ($validated['accession_numbers'] as $number) {
+            BookCopy::create([
                 'book_id' => $book->id,
                 'accession_number' => $number,
-                // If only 1 copy in total, mark as "Reserve"
                 'status' => $validated['book_copies'] === 1 ? 'Reserve' : 'Available',
             ]);
         }
 
-        return back()->with('success', 'Book and copies added successfully!');
+        return back()->with('success', '✅ Book and copies added successfully!');
     }
-
 
     public function update(Request $request, $id)
     {
@@ -106,8 +124,8 @@ class BooksController extends Controller
             'date_purchase' => 'nullable|date',
             'book_price' => 'nullable|numeric|min:0',
             'other_info' => 'nullable|string|max:1000',
-            'description' => 'nullable|string|max:500',
-            'book_cover' => 'nullable|image|max:2048',
+            // 'description' => 'nullable|string|max:500',
+            'book_cover' => 'nullable',
         ]);
 
         $data = $request->only([
@@ -116,6 +134,7 @@ class BooksController extends Controller
             'date_purchase','book_price','other_info','description'
         ]);
 
+        // ✅ Handle book cover update (manual upload or fetched URL)
         if ($request->hasFile('book_cover')) {
             if ($book->book_cover && file_exists(public_path($book->book_cover))) {
                 unlink(public_path($book->book_cover));
@@ -124,10 +143,23 @@ class BooksController extends Controller
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('uploads', $filename, 'public');
             $data['book_cover'] = '/storage/' . $path;
+        } elseif ($request->filled('book_cover') && filter_var($request->book_cover, FILTER_VALIDATE_URL)) {
+            try {
+                $contents = @file_get_contents($request->book_cover);
+                if ($contents !== false) {
+                    $filename = time() . '_' . uniqid() . '.jpg';
+                    $path = 'uploads/' . $filename;
+                    Storage::disk('public')->put($path, $contents);
+                    $data['book_cover'] = '/storage/' . $path;
+                }
+            } catch (\Exception $e) {
+                Log::error('❌ Failed to update book cover: ' . $e->getMessage());
+            }
         }
 
         $book->update($data);
 
+        // ✅ Update or create copies
         $existingCopies = $book->copies()->get();
 
         foreach ($request->accession_numbers as $index => $number) {
@@ -142,13 +174,17 @@ class BooksController extends Controller
             }
         }
 
-        return redirect()->route('books.index')->with('success', 'Book updated successfully.');
+        return redirect()->route('books.index')->with('success', '✅ Book updated successfully.');
     }
 
     public function destroy(Book $book)
     {
+        if ($book->book_cover && file_exists(public_path($book->book_cover))) {
+            unlink(public_path($book->book_cover));
+        }
+
         $book->delete();
-        return redirect()->route('books.index')->with('success', 'Book deleted successfully.');
+        return redirect()->route('books.index')->with('success', '🗑️ Book deleted successfully.');
     }
 
     public function show($id)
@@ -162,7 +198,7 @@ class BooksController extends Controller
 
     public function publicShow(Book $book)
     {
-        $book->load(['section', 'copies']); 
+        $book->load(['section', 'copies']);
 
         return Inertia::render('BookDetail', [
             'book' => $book,
@@ -177,22 +213,20 @@ class BooksController extends Controller
     }
 
     public function booksBySection(Section $section)
-{
-    // Fetch all books under the given section, including their copies
-    $books = Book::with('copies')
-        ->where('section_id', $section->id)
-        ->get()
-        ->map(function ($book) {
-            // Add first accession number for display (if available)
-            $book->accession_number = $book->copies->first()->accession_number ?? 'N/A';
-            return $book;
-        });
+    {
+        $books = Book::with('copies')
+            ->where('section_id', $section->id)
+            ->get()
+            ->map(function ($book) {
+                $book->accession_number = $book->copies->first()->accession_number ?? 'N/A';
+                return $book;
+            });
 
-    return Inertia::render('BySection', [
-        'section' => $section,
-        'books' => $books,
-    ]);
+        return Inertia::render('BySection', [
+            'section' => $section,
+            'books' => $books,
+        ]);
+    }
 }
 
-
-}
+//bookcontroller

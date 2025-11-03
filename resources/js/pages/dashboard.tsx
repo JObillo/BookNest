@@ -16,6 +16,7 @@ import {
   LabelList,
 } from 'recharts';
 
+// Stats interface
 interface StatsProps {
   stats: {
     total_books: number;
@@ -28,6 +29,7 @@ interface StatsProps {
   };
 }
 
+// Props for page data
 type Props = {
   mostBorrowed: {
     id: number;
@@ -50,22 +52,29 @@ type Props = {
   }[];
 };
 
+// Breadcrumbs
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/dashboard' },
 ];
 
 export default function Dashboard({ stats }: StatsProps) {
+  // Get mostBorrowed, leastBorrowed, notifications from Inertia page props
   const { mostBorrowed = [], leastBorrowed = [], notifications = [] } =
     usePage<Props>().props;
 
+  // State for notification drawer open/close
   const [open, setOpen] = useState(false);
+  // Local notifications copy
   const [localNotifications, setLocalNotifications] = useState(notifications);
+  // Loading state for marking notifications as read
   const [loadingIds, setLoadingIds] = useState<string[]>([]);
 
+  // Update local notifications when prop changes
   useEffect(() => {
     setLocalNotifications(notifications);
   }, [notifications]);
 
+  // Function to mark notification as read
   const markAsRead = async (id: string) => {
     try {
       setLoadingIds((prev) => [...prev, id]);
@@ -78,14 +87,24 @@ export default function Dashboard({ stats }: StatsProps) {
     }
   };
 
+  // Lock body scroll when drawer is open to prevent white bottom caused by scrollbar
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [open]);
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
 
-      <div className="flex min-h-screen overflow-x-hidden">
-        <div className="flex-1 p-6 space-y-6">
+      {/* Main container */}
+      <div className="flex min-h-screen overflow-x-hidden relative">
+        {/* Bell notification button */}
           {/* Bell beside breadcrumb title */}
-          <div className="absolute top-3 right-10 flex items-center gap-3">
+          <div className="absolute right-10 flex items-center gap-3">
             <button
               onClick={() => setOpen(!open)}
               className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -99,48 +118,56 @@ export default function Dashboard({ stats }: StatsProps) {
             </button>
           </div>
 
-          {/* Notification Drawer */}
-          {open && (
-            <>
-              <div
-                onClick={() => setOpen(false)}
-                className="fixed inset-0 bg-black/50 z-40"
-              ></div>
-              <div className="fixed top-0 right-0 w-150 h-screen bg-white dark:bg-gray-800 shadow-xl z-50 transition-transform">
-                <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="font-bold text-lg">Overdue Notifications</h2>
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="text-gray-500 hover:text-gray-800"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
-                  {localNotifications.length === 0 ? (
-                    <p className="text-gray-500">No notifications</p>
-                  ) : (
-                    localNotifications.map((n) => (
-                      <button
-                        key={n.id}
-                        onClick={() => markAsRead(n.id)}
-                        disabled={loadingIds.includes(n.id)}
-                        className="w-full text-left p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <p className="text-sm text-gray-800 dark:text-white">
-                          {n.data.message}
-                        </p>
-                        <span className="text-xs text-gray-500">
-                          Due date: {n.data.due_date}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+        {/* Notification Drawer */}
+        {open && (
+          <>
+            {/* Overlay */}
+            <div
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40"
+            />
 
+            {/* Drawer */}
+            <div className="fixed top-0 right-0 w-150 bottom-0 bg-white dark:bg-gray-800 shadow-xl z-50 flex flex-col">
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="font-bold text-lg">Notifications</h2>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Scrollable content */}
+              <div className="p-4 overflow-y-auto flex-1">
+                {localNotifications.length === 0 ? (
+                  <p className="text-gray-500">No notifications</p>
+                ) : (
+                  localNotifications.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => markAsRead(n.id)}
+                      disabled={loadingIds.includes(n.id)}
+                      className="w-full text-left p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <p className="text-sm text-gray-800 dark:text-white">
+                        {n.data.message}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        Due date: {n.data.due_date}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Main content area */}
+        <div className="flex-1 p-6 space-y-6">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <a href="/books">
@@ -227,9 +254,7 @@ export default function Dashboard({ stats }: StatsProps) {
                         tick={{ fontSize: 12, fill: "#374151" }}
                         interval={0}
                         tickFormatter={(value) =>
-                          value.length > 12
-                            ? value.slice(0, 12) + '…'
-                            : value
+                          value.length > 12 ? value.slice(0, 12) + '…' : value
                         }
                       />
                       <YAxis allowDecimals={false} />
@@ -262,7 +287,7 @@ export default function Dashboard({ stats }: StatsProps) {
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart
-                      data={leastBorrowed.filter((b) => b.borrow_count <= 2)}
+                      data={leastBorrowed.filter((b) => b.borrow_count <= 1)}
                       margin={{ top: 30, right: 20, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -271,9 +296,7 @@ export default function Dashboard({ stats }: StatsProps) {
                         tick={{ fontSize: 12, fill: '#374151' }}
                         interval={0}
                         tickFormatter={(value) =>
-                          value.length > 12
-                            ? value.slice(0, 12) + '…'
-                            : value
+                          value.length > 12 ? value.slice(0, 12) + '…' : value
                         }
                       />
                       <YAxis allowDecimals={false} />

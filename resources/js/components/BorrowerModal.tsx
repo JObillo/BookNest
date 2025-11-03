@@ -78,19 +78,14 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
     const errors: string[] = [];
 
     if (!/^[a-zA-Z\s.'-]+$/.test(formData.name)) errors.push("Name contains invalid characters.");
-
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.push("Email is invalid.");
 
     if (formData.patron_type === "Student" || formData.patron_type === "Faculty") {
-      if (!/^\d{5}$/.test(formData.school_id || "")) 
-        errors.push("School ID must be exactly 5 digits.");
+      if (!/^\d{5}$/.test(formData.school_id || "")) errors.push("School ID must be exactly 5 digits.");
     } else if (formData.patron_type === "Guest") {
-      if (!/^G-\d+$/.test(formData.school_id || "")) 
-        errors.push("Guest ID must be in format G-xxxxx.");
-      if (!/^\d+$/.test(formData.contact_number || "")) 
-        errors.push("Contact Number must contain numbers only.");
+      if (!/^G-\d+$/.test(formData.school_id || "")) errors.push("Guest ID must be in format G-xxxxx.");
+      if (!/^\d+$/.test(formData.contact_number || "")) errors.push("Contact Number must contain numbers only.");
     }
-
 
     if (formData.patron_type === "Student") {
       if (!formData.department) errors.push("Department is required.");
@@ -117,8 +112,22 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-[400px]">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+      onClick={onClose} // Close when clicking outside
+    >
+      <div
+        className="bg-white rounded-lg shadow-lg p-6 w-[400px] relative"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      >
+        {/* X button */}
+        <button
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 font-bold"
+          onClick={onClose}
+        >X
+          {/* &times; */}
+        </button>
+
         <h2 className="text-xl font-bold mb-4">Add Borrower</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Borrower Type */}
@@ -131,7 +140,9 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
           >
             <option value="">Select Borrower Type</option>
             {patronTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
+              <option key={type} value={type}>
+                {type}
+              </option>
             ))}
           </select>
 
@@ -177,7 +188,9 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
                   ))}
                 </select>
               )}
@@ -194,7 +207,9 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                   >
                     <option value="">Select Course</option>
                     {courses.map((course) => (
-                      <option key={course} value={course}>{course}</option>
+                      <option key={course} value={course}>
+                        {course}
+                      </option>
                     ))}
                   </select>
                   <select
@@ -206,7 +221,9 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                   >
                     <option value="">Select Year</option>
                     {years.map((year) => (
-                      <option key={year} value={year}>{year}</option>
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
                     ))}
                   </select>
                 </>
