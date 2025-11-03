@@ -286,6 +286,10 @@ export default function BookModal({
     if (selectedFile) {
       data.append("book_cover", selectedFile);
     }
+    else if (formData.book_cover) {
+      data.append("book_cover", formData.book_cover);
+    }
+
 
     const successMessage = book?.id
       ? "Book updated successfully."
