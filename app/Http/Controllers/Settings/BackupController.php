@@ -38,7 +38,7 @@ class BackupController extends Controller
             date_default_timezone_set('Asia/Manila');
             $now = now('Asia/Manila');
 
-            $activeSemester = \App\Models\Semester::whereNull('end_date')->first();
+            $activeSemester = \App\Models\Semester::orderBy('start_date', 'desc')->first();
             $semesterName = $activeSemester ? str_replace(' ', '_', $activeSemester->name) : 'NoSemester';
             $timestamp = strtoupper($now->format('Y-m-d_h-ia'));
 
@@ -161,29 +161,38 @@ class BackupController extends Controller
             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
             $sqlFile = null;
 
-            // Extract zip if needed
-            if ($ext === 'zip') {
-                shell_exec("powershell Expand-Archive -Path \"{$filePath}\" -DestinationPath \"{$extractDir}\" -Force");
+            // 🗜️ Extract ZIP backup and find SQL
+if ($ext === 'zip') {
+    // 1️⃣ Extract using PowerShell (works on Windows)
+    shell_exec("powershell -Command \"Expand-Archive -Path '{$filePath}' -DestinationPath '{$extractDir}' -Force\"");
 
-                // Restore uploaded covers if included
-                $uploadsRestored = $extractDir . '/uploads';
-                $targetUploads = storage_path('app/public/uploads');
-                if (file_exists($uploadsRestored)) {
-                    @mkdir($targetUploads, 0755, true);
-                    shell_exec("xcopy /E /Y \"{$uploadsRestored}\" \"{$targetUploads}\"");
-                }
+    // 2️⃣ Wait until extraction finishes
+    $waited = 0;
+    while (!glob($extractDir . '/*.sql') && $waited < 10) {
+        sleep(1);
+        $waited++;
+    }
 
-                // Find SQL file
-                $iterator = new \RecursiveIteratorIterator(
-                    new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
-                );
-                foreach ($iterator as $file) {
-                    if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'sql') {
-                        $sqlFile = $file->getPathname();
-                        break;
-                    }
-                }
-            } elseif ($ext === 'sql') {
+    // 3️⃣ Restore uploads folder if found
+    $uploadsRestored = $extractDir . '/uploads';
+    $targetUploads = storage_path('app/public/uploads');
+    if (file_exists($uploadsRestored)) {
+        @mkdir($targetUploads, 0755, true);
+        shell_exec("xcopy /E /Y \"{$uploadsRestored}\" \"{$targetUploads}\" >nul");
+    }
+
+    // 4️⃣ Locate SQL file in extracted folder
+    $iterator = new \RecursiveIteratorIterator(
+        new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $file) {
+        if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'sql') {
+            $sqlFile = $file->getPathname();
+            break;
+        }
+    }
+}
+ elseif ($ext === 'sql') {
                 $sqlFile = $filePath;
             }
 

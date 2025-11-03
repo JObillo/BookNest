@@ -103,19 +103,20 @@ export default function Dashboard({ stats }: StatsProps) {
       {/* Main container */}
       <div className="flex min-h-screen overflow-x-hidden relative">
         {/* Bell notification button */}
-        <div className="absolute top-3 left-30 flex items-center gap-3 z-30">
-          <button
-            onClick={() => setOpen(!open)}
-            className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            <Bell className="w-6 h-6 text-gray-700 dark:text-white" />
-            {localNotifications.length > 0 && (
-              <span className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1 rounded-full">
-                {localNotifications.length}
-              </span>
-            )}
-          </button>
-        </div>
+          {/* Bell beside breadcrumb title */}
+          <div className="absolute right-10 flex items-center gap-3">
+            <button
+              onClick={() => setOpen(!open)}
+              className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              <Bell className="w-7 h-7 text-gray-700 dark:text-white" />
+              {localNotifications.length > 0 && (
+                <span className="absolute top-1 right-1 bg-red-600 text-white text-xs px-1 rounded-full">
+                  {localNotifications.length}
+                </span>
+              )}
+            </button>
+          </div>
 
         {/* Notification Drawer */}
         {open && (
@@ -286,7 +287,7 @@ export default function Dashboard({ stats }: StatsProps) {
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart
-                      data={leastBorrowed.filter((b) => b.borrow_count <= 2)}
+                      data={leastBorrowed.filter((b) => b.borrow_count <= 1)}
                       margin={{ top: 30, right: 20, left: 10, bottom: 50 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
