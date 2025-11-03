@@ -14,40 +14,93 @@ type Props = {
     title: string;
     author: string;
     isbn: string;
+    subject?: string;
     publisher: string;
     status: string;
     accession_number: string;
     call_number: string;
-    year?: string;
+    year?: string | number;
     publication_place: string;
     book_cover?: string;
   }[];
 };
 
 export default function BySection({ section, books }: Props) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>(''); // UPDATED: renamed for consistency
+  const [searchFilter, setSearchFilter] = useState<string>('All'); // UPDATED: renamed for consistency
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchCategory, setSearchCategory] = useState('All');
+
+  // ADDED: Year filtering states
+  const [startYear, setStartYear] = useState<number | null>(null);
+  const [endYear, setEndYear] = useState<number | null>(null);
+  const [tempStartYear, setTempStartYear] = useState<number | null>(null);
+  const [tempEndYear, setTempEndYear] = useState<number | null>(null);
+
+  // ADDED: Apply year filter on Enter
+  const handleYearKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setStartYear(tempStartYear);
+      setEndYear(tempEndYear);
+    }
+  };
+
+  // ADDED: Clear all filters
+  const clearYearFilter = () => {
+    setTempStartYear(null);
+    setTempEndYear(null);
+    setStartYear(null);
+    setEndYear(null);
+  };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, searchCategory]);
+  }, [searchTerm, searchFilter, startYear, endYear]);
 
+  // ADDED: Helper functions (same as Welcome.tsx)
+  const parseYear = (y?: number | string): number | undefined => {
+    if (!y) return undefined;
+    const n = typeof y === "number" ? y : parseInt(String(y), 10);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  const isWithinYearRange = (itemYear?: number | string): boolean => {
+    const y = parseYear(itemYear);
+    if (startYear === null && endYear === null) return true;
+    if (y === undefined) return false;
+    if (startYear !== null && y < startYear) return false;
+    if (endYear !== null && y > endYear) return false;
+    return true;
+  };
+
+  // UPDATED: Filtering logic similar to Welcome.tsx
   const filteredBooks = useMemo(() => {
-    const lowerQuery = searchQuery.trim().toLowerCase();
+    const lowerQuery = searchTerm.trim().toLowerCase();
+
     return books.filter((book) => {
-      if (searchCategory === "All") {
-        return (
+      const matchesYear = isWithinYearRange(book.year);
+      let matchesSearch = false;
+
+      if (searchFilter === "All") {
+        matchesSearch =
           book.title.toLowerCase().includes(lowerQuery) ||
           book.isbn.toLowerCase().includes(lowerQuery) ||
-          book.author.toLowerCase().includes(lowerQuery)
-        );
+          book.author.toLowerCase().includes(lowerQuery) ||
+          (book.subject ?? "").toLowerCase().includes(lowerQuery);
+      } else if (searchFilter === "Title") {
+        matchesSearch = book.title.toLowerCase().includes(lowerQuery);
+      } else if (searchFilter === "Isbn") {
+        matchesSearch = book.isbn.toLowerCase().includes(lowerQuery);
+      } else if (searchFilter === "Author") {
+        matchesSearch = book.author.toLowerCase().includes(lowerQuery);
+      } else if (searchFilter === "Subject") {
+        matchesSearch = (book.subject ?? "").toLowerCase().includes(lowerQuery);
       }
-      const value = book[searchCategory as keyof typeof book];
-      return typeof value === "string" && value.trim().toLowerCase().includes(lowerQuery);
-    });
-  }, [books, searchQuery, searchCategory]);
 
+      return matchesSearch && matchesYear;
+    });
+  }, [books, searchTerm, searchFilter, startYear, endYear]);
+
+  // Pagination logic remains the same
   const booksPerPage = 5;
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
@@ -65,7 +118,7 @@ export default function BySection({ section, books }: Props) {
       <Head title={`Books in ${section.section_name}`} />
       <div className="p-6">
         {/* Header */}
-        <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white dark:bg-gray-800 shadow-md">
+        <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white shadow-md">
           <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
         </header>
 
@@ -79,16 +132,16 @@ export default function BySection({ section, books }: Props) {
           </p>
         </div>
 
-        {/* Section Name - now left aligned */}
+        {/* Section Name */}
         <div className="mt-8 px-2 sm:px-6">
           <h1 className="font-bold text-2xl royalPurple text-left">
             Books in {section.section_name}
           </h1>
         </div>
 
-        {/* Controls: FaHome + Filter + Search */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-start gap-3 mt-4 px-2 sm:px-6">
-          {/* FaHome */}
+        {/* UPDATED: Search + Filter controls (same style as Welcome.tsx) */}
+        <div className="flex flex-col sm:flex-row items-center justify-start gap-3 mt-4 px-2 sm:px-6 flex-wrap sm:flex-nowrap">
+          {/* Home Button */}
           <Link
             href={route("home")}
             className="px-4 py-2 bg-purple-800 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
@@ -97,28 +150,69 @@ export default function BySection({ section, books }: Props) {
             <FaHome /> Home
           </Link>
 
-          {/* Filter Dropdown */}
-          <select
+          {/* Search Filter Dropdown */}
+          <Select
+            value={searchFilter}
+            onChange={(e: any) => setSearchFilter(e.target.value)}
             className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-32"
-            value={searchCategory}
-            onChange={(e) => setSearchCategory(e.target.value)}
           >
             <option value="All">All</option>
-            <option value="title">Title</option>
-            <option value="author">Author</option>
-            <option value="isbn">ISBN</option>
-          </select>
+            <option value="Title">Title</option>
+            <option value="Isbn">Isbn</option>
+            <option value="Author">Author</option>
+            <option value="Subject">Subject</option>
+          </Select>
 
-          {/* Search Input (same height as filter) */}
+          {/* Search Input */}
           <input
+            type="text"
+            placeholder={`Search by ${searchFilter.toLowerCase()}...`}
             className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-100"
-            placeholder={`Search by ${searchCategory}`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
+
+          {/* ADDED: Start and End Year inputs */}
+          <input
+            type="number"
+            placeholder="Start Year"
+            className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
+            value={tempStartYear ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^\d{0,4}$/.test(value)) {
+                setTempStartYear(value === "" ? null : parseInt(value, 10));
+              }
+            }}
+            onKeyDown={handleYearKeyPress}
+            onWheel={(e) => (e.target as HTMLInputElement).blur()}
+          />
+
+          <input
+            type="number"
+            placeholder="End Year"
+            className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
+            value={tempEndYear ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^\d{0,4}$/.test(value)) {
+                setTempEndYear(value === "" ? null : parseInt(value, 10));
+              }
+            }}
+            onKeyDown={handleYearKeyPress}
+            onWheel={(e) => (e.target as HTMLInputElement).blur()}
+          />
+
+          {/* ADDED: Clear Button */}
+          <button
+            onClick={clearYearFilter}
+            className="bg-gray-300 text-gray-800 px-3 py-2 rounded hover:bg-gray-400 transition"
+          >
+            Clear
+          </button>
         </div>
 
-        {/* Table */}
+        {/* Table Section (unchanged except year filter works now) */}
         <div className="mt-6 w-full px-2 sm:px-6 overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
@@ -141,7 +235,6 @@ export default function BySection({ section, books }: Props) {
               {displayedBooks.length ? (
                 displayedBooks.map((book) => (
                   <tr key={book.id} className="border-b hover:bg-gray-100">
-                    {/* Book Cover */}
                     <td className="p-3 hidden lg:table-cell">
                       <Link href={route("books.publicShow", { book: book.id })}>
                         {book.book_cover ? (
@@ -156,7 +249,6 @@ export default function BySection({ section, books }: Props) {
                       </Link>
                     </td>
 
-                    {/* Title */}
                     <td className="p-3">
                       <Link href={route("books.publicShow", { book: book.id })}>
                         <div className="font-semibold">{book.title}</div>
@@ -164,13 +256,9 @@ export default function BySection({ section, books }: Props) {
                       </Link>
                     </td>
 
-                    {/* Author */}
                     <td className="p-3">{book.author}</td>
-
-                    {/* Publisher */}
                     <td className="p-3 hidden lg:table-cell">{book.publisher}</td>
 
-                    {/* Catalog Info */}
                     <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
                       <div>Accession #: {book.accession_number}</div>
                       <div>Call #: {book.call_number}</div>
@@ -178,7 +266,6 @@ export default function BySection({ section, books }: Props) {
                       <div>Place: {book.publication_place}</div>
                     </td>
 
-                    {/* Status */}
                     <td
                       className={`p-3 font-medium ${
                         book.status === "Available" ? "text-green-600" : "text-red-600"

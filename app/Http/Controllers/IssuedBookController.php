@@ -106,7 +106,9 @@ class IssuedBookController extends Controller
             'book_id'     => $book->id,
             'copy_id'     => $copy->id,
             'issued_date' => now('Asia/Manila')->setSeconds(0),
-            'due_date'    => Carbon::parse($request->due_date)->setSeconds(0),
+            'due_date' => Carbon::parse($request->due_date)
+                ->setTime(8, 0, 0)
+                ->setTimezone('Asia/Manila'),
             'status'      => 'Issued',
             'fine_amount' => 0,
             'fine_status' => 'no fine',

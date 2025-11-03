@@ -54,7 +54,26 @@ export default function Welcome() {
   const [searchFilter, setSearchFilter] = useState<string>("All");
   const [startYear, setStartYear] = useState<number | null>(null);
   const [endYear, setEndYear] = useState<number | null>(null);
+    // ADDED: temporary states for typing before pressing Enter
+  const [tempStartYear, setTempStartYear] = useState<number | null>(null);
+  const [tempEndYear, setTempEndYear] = useState<number | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+    // ADDED: when pressing Enter, apply the year filter
+  const handleYearKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setStartYear(tempStartYear);
+      setEndYear(tempEndYear);
+    }
+  };
+
+  // ADDED: clear both filters
+  const clearYearFilter = () => {
+    setTempStartYear(null);
+    setTempEndYear(null);
+    setStartYear(null);
+    setEndYear(null);
+  };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -234,31 +253,44 @@ export default function Welcome() {
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
           />
+
+          {/* ADDED: Start and End Year inputs */}
           <input
             type="number"
             placeholder="Start Year"
             className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
-            value={startYear ?? ""}
-            onChange={(e) =>
-              setStartYear(e.target.value === "" ? null : parseInt(e.target.value, 10))
-            }
+            value={tempStartYear ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^\d{0,4}$/.test(value)) {
+                setTempStartYear(value === "" ? null : parseInt(value, 10));
+              }
+            }}
+            onKeyDown={handleYearKeyPress}
+            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
+
           <input
             type="number"
             placeholder="End Year"
             className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
-            value={endYear ?? ""}
-            onChange={(e) =>
-              setEndYear(e.target.value === "" ? null : parseInt(e.target.value, 10))
-            }
+            value={tempEndYear ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || /^\d{0,4}$/.test(value)) {
+                setTempEndYear(value === "" ? null : parseInt(value, 10));
+              }
+            }}
+            onKeyDown={handleYearKeyPress}
+            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
 
+          {/* ADDED: Clear button */}
           <button
-            onClick={() => setIsHelpOpen(!isHelpOpen)}
-            className={`flying-book ${isHelpOpen ? "flying-book-open" : "flying-book-closed"} text-5xl`}
-            title="How to Use the Library"
+            onClick={clearYearFilter}
+            className="bg-gray-300 text-gray-800 px-3 py-2 rounded hover:bg-gray-400 transition"
           >
-            📖
+            Clear
           </button>
         </div>
 

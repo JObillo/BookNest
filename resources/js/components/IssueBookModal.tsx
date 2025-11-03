@@ -13,6 +13,8 @@ export default function IssueBookModal({
   const [patron, setPatron] = useState<any>(null);
   const [book, setBook] = useState<any>(null);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [loadingField, setLoadingField] = useState<"school_id" | "isbn" | null>(null);
+  const [notFound, setNotFound] = useState({ school_id: false, isbn: false });
 
   const { data, setData, post, processing, reset, errors } = useForm({
     school_id: "",
@@ -21,20 +23,52 @@ export default function IssueBookModal({
     due_date: "",
   });
 
+  /** SCHOOL ID HANDLER — numeric only and max 5 */
+  const handleSchoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // Only digits
+    if (value.length <= 5) setData("school_id", value);
+  };
+
+  /** ISBN HANDLER — auto format to 111-1-11111-111-1 (ISBN-13) */
+  const handleIsbnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, "").slice(0, 13); // Keep only 13 digits max
+    let formatted = "";
+
+    // Format dynamically
+    if (digits.length > 0) formatted += digits.substring(0, 3);
+    if (digits.length > 3) formatted += "-" + digits.substring(3, 4);
+    if (digits.length > 4) formatted += "-" + digits.substring(4, 9);
+    if (digits.length > 9) formatted += "-" + digits.substring(9, 12);
+    if (digits.length > 12) formatted += "-" + digits.substring(12, 13);
+
+    setData("isbn", formatted);
+  };
+
+  /** 🔄 Fetch patron by school_id */
   const fetchPatron = async () => {
     if (!data.school_id.trim()) return;
+    setLoadingField("school_id");
+    setNotFound((prev) => ({ ...prev, school_id: false }));
+
     try {
       const res = await axios.get(`/patrons/school/${data.school_id}`);
       setPatron(res.data);
       setDuplicateWarning(false);
     } catch {
       setPatron(null);
+      setNotFound((prev) => ({ ...prev, school_id: true }));
+    } finally {
+      setLoadingField(null);
     }
   };
 
+  /** Fetch book by ISBN */
   const fetchBook = async () => {
     const isbn = data.isbn.trim();
     if (!isbn) return;
+    setLoadingField("isbn");
+    setNotFound((prev) => ({ ...prev, isbn: false }));
+
     try {
       const res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
       setBook(res.data);
@@ -42,9 +76,13 @@ export default function IssueBookModal({
     } catch (err) {
       console.error("Error fetching book:", err);
       setBook(null);
+      setNotFound((prev) => ({ ...prev, isbn: true }));
+    } finally {
+      setLoadingField(null);
     }
   };
 
+  /** Check for duplicate issue */
   const checkDuplicateIssue = async () => {
     if (!patron || !book) return false;
     try {
@@ -58,6 +96,7 @@ export default function IssueBookModal({
     }
   };
 
+  /** ✅ Handle form submit */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -80,6 +119,7 @@ export default function IssueBookModal({
     });
   };
 
+  /** ✅ Render patron info */
   const renderPatronInfo = (patron: any) => {
     switch (patron.patron_type) {
       case "Student":
@@ -132,22 +172,29 @@ export default function IssueBookModal({
         {/* Duplicate warning */}
         {duplicateWarning && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded">
-            This patron already has this book issued. Cannot borrow again until returned.
+            This borrower already has this book issued. Cannot borrow again until returned.
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Patron lookup */}
+          {/* Student ID */}
           <div>
-            <label>Student ID:</label>
+            <label>ID:</label>
             <input
               type="text"
+              inputMode="numeric"
               value={data.school_id}
-              onChange={(e) => setData("school_id", e.target.value.trim())}
+              onChange={handleSchoolIdChange}
               onBlur={fetchPatron}
               className="w-full p-2 border rounded"
               required
             />
+            {loadingField === "school_id" && (
+              <p className="text-blue-600 text-sm mt-1 animate-pulse">Fetching student info...</p>
+            )}
+            {notFound.school_id && (
+              <p className="text-red-600 text-sm mt-1">❌ No student found for this ID.</p>
+            )}
           </div>
 
           {patron && (
@@ -158,17 +205,24 @@ export default function IssueBookModal({
             </div>
           )}
 
-          {/* Book lookup */}
+          {/* ISBN */}
           <div>
-            <label>ISBN:</label>
+            <label>ISBN 13:</label>
             <input
               type="text"
+              inputMode="numeric"
               value={data.isbn}
-              onChange={(e) => setData("isbn", e.target.value.trim())}
+              onChange={handleIsbnChange}
               onBlur={fetchBook}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded tracking-widest"
               required
             />
+            {loadingField === "isbn" && (
+              <p className="text-blue-600 text-sm mt-1 animate-pulse">Fetching book info...</p>
+            )}
+            {notFound.isbn && (
+              <p className="text-red-600 text-sm mt-1">❌ No book found for this ISBN.</p>
+            )}
           </div>
 
           {book && (
@@ -176,7 +230,6 @@ export default function IssueBookModal({
               <p><strong>Title:</strong> {book.title}</p>
               <p><strong>Author:</strong> {book.author}</p>
               <p><strong>Publisher:</strong> {book.publisher}</p>
-              {/* <p><strong>Accession:</strong> {book.accession_number}</p> */}
               <p><strong>Call No.:</strong> {book.call_number}</p>
               <p><strong>Year:</strong> {book.year}</p>
               <p><strong>Place:</strong> {book.publication_place}</p>
@@ -191,18 +244,19 @@ export default function IssueBookModal({
             </div>
           )}
 
-          {/* Accession input */}
+          {/* Accession Number */}
           <div>
             <label>Accession Number:</label>
             <input
               type="text"
               value={data.accession_number}
-              onChange={(e) =>
-                setData("accession_number", e.target.value.trim())
-              }
+              onChange={(e) => setData("accession_number", e.target.value.trim())}
               className="w-full p-2 border rounded"
               required
             />
+            {!data.accession_number && (
+              <p className="text-gray-500 text-sm mt-1">Enter a valid accession number.</p>
+            )}
           </div>
 
           {/* Due Date */}
@@ -217,6 +271,7 @@ export default function IssueBookModal({
             />
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end gap-2">
             <button
               type="button"

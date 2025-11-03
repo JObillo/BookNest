@@ -7,6 +7,7 @@ use App\Http\Controllers\EbookController;
 use App\Http\Controllers\Api\BookApiController;
 use App\Http\Controllers\Api\DeweyApiController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MobileEbookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,8 +22,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Ebook routes
 Route::get('/ebooks', [EbookController::class, 'index']);
+// Route::get('/ebooks/free', [EbookController::class, 'freeEbooks']);
 Route::post('/ebooks/fetch', [EbookController::class, 'fetchNew']);
 Route::delete('/ebooks/reset', [EbookController::class, 'reset']);
+
+// mobile ebook route
+Route::get('/mobile/ebooks', [MobileEbookController::class, 'index']);
+
 
 // Section routes
 Route::prefix('sections')->group(function () {
