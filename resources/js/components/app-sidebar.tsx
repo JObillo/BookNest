@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, CornerDownLeft, List, Book, UsersRound, Layers } from 'lucide-react';
+import { BookOpen, LibraryBig, LayoutGrid, CornerDownLeft, CornerUpRight, List, Book, UsersRound, Layers, CalendarCog, ChartColumnBig} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -17,18 +17,13 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Issued Book',
         href: '/issuedbooks',
-        icon: BookOpen,
+        icon: CornerUpRight,
     },
 
     {
         title: 'Unreturned Books',
         href: '/returnedbooks',
         icon: CornerDownLeft,
-    },
-    {
-        title: 'Borrowers',
-        href: '/borrowers',
-        icon: UsersRound,
     },
 
     {
@@ -42,20 +37,11 @@ const mainNavItems: NavItem[] = [
         href: '/books',
         icon: Book,
     },
-    {
-         title: 'Manage Semester',
-        href: '/reports/managesemester',
-        icon: Book,
-    },
-    {
-        title: 'Manage E-Books',
-        href: '/ebooks/manage',
-        icon: Book,
-    },
+
     {
         title: 'Section',
         href: '/section',
-        icon: Folder,
+        icon: LibraryBig,
     },
 
     {
@@ -65,8 +51,26 @@ const mainNavItems: NavItem[] = [
     },
 
     {
+        title: 'Borrowers',
+        href: '/borrowers',
+        icon: UsersRound,
+    },
+
+    {
+         title: 'Manage Semester',
+        href: '/reports/managesemester',
+        icon: CalendarCog,
+    },
+    
+    // {
+    //     title: 'Manage E-Books',
+    //     href: '/ebooks/manage',
+    //     icon: Book,
+    // },
+
+    {
         title: 'Report',
-        icon: Layers,
+        icon: ChartColumnBig,
         href: '/report',
         children: [
             {

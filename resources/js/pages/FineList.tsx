@@ -157,17 +157,17 @@ const handleExportExcel = () => {
       <Toaster position="top-right" richColors />
       {/* Search, Filter, Print */}
       <div className="flex flex-col sm:flex-row gap-4 sm:items-center p-6">
-        <Input
+        <input
           placeholder="Search by Name or School ID"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border rounded px-2 py-2 w-full sm:w-60 shadow-sm focus:outline-none focus:ring"
+          className="border border-black rounded px-2 py-2 w-120"
         />
 
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as "all" | "unpaid" | "cleared")}
-          className="border rounded px-2 py-2 shadow-sm focus:outline-none focus:ring"
+          className="border border-black rounded px-2 py-2"
         >
           <option value="all">All</option>
           <option value="unpaid">Unpaid</option>

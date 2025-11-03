@@ -100,11 +100,10 @@ export default function Dashboard({ stats }: StatsProps) {
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Dashboard" />
 
-      {/* Main container */}
-      <div className="flex min-h-screen overflow-x-hidden relative">
-        {/* Bell notification button */}
+      <div className="flex min-h-screen overflow-x-hidden">
+        <div className="flex-1 p-6 space-y-6">
           {/* Bell beside breadcrumb title */}
-          <div className="absolute right-10 flex items-center gap-3">
+          <div className="absolute top-3 right-10 flex items-center gap-3">
             <button
               onClick={() => setOpen(!open)}
               className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -131,7 +130,7 @@ export default function Dashboard({ stats }: StatsProps) {
             <div className="fixed top-0 right-0 w-150 bottom-0 bg-white dark:bg-gray-800 shadow-xl z-50 flex flex-col">
               {/* Header */}
               <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="font-bold text-lg">Notifications</h2>
+                <h2 className="font-bold text-lg">Overdue Notifications</h2>
                 <button
                   onClick={() => setOpen(false)}
                   className="text-gray-500 hover:text-gray-800"
@@ -226,7 +225,6 @@ export default function Dashboard({ stats }: StatsProps) {
               </div>
             </a>
           </div>
-
           {/* Borrowing Report */}
           <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">
@@ -321,6 +319,8 @@ export default function Dashboard({ stats }: StatsProps) {
           </div>
         </div>
       </div>
+      </div>
+      
     </AppLayout>
   );
 }

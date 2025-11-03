@@ -134,8 +134,8 @@ export default function ReturnedBooks() {
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
         {/* Search Bar */}
         <div>
-          <Input
-            className="border rounded px-2 py-2 w-100 shadow-sm focus:outline-none focus:ring"
+          <input
+            className="border border-black rounded px-2 py-2 w-120"
             placeholder="Search by Name or School ID"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -206,7 +206,7 @@ export default function ReturnedBooks() {
                             : "bg-green-600"
                         }`}
                       >
-                        {record.status === "Issued" ? "Not Returned" : record.status}
+                        {record.status === "Issued" ? "Unreturned" : record.status}
                       </span>
                     </td>
 
