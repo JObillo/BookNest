@@ -26,7 +26,7 @@ const ProgressBar: React.FC = () => {
     <div className="w-full bg-gray-200 rounded-full h-3 mt-3 overflow-hidden">
       <div
         className="h-3 bg-blue-600 rounded-full transition-all duration-700 ease-out"
-        style={{ width: `${progress}%` }}
+        // style={{ width: `${progress}%` }}
       />
     </div>
   );
@@ -39,7 +39,7 @@ interface Backup {
 }
 
 // -----------------------------------------------------------
-// BackupRestore Component (with confirmation modal)
+// BackupRestore Component
 // -----------------------------------------------------------
 export default function BackupRestore() {
   const [backups, setBackups] = useState<Backup[]>([]);
@@ -55,23 +55,19 @@ export default function BackupRestore() {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingRestore, setPendingRestore] = useState(false);
 
-  // fetch backups
+  // ---------------------------
+  // Fetch backups
+  // ---------------------------
   const fetchBackups = useCallback(async () => {
     try {
       const res = await axios.get<Backup[]>("/settings/backups");
-      const formatted = res.data.map((b) => ({
-        ...b,
-        created_at: new Date(b.created_at + " UTC").toLocaleString("en-PH", {
-          timeZone: "Asia/Manila",
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-      }));
-      setBackups(formatted);
+
+      // Sort newest first
+      const sorted = res.data.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setBackups(sorted);
     } catch {
       toast.error("❌ Failed to fetch backups");
     }
@@ -81,33 +77,36 @@ export default function BackupRestore() {
     fetchBackups();
   }, [fetchBackups]);
 
-  // create backup
+  // ---------------------------
+  // Create backup
+  // ---------------------------
   const createBackup = async () => {
     try {
       setIsLoading(true);
       setProgress(10);
       toast.loading("Creating backup... Please wait.", { id: "backup" });
 
-      await axios.post("/settings/backup/store");
+      await axios.post("/settings/backup/store"); // Ensure API returns new backup info
       setProgress(70);
 
-      setTimeout(async () => {
-        setProgress(100);
-        toast.dismiss("backup");
-        toast.success("✅ Backup completed successfully!");
-        await fetchBackups();
-        setIsLoading(false);
-        setProgress(0);
-      }, 1800);
+      // Fetch updated backups immediately
+      await fetchBackups();
+
+      toast.dismiss("backup");
+      toast.success("✅ Backup completed successfully!");
+      setProgress(100);
     } catch {
       toast.dismiss("backup");
       toast.error("❌ Error creating backup.");
+    } finally {
       setIsLoading(false);
       setProgress(0);
     }
   };
 
-  // download backup
+  // ---------------------------
+  // Download backup
+  // ---------------------------
   const downloadBackup = async (filename: string) => {
     try {
       setIsLoading(true);
@@ -141,20 +140,19 @@ export default function BackupRestore() {
     }
   };
 
-  // Open modal (clears previous values)
+  // ---------------------------
+  // Restore modals
+  // ---------------------------
   const openRestoreModal = () => {
     setRestoreFile(null);
     setAdminPassword("");
     setIsRestoreModalOpen(true);
   };
-
   const closeRestoreModal = () => {
     setIsRestoreModalOpen(false);
     setRestoreFile(null);
     setAdminPassword("");
   };
-
-  // handle Escape key to close modal
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeRestoreModal();
@@ -163,7 +161,6 @@ export default function BackupRestore() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isRestoreModalOpen]);
 
-  // Upload & restore handler (open confirm modal first)
   const handleRestoreUpload = async () => {
     if (!restoreFile || !adminPassword) {
       toast.error("⚠️ Please select a file and enter the admin password.");
@@ -172,7 +169,6 @@ export default function BackupRestore() {
     setIsConfirmModalOpen(true);
   };
 
-  // Confirm restore (proceed after modal)
   const confirmRestore = async () => {
     setIsConfirmModalOpen(false);
     setPendingRestore(true);
@@ -195,7 +191,7 @@ export default function BackupRestore() {
         toast.success("✅ Restore completed successfully!");
         closeRestoreModal();
 
-        // 🧠 Auto logout after short delay
+        // Auto logout
         setTimeout(async () => {
           try {
             await axios.post("/logout");
@@ -228,23 +224,22 @@ export default function BackupRestore() {
               description="Create, download, and restore database backups."
             />
 
-            {/* Top actions: Restore (modal) + Create Backup */}
+            {/* Top actions */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3">
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={openRestoreModal}
-                  disabled={isLoading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  ♻️ Restore
-                </Button>
-
-                <Button
                   onClick={createBackup}
                   disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
                 >
                   {isLoading ? "Processing..." : "💾 Create Backup"}
+                </Button>
+                <Button
+                  onClick={openRestoreModal}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                >
+                  ♻️ Restore
                 </Button>
               </div>
             </div>
@@ -266,13 +261,23 @@ export default function BackupRestore() {
                     backups.map((b, i) => (
                       <tr key={i} className="border-b hover:bg-gray-50">
                         <td className="p-3 break-all">{b.filename}</td>
-                        <td className="p-3 whitespace-nowrap">{b.created_at}</td>
+                        <td className="p-3 whitespace-nowrap">
+                          {new Date(b.created_at).toLocaleString("en-PH", {
+                            timeZone: "Asia/Manila",
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </td>
                         <td className="p-3 text-center">
                           <div className="flex justify-center gap-2">
                             <Button
                               onClick={() => downloadBackup(b.filename)}
                               disabled={isLoading}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm cursor-pointer"
                             >
                               Download
                             </Button>
@@ -291,9 +296,7 @@ export default function BackupRestore() {
               </table>
             </div>
 
-            {/* -------------------------
-                Restore Modal
-               ------------------------- */}
+            {/* Restore Modal */}
             {isRestoreModalOpen && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center px-4"
@@ -305,7 +308,6 @@ export default function BackupRestore() {
                   className="fixed inset-0 bg-black/50"
                   onClick={closeRestoreModal}
                 />
-
                 <div className="relative z-60 max-w-xl w-full bg-white rounded-xl shadow-lg p-6">
                   <h3 id="restore-modal-title" className="text-lg font-semibold mb-2">
                     ♻️ Restore Backup
@@ -365,9 +367,7 @@ export default function BackupRestore() {
               </div>
             )}
 
-            {/* -------------------------
-                Confirm Restore Modal
-               ------------------------- */}
+            {/* Confirm Restore Modal */}
             {isConfirmModalOpen && (
               <div
                 className="fixed inset-0 z-50 flex items-center justify-center px-4"

@@ -148,7 +148,7 @@ export default function LeastBorrowed() {
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-red-900 text-white border-b">
-                {["Book Cover", "Title & Author", "Publisher", "Catalog Info", "Borrowed Times"].map((header) => (
+                {["Book Cover", "Title & Author", "Publisher", "Catalog Info", "Borrowed Time"].map((header) => (
                   <th key={header} className="border p-3 text-left">{header}</th>
                 ))}
               </tr>
@@ -175,7 +175,7 @@ export default function LeastBorrowed() {
                       <div>Year: {item.book?.year || "N/A"}</div>
                       <div>Place: {item.book?.publication_place}</div>
                     </td>
-                    <td className="p-3 text-red-700 font-semibold">{item.borrow_count} Times</td>
+                    <td className="p-3 text-red-700 font-semibold">{item.borrow_count}</td>
                   </tr>
                 ))
               ) : (

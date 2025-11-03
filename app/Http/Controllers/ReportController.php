@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Section;
 use App\Models\Semester;
 use App\Models\Patron;
+use App\Models\Book;
 
 class ReportController extends Controller
 {
@@ -54,13 +55,17 @@ public function mostBorrowed(Request $request)
     $startDate = $semester !== 'All' ? $semester?->start_date : null;
     $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-    $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
+    $query = IssuedBook::select(
+            'issued_books.book_id',
+            'books.accession_number',
+            DB::raw('COUNT(*) as borrow_count')
+        )
         ->join('books', 'issued_books.book_id', '=', 'books.id')
         ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
         ->when($semester !== 'All' && $startDate && $endDate, fn($q) =>
             $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
         )
-        ->groupBy('book_id')
+        ->groupBy('issued_books.book_id', 'books.accession_number')
         ->orderByDesc('borrow_count')
         ->limit($limit)
         ->with('book')
@@ -70,7 +75,6 @@ public function mostBorrowed(Request $request)
         'books' => $query,
         'sections' => Section::all(),
         'semesters' => $semesters,
-        // if semester is "All" keep it, otherwise pass the id of active semester
         'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
         'filters' => [
             'limit' => $limit,
@@ -84,41 +88,72 @@ public function mostBorrowed(Request $request)
     // Least Borrowed Books
     // ------------------------------
     public function leastBorrowed(Request $request)
-    {
-        $limit = $request->input('limit', 10);
-        $semesterId = $request->input('semester_id');
-        $category = $request->input('category', 'All');
+{
+    $limit = $request->input('limit', 10);
+    $semesterId = $request->input('semester_id');
+    $category = $request->input('category', 'All');
 
-        $semesters = $this->getSemesters();
-        $semester = $this->resolveSemester($semesterId);
+    $semesters = $this->getSemesters();
+    $semester = $this->resolveSemester($semesterId);
 
-        $startDate = $semester !== 'All' ? $semester?->start_date : null;
-        $endDate   = $semester !== 'All' ? $semester?->end_date : null;
+    $startDate = $semester !== 'All' ? $semester?->start_date : null;
+    $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-        $query = IssuedBook::select('book_id', DB::raw('COUNT(*) as borrow_count'))
-            ->join('books', 'issued_books.book_id', '=', 'books.id')
-            ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
-            ->when($semester && $startDate && $endDate, fn($q) =>
-                $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
-            )
-            ->groupBy('book_id')
-            ->orderBy('borrow_count') // ascending for least borrowed
-            ->limit($limit)
-            ->with('book')
-            ->get();
+    // ✅ Select only needed columns
+    $query = Book::query()
+        ->select([
+            'books.id',
+            'books.title',
+            'books.author',
+            'books.publisher',
+            'books.accession_number',
+            'books.call_number',
+            'books.year',
+            'books.publication_place',
+            'books.book_cover',
+            'books.section_id',
+            DB::raw('COUNT(issued_books.id) as borrow_count')
+        ])
+        ->leftJoin('issued_books', function ($join) use ($startDate, $endDate) {
+            $join->on('books.id', '=', 'issued_books.book_id');
+            if ($startDate && $endDate) {
+                $join->whereBetween('issued_books.issued_date', [$startDate, $endDate]);
+            }
+        })
+        ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
+        ->groupBy(
+            'books.id',
+            'books.title',
+            'books.author',
+            'books.publisher',
+            'books.accession_number',
+            'books.call_number',
+            'books.year',
+            'books.publication_place',
+            'books.book_cover',
+            'books.section_id'
+        )
+        ->havingRaw('COUNT(issued_books.id) <= 1')
+        ->orderBy('borrow_count', 'asc')
+        ->limit($limit)
+        ->get();
 
-        return Inertia::render('Reports/LeastBorrowed', [
-            'books' => $query,
-            'sections' => Section::all(),
-            'semesters' => $semesters,
-            // if semester is "All" keep it, otherwise pass the id of active semester
-            'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
-            'filters' => [
-                'limit' => $limit,
-                'category' => $category,
+    return Inertia::render('Reports/LeastBorrowed', [
+        'books' => $query->map(fn($book) => [
+            'book' => $book,
+            'borrow_count' => $book->borrow_count,
+        ]),
+        'sections' => Section::all(),
+        'semesters' => $semesters,
+        'selectedSemester' => $semester === 'All' ? 'All' : ($semester?->id ?? null),
+        'filters' => [
+            'limit' => $limit,
+            'category' => $category,
         ],
-        ]);
-    }
+    ]);
+}
+
+
 
     // ------------------------------
     // Top Borrowers

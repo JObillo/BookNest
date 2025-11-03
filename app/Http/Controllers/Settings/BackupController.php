@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class BackupController extends Controller
 {
-    // 📂 Show all existing backups (unsorted)
+    // 📂 Show all existing backups
     public function index()
     {
         $backupPath = storage_path('app/private/PhilCST');
@@ -30,67 +31,73 @@ class BackupController extends Controller
         return response()->json($files);
     }
 
-    // 💾 Create FULL DATABASE BACKUP
-    // 💾 Create FULL DATABASE BACKUP
-public function store(Request $request)
-{
-    try {
-        date_default_timezone_set('Asia/Manila');
-        $now = now('Asia/Manila');
+    // 💾 Create a full database + uploads backup
+    public function store(Request $request)
+    {
+        try {
+            date_default_timezone_set('Asia/Manila');
+            $now = now('Asia/Manila');
 
-        $activeSemester = \App\Models\Semester::whereNull('end_date')->first();
-        $semesterName = $activeSemester ? str_replace(' ', '_', $activeSemester->name) : 'NoSemester';
-        $timestamp = strtoupper($now->format('Y-m-d_h-ia'));
+            $activeSemester = \App\Models\Semester::whereNull('end_date')->first();
+            $semesterName = $activeSemester ? str_replace(' ', '_', $activeSemester->name) : 'NoSemester';
+            $timestamp = strtoupper($now->format('Y-m-d_h-ia'));
 
-        $backupDir = storage_path('app/private/PhilCST');
-        $backupName = "PhilCST_OPAC_Backup_{$semesterName}_{$timestamp}";
-        $sqlFile = "{$backupDir}/{$backupName}.sql";
-        $zipFile = "{$backupDir}/{$backupName}.zip";
+            $backupDir = storage_path('app/private/PhilCST');
+            if (!file_exists($backupDir)) mkdir($backupDir, 0755, true);
 
-        if (!file_exists($backupDir)) mkdir($backupDir, 0755, true);
+            $backupName = "PhilCST_OPAC_Backup_{$semesterName}_{$timestamp}";
+            $sqlFile = "{$backupDir}/{$backupName}.sql";
+            $zipFile = "{$backupDir}/{$backupName}.zip";
 
-        $db = config('database.connections.mysql');
-        $mysqldump = 'C:/xampp/mysql/bin/mysqldump.exe';
-        $dbName = $db['database'];
+            $db = config('database.connections.mysql');
+            $mysqldump = $this->detectExecutable('mysqldump');
+            $dbName = $db['database'];
 
-        $dumpCommand = "\"{$mysqldump}\" -h {$db['host']} -u {$db['username']}";
-        if (!empty($db['password'])) $dumpCommand .= " -p{$db['password']}";
-        $dumpCommand .= " {$dbName} > \"{$sqlFile}\"";
+            $dumpCommand = "\"{$mysqldump}\" -h {$db['host']} -u {$db['username']}";
+            if (!empty($db['password'])) $dumpCommand .= " -p{$db['password']}";
+            $dumpCommand .= " {$dbName} > \"{$sqlFile}\"";
 
-        $zipCommand = "powershell Compress-Archive -Path \"{$sqlFile}\" -DestinationPath \"{$zipFile}\" -Force";
-        $cleanupCommand = "del \"{$sqlFile}\"";
+            // Backup uploads folder too
+            $uploadsPath = storage_path('app/public/uploads');
 
-        $bat = "@echo off\n".
-                "cd /d \"" . base_path() . "\"\n".
-                "{$dumpCommand}\n".
-                "{$zipCommand}\n".
-                "{$cleanupCommand}\n".
+            $zipCommand = "powershell Compress-Archive -Path \"{$sqlFile}\" -DestinationPath \"{$zipFile}\" -Force";
+            if (file_exists($uploadsPath)) {
+                $zipCommand .= " ; powershell Compress-Archive -Path \"{$uploadsPath}\" -Update -DestinationPath \"{$zipFile}\"";
+            }
+
+            $cleanupCommand = "del \"{$sqlFile}\"";
+
+            $bat = "@echo off\n" .
+                "cd /d \"" . base_path() . "\"\n" .
+                "{$dumpCommand}\n" .
+                "{$zipCommand}\n" .
+                "{$cleanupCommand}\n" .
                 "exit";
 
-        $batFile = storage_path('app/run_backup.bat');
-        file_put_contents($batFile, $bat);
-        pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
+            $batFile = storage_path('app/run_backup.bat');
+            file_put_contents($batFile, $bat);
+            pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
 
-        // 🕒 Wait until ZIP exists (max 10 seconds)
-        $waited = 0;
-        while (!file_exists($zipFile) && $waited < 10) {
-            sleep(1);
-            $waited++;
+            // Wait for zip creation
+            $waited = 0;
+            while (!file_exists($zipFile) && $waited < 15) {
+                sleep(1);
+                $waited++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Backup (DB + Covers) completed successfully!',
+                'file' => basename($zipFile),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Backup failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Backup failed: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => '✅ Backup completed successfully!',
-            'file' => basename($zipFile),
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Backup failed', ['error' => $e->getMessage()]);
-        return response()->json([
-            'success' => false,
-            'message' => '❌ Backup failed: ' . $e->getMessage(),
-        ], 500);
     }
-}
 
     // 📥 Download backup
     public function download($filename)
@@ -104,148 +111,131 @@ public function store(Request $request)
         return response()->download($filePath);
     }
 
-    // ♻️ Restore selected backup
-//     public function restore($filename)
-// {
-//     try {
-//         $backupDir = storage_path('app/private/PhilCST');
-//         $zipPath = "{$backupDir}/{$filename}";
-//         $restoreStatus = storage_path('app/restore_status.txt');
-//         $mysql = 'C:/xampp/mysql/bin/mysql.exe';
+    // ♻️ Restore progress polling
+    public function restoreStatus()
+    {
+        $statusFile = storage_path('app/restore_status.txt');
 
-//         // Initialize status
-//         file_put_contents($restoreStatus, 'starting');
+        if (!file_exists($statusFile)) {
+            return response()->json(['status' => 'idle']);
+        }
 
-//         if (!file_exists($zipPath)) {
-//             file_put_contents($restoreStatus, 'error: file not found');
-//             return response()->json(['success' => false, 'message' => 'Backup file not found.'], 404);
-//         }
+        $status = strtolower(trim(file_get_contents($statusFile)));
+        $status = str_replace(["\r", "\n"], '', $status);
 
-//         // Create extraction folder
-//         $extractDir = "{$backupDir}/restore_temp";
-//         if (!file_exists($extractDir)) mkdir($extractDir, 0755, true);
+        if (str_contains($status, 'done')) $status = 'done';
+        elseif (str_contains($status, 'error')) $status = 'error';
+        elseif (str_contains($status, 'running') || str_contains($status, 'starting')) $status = 'running';
 
-//         // Unzip the backup
-//         shell_exec("powershell Expand-Archive -Path \"{$zipPath}\" -DestinationPath \"{$extractDir}\" -Force");
-
-//         // Find the SQL file
-//         $sqlFile = glob("{$extractDir}/*.sql")[0] ?? null;
-//         if (!$sqlFile) {
-//             file_put_contents($restoreStatus, 'error: no sql found');
-//             return response()->json(['success' => false, 'message' => 'SQL file not found in backup.'], 404);
-//         }
-
-//         // Database credentials
-//         $db = config('database.connections.mysql');
-//         $dbName = $db['database'];
-//         $restoreCommand = "\"{$mysql}\" -h {$db['host']} -u {$db['username']}";
-
-//         if (!empty($db['password'])) $restoreCommand .= " -p{$db['password']}";
-//         $restoreCommand .= " {$dbName} < \"{$sqlFile}\"";
-
-//         // Create a .bat file that updates status clearly
-//         $bat = "@echo off\n" .
-//             "echo running > \"{$restoreStatus}\"\n" .
-//             "{$restoreCommand}\n" .
-//             "echo done > \"{$restoreStatus}\"\n" .
-//             "rmdir /s /q \"{$extractDir}\"\n" .
-//             "exit";
-
-//         $batFile = storage_path('app/run_restore.bat');
-//         file_put_contents($batFile, $bat);
-
-//         // Run the batch file in the background (async)
-//         pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
-
-//         return response()->json(['success' => true, 'message' => 'Restore started. Please wait...']);
-//     } catch (\Exception $e) {
-//         file_put_contents(storage_path('app/restore_status.txt'), 'error: ' . $e->getMessage());
-//         return response()->json([
-//             'success' => false,
-//             'message' => '❌ Restore failed: ' . $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
-public function restoreStatus()
-{
-    $statusFile = storage_path('app/restore_status.txt');
-
-    if (!file_exists($statusFile)) {
-        return response()->json(['status' => 'idle']);
+        return response()->json(['status' => $status]);
     }
 
-    $status = trim(file_get_contents($statusFile));
+    // 🔄 Upload and restore (DB + uploaded images)
+    public function uploadRestore(Request $request)
+    {
+        try {
+            $request->validate([
+                'password' => 'required|string',
+                'file' => 'required|file',
+            ]);
 
-    // Sanitize text in case PowerShell writes extra spaces
-    $status = strtolower(str_replace(["\r", "\n"], '', $status));
+            $admin = Auth::user();
+            if (!$admin || !Hash::check($request->password, $admin->password)) {
+                return response()->json(['success' => false, 'message' => '❌ Invalid admin password.'], 403);
+            }
 
-    // ✅ Make sure frontend always gets one of these
-    if (str_contains($status, 'done')) $status = 'done';
-    elseif (str_contains($status, 'error')) $status = 'error';
-    elseif (str_contains($status, 'running') || str_contains($status, 'starting')) $status = 'running';
+            $backupDir = storage_path('app/private/PhilCST');
+            $uploadDir = "{$backupDir}/uploads";
+            $extractDir = "{$backupDir}/restore_temp";
+            $statusFile = storage_path('app/restore_status.txt');
 
-    return response()->json(['status' => $status]);
-}
-public function uploadRestore(Request $request)
-{
-    try {
-        $request->validate([
-            'password' => 'required|string',
-            'file' => 'required|file|mimes:zip,sql|max:51200', // max 50MB
-        ]);
+            if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
+            if (!file_exists($extractDir)) mkdir($extractDir, 0755, true);
 
-        // ✅ Verify admin password
-        $admin = Auth::user();
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
-            return response()->json(['success' => false, 'message' => '❌ Invalid admin password.'], 403);
+            $uploadedFile = $request->file('file');
+            $filePath = "{$uploadDir}/" . $uploadedFile->getClientOriginalName();
+            $uploadedFile->move($uploadDir, $uploadedFile->getClientOriginalName());
+
+            file_put_contents($statusFile, 'starting');
+
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            $sqlFile = null;
+
+            // Extract zip if needed
+            if ($ext === 'zip') {
+                shell_exec("powershell Expand-Archive -Path \"{$filePath}\" -DestinationPath \"{$extractDir}\" -Force");
+
+                // Restore uploaded covers if included
+                $uploadsRestored = $extractDir . '/uploads';
+                $targetUploads = storage_path('app/public/uploads');
+                if (file_exists($uploadsRestored)) {
+                    @mkdir($targetUploads, 0755, true);
+                    shell_exec("xcopy /E /Y \"{$uploadsRestored}\" \"{$targetUploads}\"");
+                }
+
+                // Find SQL file
+                $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
+                );
+                foreach ($iterator as $file) {
+                    if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'sql') {
+                        $sqlFile = $file->getPathname();
+                        break;
+                    }
+                }
+            } elseif ($ext === 'sql') {
+                $sqlFile = $filePath;
+            }
+
+            if (!$sqlFile || !file_exists($sqlFile)) {
+                file_put_contents($statusFile, 'error: no sql file found');
+                return response()->json(['success' => false, 'message' => '❌ SQL file not found.'], 404);
+            }
+
+            $db = config('database.connections.mysql');
+            $mysql = $this->detectExecutable('mysql');
+            $restoreCommand = "\"{$mysql}\" -h {$db['host']} -u {$db['username']}";
+            if (!empty($db['password'])) $restoreCommand .= " -p{$db['password']}";
+            $restoreCommand .= " {$db['database']} < \"{$sqlFile}\"";
+
+            $bat = "@echo off\n" .
+                "echo running > \"{$statusFile}\"\n" .
+                "{$restoreCommand}\n" .
+                "echo done > \"{$statusFile}\"\n" .
+                "rmdir /s /q \"{$extractDir}\" >nul 2>&1\n" .
+                "exit";
+
+            $batFile = storage_path('app/run_restore_upload.bat');
+            file_put_contents($batFile, $bat);
+            pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
+
+            return response()->json(['success' => true, 'message' => '✅ Restore (DB + Covers) started successfully!']);
+        } catch (\Exception $e) {
+            file_put_contents(storage_path('app/restore_status.txt'), 'error: ' . $e->getMessage());
+            Log::error('Restore failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Restore failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // 🔍 Detect MySQL executables automatically
+    private function detectExecutable(string $exeName): string
+    {
+        $paths = [
+            "C:/xampp/mysql/bin/{$exeName}.exe",
+            "D:/xampp/mysql/bin/{$exeName}.exe",
+            "C:/Program Files/MySQL/MySQL Server 8.0/bin/{$exeName}.exe",
+            "C:/Program Files (x86)/MySQL/MySQL Server 5.7/bin/{$exeName}.exe",
+        ];
+
+        foreach ($paths as $path) {
+            if (file_exists($path)) return $path;
         }
 
-        // Save uploaded file
-        $uploadedFile = $request->file('file');
-        $backupDir = storage_path('app/private/PhilCST/uploads');
-        if (!file_exists($backupDir)) mkdir($backupDir, 0755, true);
-
-        $filePath = $backupDir . '/' . $uploadedFile->getClientOriginalName();
-        $uploadedFile->move($backupDir, $uploadedFile->getClientOriginalName());
-
-        // If it's a ZIP, extract it
-        $extractDir = "{$backupDir}/restore_temp";
-        if (!file_exists($extractDir)) mkdir($extractDir, 0755, true);
-
-        $sqlFile = '';
-        if (pathinfo($filePath, PATHINFO_EXTENSION) === 'zip') {
-            shell_exec("powershell Expand-Archive -Path \"{$filePath}\" -DestinationPath \"{$extractDir}\" -Force");
-            $sqlFile = glob("{$extractDir}/*.sql")[0] ?? null;
-        } else {
-            $sqlFile = $filePath;
-        }
-
-        if (!$sqlFile || !file_exists($sqlFile)) {
-            return response()->json(['success' => false, 'message' => '❌ SQL file not found in backup.'], 404);
-        }
-
-        // Run restore command
-        $db = config('database.connections.mysql');
-        $mysql = 'C:/xampp/mysql/bin/mysql.exe';
-        $restoreCommand = "\"{$mysql}\" -h {$db['host']} -u {$db['username']}";
-        if (!empty($db['password'])) $restoreCommand .= " -p{$db['password']}";
-        $restoreCommand .= " {$db['database']} < \"{$sqlFile}\"";
-
-        $bat = "@echo off\n{$restoreCommand}\nexit";
-        $batFile = storage_path('app/run_restore_upload.bat');
-        file_put_contents($batFile, $bat);
-
-        pclose(popen("start /B cmd /C \"{$batFile}\"", "r"));
-
-        return response()->json(['success' => true, 'message' => '✅ Restore started successfully!']);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => '❌ Restore failed: ' . $e->getMessage(),
-        ], 500);
+        return $exeName;
     }
 }
 
-
-}
+//backupcontoller
