@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Head } from "@inertiajs/react";
 import AppLayout from "@/layouts/app-layout";
 import { Input } from "@/components/ui/input";
-import { FaDownload, FaPlus } from "react-icons/fa";
+import { type BreadcrumbItem } from '@/types';
 
 export type Ebook = {
   id: number;
@@ -12,6 +12,9 @@ export type Ebook = {
   file_url: string;
   cover: string;
 };
+const breadcrumbs: BreadcrumbItem[] = [
+  { title: 'Ebooks', href: '/ebooks' },
+];
 
 const Ebooks = () => {
   const [ebooks, setEbooks] = useState<Ebook[]>([]);
@@ -118,11 +121,9 @@ const Ebooks = () => {
   }, [currentPage, search, perPage]);
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="E-books" />
       <div className="p-6 space-y-4 bg-white rounded shadow-md">
-        <h1 className="text-2xl font-bold text-gray-800">Free E-books</h1>
-
         {statusMsg && (
           <div className="p-2 bg-yellow-100 text-yellow-800 rounded">
             {statusMsg}

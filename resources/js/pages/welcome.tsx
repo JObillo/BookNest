@@ -72,6 +72,21 @@ export default function Welcome() {
       });
     }
   };
+useEffect(() => {
+  const banner = `
+------------------< Happy Hacking! >------------------
+ \\   ^__^
+  \\  (oo)\\_______
+     (__)\\       )\\/\\
+         ||----w |
+         ||     ||
+
+`;
+
+  console.log('%c' + banner, 'font-family: monospace; color: purple; font-weight: 700;');
+  console.log('%cCute console message: enjoy poking around! 😄', 'color: #666;');
+
+}, []);
 
   useEffect(() => {
     if (props.books) setBooks(props.books);
