@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import { Head } from "@inertiajs/react";
+import { useEffect, useState, useCallback } from "react";
+import { Head, Link } from "@inertiajs/react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@headlessui/react";
 import { FaDownload, FaHome } from "react-icons/fa";
-import { Link } from '@inertiajs/react';
 
 type Ebook = {
   id: number;
@@ -20,22 +19,39 @@ export default function EbooksBySection() {
   const [search, setSearch] = useState("");
   const [searchCategory, setSearchCategory] = useState<"title" | "author">("title");
 
-  useEffect(() => {
-    const fetchEbooks = async () => {
-      setLoading(true);
-      try {
-        // Fetch all ebooks, no limit
-        const res = await fetch(`/api/ebooks?search=${search}&category=${searchCategory}`);
-        const data = await res.json();
-        setEbooks(data.data ?? []);
-      } catch {
-        setEbooks([]);
-      }
-      setLoading(false);
-    };
+  // pagination
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const perPage = 10;
 
-    fetchEbooks();
+  const fetchEbooks = useCallback(async (pageNum = 1) => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/mobile/ebooks?page=${pageNum}&perPage=${perPage}&search=${encodeURIComponent(
+          search
+        )}&filter=${searchCategory}`
+      );
+
+      const data = await res.json();
+
+      // expected Laravel pagination keys
+      setEbooks(data.data ?? []);
+      setPage(data.current_page ?? 1);
+      setLastPage(data.last_page ?? 1);
+      setTotal(data.total ?? 0);
+    } catch (err) {
+      console.error("Error fetching ebooks:", err);
+      setEbooks([]);
+    }
+    setLoading(false);
   }, [search, searchCategory]);
+
+  // trigger fetch when search/filter changes
+  useEffect(() => {
+    fetchEbooks(1);
+  }, [search, searchCategory, fetchEbooks]);
 
   return (
     <>
@@ -81,7 +97,7 @@ export default function EbooksBySection() {
 
         {/* Total eBooks */}
         <p className="text-gray-700 mb-4">
-          Total eBooks available: <span className="font-semibold">{ebooks.length}</span>
+          Total eBooks available: <span className="font-semibold">{total}</span>
         </p>
 
         {loading && <p className="text-gray-500 text-center">Loading...</p>}
@@ -101,23 +117,28 @@ export default function EbooksBySection() {
                   <tr key={ebook.id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
                       {ebook.cover ? (
-                        <img src={ebook.cover} alt={ebook.title} className="w-20 h-28 object-cover rounded shadow" />
+                        <img
+                          src={ebook.cover}
+                          alt={ebook.title}
+                          className="w-20 h-28 object-cover rounded shadow"
+                        />
                       ) : (
                         <span className="text-gray-500">No Cover</span>
                       )}
                     </td>
                     <td className="p-3 font-semibold">{ebook.title}</td>
                     <td className="p-3">
-                        <a
-                          href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(ebook.author)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {ebook.author}
-                        </a>
-                      </td>
-
+                      <a
+                        href={`https://www.google.com/search?tbm=bks&q=${encodeURIComponent(
+                          ebook.author
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {ebook.author}
+                      </a>
+                    </td>
                     <td className="p-3">{ebook.year ?? "Unknown"}</td>
                     <td className="p-3">
                       <a
@@ -133,6 +154,27 @@ export default function EbooksBySection() {
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination */}
+            <div className="flex justify-center items-center gap-3 mt-6">
+              <button
+                disabled={page <= 1}
+                onClick={() => fetchEbooks(page - 1)}
+                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-gray-700">
+                Page {page} of {lastPage}
+              </span>
+              <button
+                disabled={page >= lastPage}
+                onClick={() => fetchEbooks(page + 1)}
+                className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
 

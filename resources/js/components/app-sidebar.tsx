@@ -62,11 +62,11 @@ const mainNavItems: NavItem[] = [
         icon: CalendarCog,
     },
     
-    // {
-    //     title: 'Manage E-Books',
-    //     href: '/ebooks/manage',
-    //     icon: Book,
-    // },
+    {
+        title: 'Manage E-Books',
+        href: '/ebooks/manage',
+        icon: Book,
+    },
 
     {
         title: 'Report',
