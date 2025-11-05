@@ -30,5 +30,17 @@ class SemesterController extends Controller
 
         return redirect()->back()->with('success', $semester->name . ' ended.');
     }
+public function getActive()
+{
+    $semester = Semester::where('status', 'Active')->first();
+
+    if (!$semester) {
+        return response()->json(['message' => 'No active semester found.'], 404);
+    }
+
+    return response()->json($semester);
+}
+
+
 }
 

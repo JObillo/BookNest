@@ -145,12 +145,14 @@ Route::prefix('reports')->group(function () {
     Route::get('/most-borrowed', [ReportController::class, 'mostBorrowed'])->name('reports.mostBorrowed');
     Route::get('/least-borrowed', [ReportController::class, 'leastBorrowed'])->name('reports.leastBorrowed');
     Route::get('/top-borrowers', [ReportController::class, 'topBorrowers'])->name('reports.topBorrowers');
-    Route::get('/managesemester', [ReportController::class, 'managesemester'])->name('reports.managesemester');
-    Route::post('/managesemester', [ReportController::class, 'storeSemester'])->name('reports.semester.store');
-    Route::put('/managesemester/{semester}', [ReportController::class, 'updateSemester'])->name('reports.semester.update');
-    Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 });
 Route::get('/reports/top-borrowers/{patron}/books', [ReportController::class, 'borrowerBooks']);
+// routes/web.php
+Route::get('/semester/active', [SemesterController::class, 'getActive']);
+Route::get('/managesemester', [ReportController::class, 'managesemester'])->name('reports.managesemester');
+Route::post('/managesemester', [ReportController::class, 'storeSemester'])->name('reports.semester.store');
+Route::put('/managesemester/{semester}', [ReportController::class, 'updateSemester'])->name('reports.semester.update');
+Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 
 // -------------------------
 // Extra Route Files

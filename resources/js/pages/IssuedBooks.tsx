@@ -79,36 +79,54 @@ export default function IssuedBooks() {
     });
   };
 
-  const renderPatronInfo = (patron: IssuedBook["patron"]) => {
-    switch (patron.patron_type) {
-      case "Student":
-        return (
-          <>
-            <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
+const renderPatronInfo = (patron: IssuedBook["patron"]) => {
+  switch (patron.patron_type) {
+    case "Student":
+      return (
+        <>
+          <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
+          <div className="text-sm text-gray-600">
+            {patron.department && `${patron.department} | `}
+            {patron.course && `${patron.course} | `}
+            {patron.year && patron.year}
+          </div>
+        </>
+      );
+
+    case "Faculty":
+      return (
+        <>
+          <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
+          {patron.department && (
             <div className="text-sm text-gray-600">
-              {patron.department || "N/A"} | {patron.course || "N/A"} | {patron.year || "N/A"}
+              Department: {patron.department}
             </div>
-          </>
-        );
-      case "Faculty":
-        return (
-          <>
-            <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
-            <div className="text-sm text-gray-600">Department: {patron.department || "N/A"}</div>
-          </>
-        );
-      case "Guest":
-        return (
-          <>
-            <div className="text-sm text-gray-600">Guest ID: {patron.school_id}</div>
-            <div className="text-sm text-gray-600">Contact: {patron.contact_number || "N/A"}</div>
-            <div className="text-sm text-gray-600">Address: {patron.address || "N/A"}</div>
-          </>
-        );
-      default:
-        return null;
-    }
-  };
+          )}
+        </>
+      );
+
+    case "Guest":
+      return (
+        <>
+          <div className="text-sm text-gray-600">Guest ID: {patron.school_id}</div>
+          {patron.contact_number && (
+            <div className="text-sm text-gray-600">
+              Contact: {patron.contact_number}
+            </div>
+          )}
+          {patron.address && (
+            <div className="text-sm text-gray-600">
+              Address: {patron.address}
+            </div>
+          )}
+        </>
+      );
+
+    default:
+      return null;
+  }
+};
+
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -147,15 +165,10 @@ export default function IssuedBooks() {
                   <tr key={record.id} className="border-b hover:bg-gray-100">
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
-                      <div className="text-sm text-gray-600">
-                        School ID: {record.patron.school_id}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {record.patron.course || "N/A"} | {record.patron.year || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {record.patron.department || "N/A"} ({record.patron.patron_type})
-                      </div>
+                        {renderPatronInfo(record.patron)}
+                        <div className="text-sm text-gray-600 font-medium mt-1">
+                          ({record.patron.patron_type})
+                        </div>
                     </td>
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>

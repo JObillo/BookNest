@@ -85,6 +85,8 @@ export default function BookModal({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [accessionNumbers, setAccessionNumbers] = useState<string[]>([""]);
   const [isFetching, setIsFetching] = useState(false); // 👈 spinner control
+  const [highlightFields, setHighlightFields] = useState<string[]>([]);
+
   
 
   // Populate form when editing a book
@@ -370,9 +372,12 @@ const fetchBookByISBN = async (isbn: string) => {
     toast.error("Please enter a valid ISBN.");
     return;
   }
+
   setIsFetching(true); // 👈 show spinner
   try {
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`);
+    const res = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`
+    );
     const data = await res.json();
 
     if (!data.items || data.items.length === 0) {
@@ -382,31 +387,45 @@ const fetchBookByISBN = async (isbn: string) => {
 
     const info = data.items[0].volumeInfo;
 
-    setFormData((prev) => ({
-    ...prev,
-    title: info.title || prev.title,
-    author: info.authors ? info.authors.join(", ") : prev.author,
-    publisher: info.publisher || prev.publisher,
-    year: info.publishedDate ? info.publishedDate.slice(0, 4) : prev.year,
-    subject: info.categories ? info.categories.join(", ") : prev.subject,
-    description: info.description || prev.description,
-    book_cover: info.imageLinks?.thumbnail || prev.book_cover,
-    other_info: `${info.pageCount ? `${info.pageCount} pages` : ""}${
-      info.dimensions
-        ? `, Size: ${info.dimensions.height || ""} × ${info.dimensions.width || ""}`
-        : ""
-    }` || prev.other_info,
-  }));
+    // 👇 Build updated form FIRST (to ensure highlight accuracy)
+    const updatedForm = {
+      ...formData,
+      title: info.title || formData.title,
+      author: info.authors ? info.authors.join(", ") : formData.author,
+      publisher: info.publisher || formData.publisher,
+      year: info.publishedDate ? info.publishedDate.slice(0, 4) : formData.year,
+      subject: info.categories ? info.categories.join(", ") : formData.subject,
+      description: info.description || formData.description,
+      book_cover: info.imageLinks?.thumbnail || formData.book_cover,
+      other_info:
+        `${info.pageCount ? `${info.pageCount} pages` : ""}${
+          info.dimensions
+            ? `, Size: ${info.dimensions.height || ""} × ${info.dimensions.width || ""}`
+            : ""
+        }` || formData.other_info,
+    };
 
+    // ✅ Now update formData once
+    setFormData(updatedForm);
+
+    // 👇 Highlight any still-empty fields AFTER fetch
+    const missingFields = Object.entries(updatedForm)
+      .filter(([key, value]) => value === "" || value === null)
+      .map(([key]) => key);
+
+    setHighlightFields(missingFields);
+
+    // ✅ Update preview and success toast
     setPreview(info.imageLinks?.thumbnail || "");
     toast.success("Book info loaded!");
   } catch (error) {
     console.error("Error fetching book data:", error);
     toast.error("Failed to fetch book info.");
   } finally {
-      setIsFetching(false); // 👈 hide spinner
-    }
-  };
+    setIsFetching(false); // 👈 hide spinner
+  }
+};
+
 
 
   return (
@@ -453,14 +472,19 @@ const fetchBookByISBN = async (isbn: string) => {
             >
               <label className="block text-sm font-medium">{label}</label>
               <Input
-                type="text"
-                name={name}
-                value={(formData as any)[name] || ""}
-                onChange={handleChange}
-                onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
-                className={`w-full border rounded p-2 ${name === "title" ? "text-lg" : ""}`}
-                required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
-              />
+  type="text"
+  name={name}
+  value={(formData as any)[name] || ""}
+  onChange={handleChange}
+  onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
+  className={`w-full border rounded p-2 ${
+    highlightFields.includes(name)
+      ? "border-red-500 bg-red-50"
+      : "border-gray-300"
+  } ${name === "title" ? "text-lg" : ""}`}
+  required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
+/>
+
               {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
             </div>
           ))}
@@ -638,3 +662,5 @@ const fetchBookByISBN = async (isbn: string) => {
     </div>
   );
 }
+
+//bookmodal.tsx

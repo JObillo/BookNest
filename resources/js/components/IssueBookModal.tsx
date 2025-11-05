@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Dialog } from "@headlessui/react";
+import { Dialog, Input } from "@headlessui/react";
 import { useForm, router } from "@inertiajs/react";
 
 export default function IssueBookModal({
@@ -44,23 +44,41 @@ export default function IssueBookModal({
     setData("isbn", formatted);
   };
 
-  /** 🔄 Fetch patron by school_id */
-  const fetchPatron = async () => {
-    if (!data.school_id.trim()) return;
-    setLoadingField("school_id");
-    setNotFound((prev) => ({ ...prev, school_id: false }));
+/** 🔄 Fetch patron by school_id */
+const fetchPatron = async () => {
+  if (!data.school_id.trim()) return;
 
-    try {
-      const res = await axios.get(`/patrons/school/${data.school_id}`);
-      setPatron(res.data);
-      setDuplicateWarning(false);
-    } catch {
-      setPatron(null);
-      setNotFound((prev) => ({ ...prev, school_id: true }));
-    } finally {
-      setLoadingField(null);
+  setLoadingField("school_id");
+  setNotFound((prev) => ({ ...prev, school_id: false }));
+
+  try {
+    const res = await axios.get(`/patrons/school/${data.school_id}`);
+    const patron = res.data;
+    setPatron(patron);
+    setDuplicateWarning(false);
+
+    // ✅ If Faculty, auto-fetch semester and set due_date
+    if (patron.patron_type?.toLowerCase() === "faculty") {
+      try {
+        const semesterRes = await axios.get("/semester/active");
+        if (semesterRes.data?.end_date) {
+          setData("due_date", semesterRes.data.end_date);
+          // toast.success(`Due date set to end of semester: ${semesterRes.data.end_date}`);
+        } else {
+          console.warn("No active semester found.");
+        }
+      } catch (semesterError) {
+        console.warn("Error fetching active semester:", semesterError);
+      }
     }
-  };
+  } catch (error) {
+    setPatron(null);
+    setNotFound((prev) => ({ ...prev, school_id: true }));
+  } finally {
+    setLoadingField(null);
+  }
+};
+
 
   /** Fetch book by ISBN */
   const fetchBook = async () => {
@@ -180,7 +198,7 @@ export default function IssueBookModal({
           {/* Student ID */}
           <div>
             <label>ID:</label>
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               value={data.school_id}
@@ -190,10 +208,10 @@ export default function IssueBookModal({
               required
             />
             {loadingField === "school_id" && (
-              <p className="text-blue-600 text-sm mt-1 animate-pulse">Fetching student info...</p>
+              <p className="text-blue-600 text-sm mt-1 animate-pulse">Fetching info...</p>
             )}
             {notFound.school_id && (
-              <p className="text-red-600 text-sm mt-1">❌ No student found for this ID.</p>
+              <p className="text-red-600 text-sm mt-1">❌ No found for this ID.</p>
             )}
           </div>
 
@@ -208,7 +226,7 @@ export default function IssueBookModal({
           {/* ISBN */}
           <div>
             <label>ISBN 13:</label>
-            <input
+            <Input
               type="text"
               inputMode="numeric"
               value={data.isbn}
@@ -247,7 +265,7 @@ export default function IssueBookModal({
           {/* Accession Number */}
           <div>
             <label>Accession Number:</label>
-            <input
+            <Input
               type="text"
               value={data.accession_number}
               onChange={(e) => setData("accession_number", e.target.value.trim())}
@@ -262,7 +280,7 @@ export default function IssueBookModal({
           {/* Due Date */}
           <div>
             <label>Due Date:</label>
-            <input
+            <Input
               type="date"
               value={data.due_date}
               onChange={(e) => setData("due_date", e.target.value)}

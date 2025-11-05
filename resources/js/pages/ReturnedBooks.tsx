@@ -79,6 +79,59 @@ export default function ReturnedBooks() {
     }
   };
 
+  const renderPatronInfo = (patron: IssuedBook["patron"]) => {
+  switch (patron.patron_type) {
+    case "Student":
+      return (
+        <>
+          <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
+          <div className="text-sm text-gray-600">
+            {patron.department && `${patron.department} | `}
+            {patron.course && `${patron.course} | `}
+            {patron.year && patron.year}
+          </div>
+        </>
+      );
+
+    case "Faculty":
+      return (
+        <>
+          <div className="text-sm text-gray-600">School ID: {patron.school_id}</div>
+          {patron.department && (
+            <div className="text-sm text-gray-600">
+              Department: {patron.department}
+            </div>
+          )}
+        </>
+      );
+
+    // case "Guest":
+    //   return (
+    //     <>
+    //       <div className="text-sm text-gray-600">Guest ID: {patron.school_id}</div>
+    //       {patron.contact_number && (
+    //         <div className="text-sm text-gray-600">
+    //           Contact: {patron.contact_number}
+    //         </div>
+    //       )}
+    //       {patron.address && (
+    //         <div className="text-sm text-gray-600">
+    //           Address: {patron.address}
+    //         </div>
+    //       )}
+    //     </>
+    //   );
+
+    default:
+      return (
+        <div className="text-sm text-gray-600">
+          School ID: {patron.school_id}
+        </div>
+      );
+  }
+};
+
+
   // Format date
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -170,17 +223,11 @@ export default function ReturnedBooks() {
                     {/* Patron Info */}
                     <td className="p-3">
                       <div className="font-semibold">{record.patron.name}</div>
-                      <div className="text-sm text-gray-600">
-                        School ID: {record.patron.school_id}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {record.patron.course || "N/A"} | {record.patron.year || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {record.patron.department || "N/A"} ({record.patron.patron_type})
+                      {renderPatronInfo(record.patron)}
+                      <div className="text-sm text-gray-600 italic">
+                        ({record.patron.patron_type})
                       </div>
                     </td>
-
                     {/* Book Info */}
                     <td className="p-3">
                       <div className="font-semibold">{record.book.title}</div>

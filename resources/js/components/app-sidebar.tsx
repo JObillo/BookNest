@@ -58,7 +58,7 @@ const mainNavItems: NavItem[] = [
 
     {
          title: 'Manage Semester',
-        href: '/reports/managesemester',
+        href: '/managesemester',
         icon: CalendarCog,
     },
     
