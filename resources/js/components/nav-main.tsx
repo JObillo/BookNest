@@ -20,7 +20,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         setOpen(open === title ? null : title);
     };
 
-    // ✅ Keep dropdown open when inside child page
+    // Keep dropdown open when inside child page
     useEffect(() => {
         const activeParent = items.find(item =>
             item.children?.some(child => page.url.startsWith(child.href ?? ""))
@@ -35,7 +35,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
         <SidebarGroup className="px-2 py-0">
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarMenu>
-                {items.map((item) => {
+                {items.map(item => {
                     const isActive = page.url.startsWith(item.href ?? "");
 
                     return (
@@ -46,7 +46,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                         onClick={() => toggle(item.title)}
                                         className={`transition ${
                                             isActive
-                                                ? "bg-primary/10 text-primary font-medium"
+                                                ? "bg-primary/15 text-primary font-semibold hover:bg-primary/15"
                                                 : "hover:bg-accent"
                                         }`}
                                     >
@@ -61,7 +61,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
 
                                     {open === item.title && (
                                         <div className="ml-6 mt-1 space-y-1">
-                                            {item.children.map((child) => {
+                                            {item.children.map(child => {
                                                 const childActive = page.url.startsWith(child.href ?? "");
 
                                                 return (
@@ -70,7 +70,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                                         href={child.href || "#"}
                                                         className={`flex items-center gap-2 px-2 py-1 text-sm rounded-md transition ${
                                                             childActive
-                                                                ? "bg-primary/10 text-primary font-medium"
+                                                                ? "bg-primary/15 text-primary font-semibold hover:bg-primary/15"
                                                                 : "hover:bg-accent"
                                                         }`}
                                                     >
@@ -88,7 +88,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                                     tooltip={{ children: item.title }}
                                     className={`transition ${
                                         isActive
-                                            ? "bg-primary/10 text-primary font-medium"
+                                            ? "bg-primary/15 text-primary font-semibold hover:bg-primary/15"
                                             : "hover:bg-accent"
                                     }`}
                                 >

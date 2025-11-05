@@ -265,102 +265,80 @@ export default function BookModal({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const validationErrors: { [key: string]: string } = {};
-    ["isbn", "accession_number", "call_number", "book_price", "other_info", "subject", "date_purchase"].forEach(
-      (field) => {
-        const error = validateField(field, (formData as any)[field] || "");
-        if (error) validationErrors[field] = error;
+  const validationErrors: { [key: string]: string } = {};
+  ["isbn", "accession_number", "call_number", "book_price", "other_info", "subject", "date_purchase"].forEach(
+    (field) => {
+      const error = validateField(field, (formData as any)[field] || "");
+      if (error) validationErrors[field] = error;
+    }
+  );
+
+  if (!formData.section_id) validationErrors.section_id = "Section is required.";
+  if (!formData.dewey_id) validationErrors.dewey_id = "Dewey classification is required.";
+
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    toast.error("Please fix validation errors before submitting.");
+    return;
+  }
+
+  const data = new FormData();
+  data.append("isbn", formData.isbn);
+  data.append("title", formData.title);
+  data.append("author", formData.author);
+  data.append("publisher", formData.publisher);
+  data.append("publication_place", formData.publication_place || "");
+  data.append("year", formData.year || "");
+  data.append("book_copies", String(formData.book_copies));
+  data.append("call_number", formData.call_number);
+  data.append("section_id", String(formData.section_id || ""));
+  data.append("dewey_id", String(formData.dewey_id || ""));
+  data.append("subject", formData.subject || "");
+  data.append("date_purchase", formData.date_purchase || "");
+  data.append("book_price", formData.book_price || "");
+  data.append("other_info", formData.other_info || "");
+
+  accessionNumbers.forEach((num, i) => {
+    data.append(`accession_numbers[${i}]`, num);
+  });
+
+  if (selectedFile) {
+    data.append("book_cover", selectedFile);
+  } else if (formData.book_cover) {
+    data.append("book_cover", formData.book_cover);
+  }
+
+  const isEditing = Boolean(book?.id);
+  const successMessage = isEditing
+    ? "Book updated successfully!"
+    : "Book added successfully!";
+  const errorMessage = isEditing
+    ? "Failed to update book."
+    : "Failed to add book.";
+
+  const url = isEditing ? `/books/${book!.id}` : "/books";
+  if (isEditing) data.append("_method", "PUT");
+
+  router.post(url, data, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success(successMessage);
+      closeModal();
+      router.reload();
+    },
+    onError: (errors) => {
+      console.error("Submit errors:", errors);
+      if (errors.accession_numbers) {
+        toast.error(errors.accession_numbers);
+      } else {
+        toast.error(errorMessage);
       }
-    );
+    },
+  });
+};
 
-    if (!formData.section_id) validationErrors.section_id = "Section is required.";
-    if (!formData.dewey_id) validationErrors.dewey_id = "Dewey classification is required.";
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Please fix validation errors before submitting.");
-      return;
-    }
-
-    const data = new FormData();
-    data.append("isbn", formData.isbn);
-    data.append("title", formData.title);
-    data.append("author", formData.author);
-    data.append("publisher", formData.publisher);
-    data.append("publication_place", formData.publication_place || "");
-    data.append("year", formData.year || "");
-    data.append("book_copies", String(formData.book_copies));
-    data.append("call_number", formData.call_number);
-    data.append("section_id", String(formData.section_id || ""));
-    data.append("dewey_id", String(formData.dewey_id || ""));
-    data.append("subject", formData.subject || "");
-    data.append("date_purchase", formData.date_purchase || "");
-    data.append("book_price", formData.book_price || "");
-    data.append("other_info", formData.other_info || "");
-
-    accessionNumbers.forEach((num, i) => {
-      data.append(`accession_numbers[${i}]`, num);
-    });
-
-    if (selectedFile) {
-      data.append("book_cover", selectedFile);
-    }
-    else if (formData.book_cover) {
-      data.append("book_cover", formData.book_cover);
-    }
-
-
-    const successMessage = book?.id
-      ? "Book updated successfully."
-      : "Book added successfully.";
-    const errorMessage = book?.id
-      ? "Failed to update book."
-      : "Failed to add book.";
-
-    if (book?.id) {
-      data.append("_method", "PUT");
-      router.post(`/books/${book.id}`, data, {
-        onSuccess: () => {
-          toast.success(successMessage);
-          closeModal();
-          router.reload();
-        },
-        onError: (errors) => {
-          console.error("Update errors:", errors);
-          toast.error(errorMessage);
-        },
-      });
-    } else {
-      router.post("/books", data, {
-        onSuccess: () => {
-          toast.success(successMessage);
-          closeModal();
-          router.reload();
-        },
-        onError: (errors) => {
-          console.error("Create errors:", errors);
-          toast.error(errorMessage);
-        },
-      });
-    }
-    router.post("/books", data, {
-  onSuccess: () => {
-    toast.success("Book added successfully!");
-    closeModal();
-    router.reload();
-  },
-  onError: (errors) => {
-    if (errors.accession_numbers) {
-      toast.error(errors.accession_numbers);
-    } else {
-      toast.error("Failed to add book.");
-    }
-  },
-});
-
-  };
 
   if (!isOpen) return null;
   // Fetch book info from Google Books API using ISBN
