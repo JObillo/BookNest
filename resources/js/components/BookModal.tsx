@@ -3,6 +3,7 @@ import { router } from "@inertiajs/react";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Select } from "@headlessui/react";
+import { Loader2 } from "lucide-react"; // 👈 added spinner icon
 
 type Book = {
   id?: number;
@@ -32,6 +33,26 @@ interface Props {
   sections: { id: number; section_name: string }[];
   deweys: { id: number; dewey_classification: string }[];
 }
+const ErrorModal = ({
+  message,
+  onClose,
+}: {
+  message: string;
+  onClose: () => void;
+}) => (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
+    <div className="bg-white rounded-md p-6 w-[400px] text-center shadow-lg">
+      <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
+      <p className="text-gray-700 mb-4">{message}</p>
+      <button
+        onClick={onClose}
+        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+);
 
 export default function BookModal({
   isOpen,
@@ -63,6 +84,8 @@ export default function BookModal({
   const [preview, setPreview] = useState<string>("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [accessionNumbers, setAccessionNumbers] = useState<string[]>([""]);
+  const [isFetching, setIsFetching] = useState(false); // 👈 spinner control
+  
 
   // Populate form when editing a book
   useEffect(() => {
@@ -320,6 +343,21 @@ export default function BookModal({
         },
       });
     }
+    router.post("/books", data, {
+  onSuccess: () => {
+    toast.success("Book added successfully!");
+    closeModal();
+    router.reload();
+  },
+  onError: (errors) => {
+    if (errors.accession_numbers) {
+      toast.error(errors.accession_numbers);
+    } else {
+      toast.error("Failed to add book.");
+    }
+  },
+});
+
   };
 
   if (!isOpen) return null;
@@ -332,7 +370,7 @@ const fetchBookByISBN = async (isbn: string) => {
     toast.error("Please enter a valid ISBN.");
     return;
   }
-
+  setIsFetching(true); // 👈 show spinner
   try {
     const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`);
     const data = await res.json();
@@ -365,8 +403,10 @@ const fetchBookByISBN = async (isbn: string) => {
   } catch (error) {
     console.error("Error fetching book data:", error);
     toast.error("Failed to fetch book info.");
-  }
-};
+  } finally {
+      setIsFetching(false); // 👈 hide spinner
+    }
+  };
 
 
   return (
@@ -375,12 +415,32 @@ const fetchBookByISBN = async (isbn: string) => {
         <h2 className="text-lg font-semibold mb-4">
           {book ? "Edit Book" : "Add Book"}
         </h2>
+        {/* ISBN field with spinner */}
+            <div className="mb-3 relative">
+              <label className="block text-sm font-medium">ISBN</label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  name="isbn"
+                  value={formData.isbn}
+                  onChange={handleChange}
+                  onBlur={() => fetchBookByISBN(formData.isbn)}
+                  className="w-100 border rounded p-2 pr-10"
+                  required
+                />
+                {/* 👇 spinner visible only while fetching */}
+                {isFetching && (
+                  <Loader2 className="absolute right-1 top-3 h-5 w-5 text-blue-500 animate-spin" />
+                )}
+              </div>
+              {errors.isbn && <p className="text-xs text-red-500 mt-1">{errors.isbn}</p>}
+            </div>
 
         <form onSubmit={handleSubmit} encType="multipart/form-data">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Standard fields */}
             {[
-            { label: "ISBN", name: "isbn" },
+            
             { label: "Title", name: "title" },
             { label: "Author", name: "author" },
             { label: "Publisher", name: "publisher" },

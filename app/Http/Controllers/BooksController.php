@@ -24,84 +24,93 @@ class BooksController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'author' => 'required|string',
-            'isbn' => 'required|string|unique:books,isbn',
-            'publisher' => 'required|string',
-            'book_copies' => 'required|integer|min:1',
-            'call_number' => 'required|string',
-            'section_id' => 'required|integer',
-            'dewey_id' => 'required|integer',
-            'accession_numbers' => 'required|array',
-            'accession_numbers.*' => 'required|string|distinct',
-            'subject' => 'required|string',
-            'date_purchase' => 'required|date',
-            'book_price' => 'required',
-            'other_info' => 'required|string',
-            'book_cover' => 'nullable',
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string',
+        'author' => 'required|string',
+        'isbn' => 'required|string|unique:books,isbn',
+        'publisher' => 'required|string',
+        'book_copies' => 'required|integer|min:1',
+        'call_number' => 'required|string',
+        'section_id' => 'required|integer',
+        'dewey_id' => 'required|integer',
+        'accession_numbers' => 'required|array',
+        'accession_numbers.*' => 'required|string|distinct',
+        'subject' => 'required|string',
+        'date_purchase' => 'required|date',
+        'book_price' => 'required',
+        'other_info' => 'required|string',
+        'book_cover' => 'nullable',
+    ]);
 
-        $bookCoverPath = null;
+    // ✅ Step 1: Check for existing accession numbers
+    $duplicates = BookCopy::whereIn('accession_number', $validated['accession_numbers'])
+        ->with('book:id,title')
+        ->get();
 
-        // 1. If user manually uploaded cover
-        if ($request->hasFile('book_cover')) {
-            $file = $request->file('book_cover');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('uploads', $filename, 'public');
-            $bookCoverPath = '/storage/' . $path;
-        }
+    if ($duplicates->isNotEmpty()) {
+        $messages = $duplicates->map(function ($copy) {
+            return "Accession number '{$copy->accession_number}' already exists in book '{$copy->book->title}'.";
+        })->implode("\n");
 
-        // 2. If cover is a URL (fetched from Google Books API)
-        elseif ($request->filled('book_cover') && filter_var($request->book_cover, FILTER_VALIDATE_URL)) {
-            try {
-                $contents = @file_get_contents($request->book_cover);
-                if ($contents !== false) {
-                    $filename = time() . '_' . uniqid() . '.jpg';
-                    $path = 'uploads/' . $filename;
-                    Storage::disk('public')->put($path, $contents);
-                    $bookCoverPath = '/storage/' . $path;
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to download book cover: ' . $e->getMessage());
-            }
-        }
-
-        // 3. Create the Book record
-        $book = Book::create([
-            'title' => $validated['title'],
-            'author' => $validated['author'],
-            'isbn' => $validated['isbn'],
-            'publisher' => $validated['publisher'],
-            'book_copies' => $validated['book_copies'],
-            'copies_available' => $validated['book_copies'],
-            'call_number' => $validated['call_number'],
-            'year' => $request->year,
-            'publication_place' => $request->publication_place,
-            'section_id' => $validated['section_id'],
-            'dewey_id' => $validated['dewey_id'],
-            'subject' => $validated['subject'],
-            'date_purchase' => $validated['date_purchase'],
-            'book_price' => $validated['book_price'],
-            'other_info' => $validated['other_info'],
-            'description' => $request->description,
-            'status' => 'Available',
-            'book_cover' => $bookCoverPath,
-        ]);
-
-        //4. Create copies of the book
-        foreach ($validated['accession_numbers'] as $number) {
-            BookCopy::create([
-                'book_id' => $book->id,
-                'accession_number' => $number,
-                'status' => $validated['book_copies'] === 1 ? 'Reserve' : 'Available',
-            ]);
-        }
-
-        return back()->with('success', 'Book and copies added successfully!');
+        return back()->withErrors(['accession_numbers' => $messages])->withInput();
     }
+
+    // ✅ Step 2: Continue saving if no duplicates found
+    $bookCoverPath = null;
+
+    if ($request->hasFile('book_cover')) {
+        $file = $request->file('book_cover');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $path = $file->storeAs('uploads', $filename, 'public');
+        $bookCoverPath = '/storage/' . $path;
+    } elseif ($request->filled('book_cover') && filter_var($request->book_cover, FILTER_VALIDATE_URL)) {
+        try {
+            $contents = @file_get_contents($request->book_cover);
+            if ($contents !== false) {
+                $filename = time() . '_' . uniqid() . '.jpg';
+                $path = 'uploads/' . $filename;
+                Storage::disk('public')->put($path, $contents);
+                $bookCoverPath = '/storage/' . $path;
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to download book cover: ' . $e->getMessage());
+        }
+    }
+
+    $book = Book::create([
+        'title' => $validated['title'],
+        'author' => $validated['author'],
+        'isbn' => $validated['isbn'],
+        'publisher' => $validated['publisher'],
+        'book_copies' => $validated['book_copies'],
+        'copies_available' => $validated['book_copies'],
+        'call_number' => $validated['call_number'],
+        'year' => $request->year,
+        'publication_place' => $request->publication_place,
+        'section_id' => $validated['section_id'],
+        'dewey_id' => $validated['dewey_id'],
+        'subject' => $validated['subject'],
+        'date_purchase' => $validated['date_purchase'],
+        'book_price' => $validated['book_price'],
+        'other_info' => $validated['other_info'],
+        'description' => $request->description,
+        'status' => 'Available',
+        'book_cover' => $bookCoverPath,
+    ]);
+
+    foreach ($validated['accession_numbers'] as $number) {
+        BookCopy::create([
+            'book_id' => $book->id,
+            'accession_number' => $number,
+            'status' => 'Available',
+        ]);
+    }
+
+    return back()->with('success', 'Book and copies added successfully!');
+}
+
 
     public function update(Request $request, $id)
     {
