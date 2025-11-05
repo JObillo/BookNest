@@ -192,9 +192,6 @@ class IssuedBookController extends Controller
         return response()->json(['message' => 'Book returned successfully!']);
     }
 
-
-
-
     // Check for duplicate issue (same as before)
     public function checkDuplicate($school_id, $isbn)
     {

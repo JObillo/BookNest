@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { Head, Link } from "@inertiajs/react";
-import { Input } from "@/components/ui/input";
 import { Select } from "@headlessui/react";
 import { FaDownload, FaHome } from "react-icons/fa";
 
@@ -53,6 +52,24 @@ export default function EbooksBySection() {
     fetchEbooks(1);
   }, [search, searchCategory, fetchEbooks]);
 
+  // Generate numeric pagination with dots for skipped pages
+  const getPageNumbers = (current: number, last: number) => {
+    const delta = 2; // how many pages to show around current
+    const range: (number | string)[] = [];
+    let l: number =0;
+
+    for (let i = 1; i <= last; i++) {
+      if (i === 1 || i === last || (i >= current - delta && i <= current + delta)) {
+        if (l && i - l !== 1) {
+          range.push("...");
+        }
+        range.push(i);
+        l = i;
+      }
+    }
+    return range;
+  };
+
   return (
     <>
       <Head title="Student eBooks" />
@@ -68,31 +85,42 @@ export default function EbooksBySection() {
           <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
             PhilCST Library: Your Gateway to Knowledge and Discovery
           </p>
-          <div className="flex items-center space-x-2 justify-center mt-2">
-            <Link href={route("home")} className="text-black text-xl sm:text-2xl hover:text-purple-900">
-              <FaHome />
-            </Link>
-            <h1 className="font-bold text-xl">Ebooks For Student</h1>
-          </div>
         </div>
 
-        {/* Search & Category */}
-        <div className="flex gap-2 w-full sm:w-auto mb-5 mt-6">
-          <Select
-            className="border rounded px-2 py-1 text-sm text-gray-700"
-            value={searchCategory}
-            onChange={(e) => setSearchCategory(e.target.value as "title" | "author")}
-          >
-            <option value="title">Title</option>
-            <option value="author">Author</option>
-          </Select>
+        {/* Section Name */}
+        <div className="mt-8 px-2 sm:px-6">
+          <h1 className="font-bold text-2xl royalPurple text-left">
+            Free ebooks
+          </h1>
+        </div>
 
-          <Input
-            className="border rounded px-2 py-1 w-full sm:w-64 placeholder-italic"
-            placeholder={`Search by ${searchCategory}`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        {/* Home & Search */}
+        <div className="flex flex-col sm:flex-row items-center justify-start gap-3 mt-4 px-2 sm:px-6 flex-wrap sm:flex-nowrap">
+          <Link
+            href={route("home")}
+            className="px-4 py-2 bg-purple-900 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
+          >
+            <FaHome /> Home
+          </Link>
+
+          {/* Search & Category */}
+          <div className="flex gap-2 w-full sm:w-auto mb-5 mt-6">
+            <Select
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-32"
+              value={searchCategory}
+              onChange={(e) => setSearchCategory(e.target.value as "title" | "author")}
+            >
+              <option value="title">Title</option>
+              <option value="author">Author</option>
+            </Select>
+
+            <input
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-100"
+              placeholder={`Search by ${searchCategory}`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
         {/* Total eBooks */}
@@ -145,7 +173,7 @@ export default function EbooksBySection() {
                         href={ebook.file_url ?? "#"}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm flex items-center gap-1"
+                        className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm flex items-center gap-1 w-28 justify-center"
                       >
                         <FaDownload /> Download
                       </a>
@@ -155,24 +183,45 @@ export default function EbooksBySection() {
               </tbody>
             </table>
 
-            {/* Pagination */}
-            <div className="flex justify-center items-center gap-3 mt-6">
+            {/* Numeric Pagination */}
+            <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+              {/* Previous */}
               <button
                 disabled={page <= 1}
                 onClick={() => fetchEbooks(page - 1)}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
               >
-                Previous
+                &lt;
               </button>
-              <span className="text-gray-700">
-                Page {page} of {lastPage}
-              </span>
+
+              {/* Page Numbers */}
+              {getPageNumbers(page, lastPage).map((p, idx) =>
+                p === "..." ? (
+                  <span key={idx} className="px-3 py-1">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={idx}
+                    onClick={() => fetchEbooks(Number(p))}
+                    className={`px-3 py-1 rounded ${
+                      p === page
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+
+              {/* Next */}
               <button
                 disabled={page >= lastPage}
                 onClick={() => fetchEbooks(page + 1)}
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
               >
-                Next
+                &gt;
               </button>
             </div>
           </div>

@@ -139,7 +139,6 @@ export default function BySection({ section, books }: Props) {
           </h1>
         </div>
 
-        {/* UPDATED: Search + Filter controls (same style as Welcome.tsx) */}
         <div className="flex flex-col sm:flex-row items-center justify-start gap-3 mt-4 px-2 sm:px-6 flex-wrap sm:flex-nowrap">
           {/* Home Button */}
           <Link

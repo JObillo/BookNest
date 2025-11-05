@@ -368,7 +368,8 @@ export default function Welcome() {
         <div className="mt-12">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Free eBooks</h2>
-            <Link href={route("ebooks.index")} className="text-blue-500 hover:underline">
+            <Link href={route("ebooks.index")} 
+            className="inline-block bg-purple-800 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-purple-900 hover:bg-purple-900 transform hover:-translate-y-0.5 transition-all duration-200">
               See All
             </Link>
           </div>
@@ -380,7 +381,8 @@ export default function Welcome() {
               {filteredEbooks.slice(0, 5).map((ebook) => (
                 <div
                   key={ebook.id}
-                  className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:shadow-md transition"
+                  className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center 
+                            transform hover:-translate-y-1 hover:scale-105 hover:shadow-lg transition-all duration-300"
                 >
                   <img
                     src={ebook.cover || "/placeholder-book.png"}
