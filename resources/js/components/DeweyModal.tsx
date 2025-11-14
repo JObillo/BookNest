@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { Toaster, toast } from "sonner";
+import { Input } from "@headlessui/react";
 
 interface Dewey {
   id?: number;
@@ -104,7 +105,7 @@ export default function DeweyModal({ isOpen, closeModal, dewey }: Props) {
           {/* Dewey Number */}
           <div className="mb-3">
             <label className="block text-sm font-medium">Dewey Number</label>
-            <input
+            <Input
               type="text"
               name="dewey_number"
               value={formData.dewey_number}
@@ -117,7 +118,7 @@ export default function DeweyModal({ isOpen, closeModal, dewey }: Props) {
           {/* Dewey Classification */}
           <div className="mb-3">
             <label className="block text-sm font-medium">Dewey Classification</label>
-            <input
+            <Input
               type="text"
               name="dewey_classification"
               value={formData.dewey_classification}

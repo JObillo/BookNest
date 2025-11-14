@@ -138,7 +138,7 @@ export default function Books() {
             <input
               type="text"
               placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-              className="border border-black rounded px-2 py-2 shadow-sm w-full md:w-60"
+               className="border border-black rounded px-2 py-2 w-100 shadow-sm focus:outline-none focus:ring focus:border-black"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -191,7 +191,7 @@ export default function Books() {
                         <img
                           src={book.book_cover}
                           alt="Book Cover"
-                          className="w-20 h-28 object-cover rounded shadow"
+                          className="w-30 h-28 object-cover rounded shadow"
                         />
                       ) : (
                         <span className="text-gray-500">No Cover</span>
