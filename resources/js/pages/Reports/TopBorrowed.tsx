@@ -202,7 +202,7 @@ const handleMainPrint = useReactToPrint({
                       {item.patron?.course} — {item.patron?.year}
                     </td>
                     <td className="p-3 text-purple-700 font-semibold">
-                      {item.borrow_count} Times
+                      {item.borrow_count} {item.borrow_count === 1 ? "Time" : "Times"}
                     </td>
                     <td className="p-3">
                       <button
@@ -228,10 +228,9 @@ const handleMainPrint = useReactToPrint({
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
           <span>
-            Page {currentPage} — {displayedBorrowers.length} borrower
-            {displayedBorrowers.length !== 1 && "s"} on this page
+            Page {currentPage} — {displayedBorrowers.length} 
+            {displayedBorrowers.length === 1 ? " borrower" : " borrowers"} on this page
           </span>
-
           <div className="flex items-center gap-1">
             <button
               className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"

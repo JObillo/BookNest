@@ -24,6 +24,9 @@ export type Book = {
     section_id?: number;
   };
   borrow_count?: number;
+  copy?: {
+    accession_number: string;
+  };
 };
 
 type Section = { id: number; section_name: string };

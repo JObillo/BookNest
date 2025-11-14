@@ -225,7 +225,7 @@ const fetchPatron = async () => {
 
           {/* ISBN */}
           <div>
-            <label>ISBN 13:</label>
+            <label>ISBN (13 or 10):</label>
             <Input
               type="text"
               inputMode="numeric"

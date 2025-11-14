@@ -66,6 +66,7 @@ public function mostBorrowed(Request $request)
             $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
         )
         ->groupBy('issued_books.book_id', 'books.accession_number')
+        ->havingRaw('COUNT(*) > 1') // <-- Add this line to filter out 1-time borrows
         ->orderByDesc('borrow_count')
         ->limit($limit)
         ->with('book')

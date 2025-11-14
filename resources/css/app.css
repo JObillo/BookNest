@@ -286,4 +286,23 @@
   width: 60%;
   margin: 30px auto;
 }
+/* @media print {
+  @page {
+    size: 89mm 127mm; 
+    margin: 0;
+  }
+
+  body * {
+    display: none !important;
+  }
+
+  #receipt-print {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 89mm;
+    height: 127mm;
+  }
+} */
 

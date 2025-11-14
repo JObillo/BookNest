@@ -63,12 +63,19 @@ export default function LeastBorrowed() {
     );
   };
 
-  // Pagination
-  const booksPerPage = limit;
-  const totalPages = Math.ceil(backendBooks.length / booksPerPage);
-  const startIndex = (currentPage - 1) * booksPerPage;
-  const endIndex = startIndex + booksPerPage;
-  const displayedBooks = backendBooks.slice(startIndex, endIndex);
+// Sort books: borrow_count >= 1 first (ascending), then 0 at the bottom
+const sortedBooks = [...backendBooks].sort((a, b) => {
+  if ((a.borrow_count || 0) === 0 && (b.borrow_count || 0) > 0) return 1; // move 0 to bottom
+  if ((b.borrow_count || 0) === 0 && (a.borrow_count || 0) > 0) return -1; // move 0 to bottom
+  return (a.borrow_count || 0) - (b.borrow_count || 0); // ascending order
+});
+
+const booksPerPage = limit;
+const totalPages = Math.ceil(sortedBooks.length / booksPerPage);
+const startIndex = (currentPage - 1) * booksPerPage;
+const endIndex = startIndex + booksPerPage;
+const displayedBooks = sortedBooks.slice(startIndex, endIndex);
+
 
   useEffect(() => {
     setCurrentPage(1);

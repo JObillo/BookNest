@@ -92,6 +92,7 @@ export default function BookModal({
   // Populate form when editing a book
   useEffect(() => {
     if (isOpen) {
+      setHighlightFields([]); // ✅ clear old highlights
       if (book) {
         setFormData({
           isbn: book.isbn,
@@ -169,11 +170,11 @@ export default function BookModal({
     let error = "";
 
     if (name === "isbn") {
-      const digitsOnly = value.replace(/\D/g, "");
-      if (digitsOnly.length !== 13) {
-        error = "ISBN must be exactly 13 digits.";
-      }
-    }
+  const digitsOnly = value.replace(/\D/g, "");
+  if (digitsOnly.length !== 10 && digitsOnly.length !== 13) {
+    error = "ISBN must be either 10 or 13 digits.";
+  }
+}
 
     if (name === "accession_number") {
       if (value && !/^\d+$/.test(value)) {
@@ -346,10 +347,11 @@ const fetchBookByISBN = async (isbn: string) => {
   if (!isbn) return;
 
   const cleanIsbn = isbn.replace(/\D/g, ""); // remove dashes or spaces
-  if (cleanIsbn.length < 10) {
-    toast.error("Please enter a valid ISBN.");
-    return;
-  }
+if (cleanIsbn.length !== 10 && cleanIsbn.length !== 13) {
+  toast.error("Please enter a valid ISBN (10 or 13 digits).");
+  return;
+}
+
 
   setIsFetching(true); // 👈 show spinner
   try {
@@ -450,19 +452,18 @@ const fetchBookByISBN = async (isbn: string) => {
             >
               <label className="block text-sm font-medium">{label}</label>
               <Input
-  type="text"
-  name={name}
-  value={(formData as any)[name] || ""}
-  onChange={handleChange}
-  onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
-  className={`w-full border rounded p-2 ${
-    highlightFields.includes(name)
-      ? "border-red-500 bg-red-50"
-      : "border-gray-300"
-  } ${name === "title" ? "text-lg" : ""}`}
-  required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
-/>
-
+              type="text"
+              name={name}
+              value={(formData as any)[name] || ""}
+              onChange={handleChange}
+              onBlur={name === "isbn" ? () => fetchBookByISBN(formData.isbn) : undefined}
+              className={`w-full border rounded p-2 ${
+                highlightFields.includes(name)
+                  ? "border-gray-900 bg-gray-100"
+                  : "border-gray-300"
+              } ${name === "title" ? "text-lg" : ""}`}
+              required={["title", "author", "isbn", "publisher", "call_number"].includes(name)}
+            />
               {errors[name] && <p className="text-xs text-red-500 mt-1">{errors[name]}</p>}
             </div>
           ))}

@@ -295,7 +295,7 @@ export default function ReturnedBooks() {
               ) : (
                 <tr>
                   <td colSpan={8} className="text-center p-4 text-gray-600">
-                    No matching patrons found.
+                    No patrons found.
                   </td>
                 </tr>
               )}

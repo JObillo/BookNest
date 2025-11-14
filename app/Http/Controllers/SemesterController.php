@@ -41,6 +41,5 @@ public function getActive()
     return response()->json($semester);
 }
 
-
 }
 

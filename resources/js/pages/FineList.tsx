@@ -9,6 +9,8 @@ import FineListModal from "@/components/FineListModal";
 import { Select } from "@headlessui/react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import ReceiptPrint from "./ReceiptPrint";
+import { useReactToPrint } from "react-to-print";
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: "Fine List", href: "/fines" }];
 
@@ -42,6 +44,10 @@ export default function FineList() {
   const [selectedFine, setSelectedFine] = useState<FineRecord | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "unpaid" | "cleared">("unpaid");
   const [showPrint, setShowPrint] = useState(false);
+  
+  const [printRecord, setPrintRecord] = useState<FineRecord | null>(null);
+
+  
 
   const finesPerPage = 6;
   const printRef = useRef<HTMLDivElement>(null);
@@ -150,6 +156,40 @@ const handleExportExcel = () => {
   const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
   saveAs(blob, `Fine_List_${statusFilter.toUpperCase()}.xlsx`);
 };
+  // React-to-print
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "Fine Receipt",
+    pageStyle: `
+      <style>
+        @page {
+          size: 89mm 127mm;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          font-family: Arial, sans-serif;
+        }
+      </style>
+    `,
+  });
+
+useEffect(() => {
+  if (printRecord) {
+    const timeout = setTimeout(() => {
+      handlePrint();
+      // ✅ Reset after printing
+      setTimeout(() => setPrintRecord(null), 500);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }
+}, [printRecord]);
+
+const handlePrintReceipt = (record: FineRecord) => {
+  setPrintRecord(record);
+};
+
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -226,6 +266,12 @@ const handleExportExcel = () => {
                     </span>
                   </td>
                   <td className="p-3">
+                    <button
+                      onClick={() => handlePrintReceipt(record)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 mb-2"
+                    >
+                      Print Receipt
+                    </button>
                     {record.fine_status === "unpaid" ? (
                       <button
                         onClick={() => { setSelectedFine(record); setShowModal(true); }}
@@ -276,6 +322,14 @@ const handleExportExcel = () => {
         onClose={() => setShowModal(false)}
         onConfirm={handleConfirm}
       />
+      {/* Hidden receipt for printing */}
+      <div className="hidden print:block">
+        {printRecord && (
+          <div ref={printRef}>
+            <ReceiptPrint record={printRecord} formatDateTime={formatDateTime} />
+          </div>
+        )}
+      </div>
     </AppLayout>
   );
 }

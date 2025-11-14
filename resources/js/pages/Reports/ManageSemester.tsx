@@ -182,9 +182,9 @@ export default function ManageSemester() {
         onClose={() => setIsModalOpen(false)}
         onSave={(data) => {
           if (selectedSemester) {
-            router.put(`/reports/managesemester/${selectedSemester.id}`, data);
+            router.put(`managesemester/${selectedSemester.id}`, data);
           } else {
-            router.post("/reports/managesemester", data);
+            router.post("/managesemester", data);
           }
           setIsModalOpen(false);
         }}

@@ -32,7 +32,7 @@ export type Book = {
   date_purchase?: string;
   book_price?: string;
   description?: string;
-  section?: {id: number; section_name: string};
+  section?: { id: number; section_name: string };
   copies?: { id: number; accession_number: string; status: string }[];
 };
 
@@ -61,6 +61,7 @@ export default function Books() {
     setIsModalOpen(true);
   };
 
+  // Delete book
   const handleDelete = (id: number) => {
     router.delete(`/books/${id}`, {
       onSuccess: () => {
@@ -79,9 +80,7 @@ export default function Books() {
   const [sectionFilter, setSectionFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, searchFilter, sectionFilter]);
+  useEffect(() => setCurrentPage(1), [searchTerm, searchFilter, sectionFilter]);
 
   const booksPerPage = 5;
 
@@ -100,13 +99,13 @@ export default function Books() {
       return book.isbn?.toLowerCase().includes(term);
     } else if (searchFilter === "Author") {
       return book.author.toLowerCase().includes(term);
-    } else {
-      return (
-        book.title.toLowerCase().includes(term) ||
-        book.isbn?.toLowerCase().includes(term) ||
-        book.author.toLowerCase().includes(term)
-      );
     }
+
+    return (
+      book.title.toLowerCase().includes(term) ||
+      book.isbn?.toLowerCase().includes(term) ||
+      book.author.toLowerCase().includes(term)
+    );
   });
 
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
@@ -120,13 +119,15 @@ export default function Books() {
       <Toaster position="top-right" richColors />
 
       <div className="flex flex-col gap-6 p-6 bg-white text-black shadow-lg rounded">
-        <div className="flex justify-between items-center mb-4">
-          {/* Search + Section Filter */}
-          <div className="flex space-x-2">
+        {/* Top Controls */}
+        <div className="flex flex-col md:flex-row justify-between gap-4 items-center">
+
+          {/* Search Filters */}
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <Select
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
+              className="border border-black rounded px-2 py-2 shadow-sm"
             >
               <option value="All">All</option>
               <option value="Title">Title</option>
@@ -137,7 +138,7 @@ export default function Books() {
             <input
               type="text"
               placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-              className="border border-black rounded px-2 py-2 w-150 shadow-sm focus:outline-none focus:ring focus:border-black"
+              className="border border-black rounded px-2 py-2 shadow-sm w-full md:w-60"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -145,7 +146,7 @@ export default function Books() {
             <Select
               value={sectionFilter}
               onChange={(e) => setSectionFilter(e.target.value)}
-              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black"
+              className="border border-black rounded px-2 py-2 shadow-sm"
             >
               <option value="All">All Sections</option>
               {sections.map((section, index) => (
@@ -158,38 +159,34 @@ export default function Books() {
 
           <button
             onClick={() => openModal()}
-            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg ml-5 px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
           >
             Add Book
           </button>
         </div>
 
-        {/* Books Table */}
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {[
-                  "Book Cover",
-                  "Book Title",
-                  "Author",
-                  "Publisher",
-                  "Catalog Info",
-                  // "Other Info",
-                  "Book Copies",
-                  "Actions",
-                ].map((header, index) => (
-                  <th key={`${header}-${index}`} className="border p-3 text-left">
-                    {header}
-                  </th>
-                ))}
+                <th className="border p-3 text-left hidden sm:table-cell">Book Cover</th>
+                <th className="border p-3 text-left">Book Title</th>
+                <th className="border p-3 text-left">Author</th>
+                <th className="border p-3 text-left hidden lg:table-cell">Publisher</th>
+                <th className="border p-3 text-left hidden md:table-cell">Catalog Info</th>
+                <th className="border p-3 text-left hidden md:table-cell">Book Copies</th>
+                <th className="border p-3 text-left">Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {displayedBooks.length ? (
                 displayedBooks.map((book, index) => (
                   <tr key={`${book.id}-${index}`} className="border-b hover:bg-gray-100">
-                    <td className="p-3">
+
+                    {/* Book Cover */}
+                    <td className="p-3 hidden sm:table-cell">
                       {book.book_cover ? (
                         <img
                           src={book.book_cover}
@@ -200,37 +197,36 @@ export default function Books() {
                         <span className="text-gray-500">No Cover</span>
                       )}
                     </td>
+
+                    {/* Title */}
                     <td className="p-3">
                       <div className="font-semibold">{book.title}</div>
-                      <div className="text-sm text-gray-600">
-                        ISBN: {book.isbn}
-                      </div>
+                      <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
                     </td>
+
+                    {/* Author */}
                     <td className="p-3">{book.author}</td>
-                    <td className="p-3">{book.publisher}</td>
-                    <td className="p-3 text-sm text-gray-800">
+
+                    {/* Publisher */}
+                    <td className="p-3 hidden lg:table-cell">{book.publisher}</td>
+
+                    {/* Catalog Info */}
+                    <td className="p-3 text-sm text-gray-800 hidden md:table-cell">
                       <div>
                         Accession #:{" "}
                         {book.copies?.length ? book.copies[0].accession_number : "N/A"}
                       </div>
                       <div>Call #: {book.call_number}</div>
                       <div>DDC: {book.dewey}</div>
-                      <div>Year: {book.year?.toString() || "N/A"}</div>
+                      <div>Year: {book.year || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
                     </td>
-                    {/* <td className="p-3 text-sm text-gray-800">
-                      <div>Section: {book.section?.section_name || "N/A"}</div>
-                      <div>
-                        Dewey Class: {book.dewey_relation?.dewey_classification || "N/A"}
-                      </div>
-                      <div>Subject #: {book.subject}</div>
-                      <div>Date purchase: {book.date_purchase?.toString() || "N/A"}</div>
-                      <div>Book Price: {book.book_price}</div>
-                    </td> */}
-                    <td className="p-3 text-sm text-gray-800">
+
+                    {/* Book Copies */}
+                    <td className="p-3 text-sm text-gray-800 hidden md:table-cell">
                       <div>Copies: {book.book_copies}</div>
                       <div>Available: {book.copies_available}</div>
-                      <div className="text-gray-800">
+                      <div>
                         Status:{" "}
                         <span
                           className={
@@ -243,17 +239,19 @@ export default function Books() {
                         </span>
                       </div>
                     </td>
+
+                    {/* Actions */}
                     <td className="p-3 flex gap-2">
                       <button
                         onClick={() => openModal(book)}
-                        className="bg-blue-500 hover:bg-blue-600 text-sm text-white px-3 py-1 rounded cursor-pointer"
+                        className="bg-blue-500 hover:bg-blue-600 text-sm text-white px-3 py-1 rounded"
                       >
                         Edit
                       </button>
 
                       <button
                         onClick={() => router.get(`/books/${book.id}`)}
-                        className="bg-purple-600 hover:bg-purple-700 text-sm text-white px-3 py-1 rounded cursor-pointer"
+                        className="bg-purple-600 hover:bg-purple-700 text-sm text-white px-3 py-1 rounded"
                       >
                         Show
                       </button>
@@ -263,7 +261,7 @@ export default function Books() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="text-center p-4 text-gray-600">
+                  <td colSpan={7} className="text-center p-4 text-gray-600">
                     No books found.
                   </td>
                 </tr>
@@ -274,7 +272,7 @@ export default function Books() {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
+      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
         <span>
           Page {currentPage} — {displayedBooks.length} book
           {displayedBooks.length !== 1 && "s"} on this page
@@ -282,7 +280,7 @@ export default function Books() {
 
         <div className="flex items-center gap-1">
           <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
@@ -294,10 +292,8 @@ export default function Books() {
           </span>
 
           <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
             Next
