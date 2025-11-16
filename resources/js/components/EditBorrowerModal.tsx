@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
+import { Select } from "@headlessui/react";
 
 type Patron = {
   id: number;
@@ -117,7 +118,7 @@ export default function EditBorrowerModal({ isOpen, onClose, patron }: Props) {
 
           {/* Department for Student & Faculty */}
           {(formData.patron_type === "Student" || formData.patron_type === "Faculty") && (
-            <select
+            <Select
               name="department"
               value={formData.department || ""}
               onChange={handleChange}
@@ -128,20 +129,20 @@ export default function EditBorrowerModal({ isOpen, onClose, patron }: Props) {
               {departments.map((dept) => (
                 <option key={dept} value={dept}>{dept}</option>
               ))}
-            </select>
+            </Select>
           )}
 
           {/* Student-specific fields */}
           {formData.patron_type === "Student" && (
             <>
-              <select name="course" value={formData.course || ""} onChange={handleChange} className="border p-2 w-full rounded" required>
+              <Select name="course" value={formData.course || ""} onChange={handleChange} className="border p-2 w-full rounded" required>
                 <option value="">Select Course</option>
                 {courses.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select name="year" value={formData.year || ""} onChange={handleChange} className="border p-2 w-full rounded" required>
+              </Select>
+              <Select name="year" value={formData.year || ""} onChange={handleChange} className="border p-2 w-full rounded" required>
                 <option value="">Select Year</option>
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              </Select>
             </>
           )}
 

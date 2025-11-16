@@ -5,6 +5,7 @@ import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
 import BorrowerModal from "@/components/BorrowerModal"; 
 import EditBorrowerModal from "@/components/EditBorrowerModal";
+import ImportPatronModal from "@/components/ImportPatronModal";
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Borrowers", href: "/borrowers" },
@@ -29,6 +30,7 @@ export default function Borrowers() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPatron, setEditingPatron] = useState<Patron | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,6 +81,13 @@ export default function Borrowers() {
           >
             Add Borrower
           </button>
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg ml-2 px-5 py-2 shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+          >
+            Import Borrowers
+          </button>
+
         </div>
 
         <div className="overflow-x-auto">
@@ -177,6 +186,11 @@ export default function Borrowers() {
           patron={editingPatron}
         />
       )}
+      <ImportPatronModal
+  isOpen={isImportModalOpen}
+  onClose={() => setIsImportModalOpen(false)}
+/>
+
     </AppLayout>
   );
 }

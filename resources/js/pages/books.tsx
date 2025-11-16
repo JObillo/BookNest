@@ -5,6 +5,8 @@ import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
 import { Select } from "@headlessui/react";
+import ImportCSVModal from "@/components/ImportCSVModal";
+
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -112,6 +114,8 @@ export default function Books() {
   const startIndex = (currentPage - 1) * booksPerPage;
   const endIndex = startIndex + booksPerPage;
   const displayedBooks = filteredBooks.slice(startIndex, endIndex);
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -164,7 +168,12 @@ export default function Books() {
             Add Book
           </button>
         </div>
-
+        <button
+          onClick={() => setIsCSVModalOpen(true)}
+          className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
+        >
+          Import CSV
+        </button>
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
@@ -306,6 +315,10 @@ export default function Books() {
         book={selectedBook}
         sections={sections}
         deweys={deweys}
+      />
+      <ImportCSVModal
+        isOpen={isCSVModalOpen}
+        closeModal={() => setIsCSVModalOpen(false)}
       />
     </AppLayout>
   );
