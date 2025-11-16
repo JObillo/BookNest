@@ -51,6 +51,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // -------------------------
 // Books
 // -------------------------
+Route::get('/books/archived', [BooksController::class, 'archivedBooks'])->name('books.archived');
+
 Route::resource('books', BooksController::class);
 Route::get('/books/isbn/{isbn}', function ($isbn) {
     $book = Book::where('isbn', $isbn)->first();
@@ -63,6 +65,8 @@ Route::get('/books/isbn/{isbn}', function ($isbn) {
 });
 Route::get('/books/{book}', [BooksController::class, 'show'])->name('books.show');
 Route::get('/book/{book}', [BooksController::class, 'publicShow'])->name('books.publicShow');
+Route::post('/book-copies/{copy}/archive', [BooksController::class, 'archiveCopy'])
+    ->name('bookCopies.archive');
 
 // -------------------------
 // Borrowers

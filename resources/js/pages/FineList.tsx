@@ -294,27 +294,46 @@ const handlePrintReceipt = (record: FineRecord) => {
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
-        <span>Page {currentPage} — {displayedFines.length} record{displayedFines.length !== 1 && "s"} on this page</span>
-        <div className="flex items-center gap-1">
+    {/* Pagination */}
+    <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+      <span>
+        Page {currentPage} of {totalPages} — {displayedFines.length} record
+        {displayedFines.length !== 1 && "s"} on this page
+      </span>
+
+      <div className="flex items-center gap-1">
+        {/* Previous Arrow */}
+        <button
+          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          «
+        </button>
+
+        {/* Numeric Page Buttons */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-3 py-1 border rounded hover:bg-gray-200 ${
+              page === currentPage ? "bg-purple-700 text-white" : ""
+            }`}
           >
-            Previous
+            {page}
           </button>
-          <span className="px-3 py-1 bg-purple-700 text-white rounded">{currentPage}</span>
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
-        </div>
+        ))}
+
+        {/* Next Arrow */}
+        <button
+          className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+          onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          »
+        </button>
       </div>
+    </div>
 
       <FineListModal
         show={showModal}

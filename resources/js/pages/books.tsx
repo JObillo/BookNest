@@ -5,6 +5,7 @@ import AppLayout from "@/layouts/app-layout";
 import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
 import { Select } from "@headlessui/react";
+import { Archive } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -79,6 +80,7 @@ export default function Books() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sectionFilter, setSectionFilter] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [incompleteFilter, setIncompleteFilter] = useState<boolean>(false);
 
   useEffect(() => setCurrentPage(1), [searchTerm, searchFilter, sectionFilter]);
 
@@ -89,6 +91,26 @@ export default function Books() {
 
     if (sectionFilter !== "All" && book.section?.section_name !== sectionFilter) {
       return false;
+    }
+
+    if (incompleteFilter) {
+      const isIncomplete =
+        !book.title ||
+        !book.author ||
+        !book.isbn ||
+        !book.publisher ||
+        !book.book_copies ||
+        !book.call_number ||
+        !book.accession_number ||
+        !book.year ||
+        !book.publication_place ||
+        !book.section_id;
+        !book.dewey_id ||
+        !book.subject ||
+        !book.date_purchase ||
+        !book.book_price ||
+        !book.book_cover;
+      if (!isIncomplete) return false;
     }
 
     if (!term) return true;
@@ -155,15 +177,41 @@ export default function Books() {
                 </option>
               ))}
             </Select>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="incompleteFilter"
+                checked={incompleteFilter}
+                onChange={(e) => setIncompleteFilter(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="incompleteFilter" className="text-sm text-gray-700">
+                Show Incomplete Info
+              </label>
+            </div>
+
           </div>
 
+        <div className="flex gap-2">
+          {/* Add Book Button */}
           <button
             onClick={() => openModal()}
-            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
+            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition"
           >
             Add Book
           </button>
+
+          {/* Archived Books Icon */}
+        <button
+          onClick={() => router.get('/books/archived')}
+          className="cursor-pointer bg-gray-500 text-white rounded-lg p-2 shadow-md hover:bg-gray-600 transition flex items-center justify-center"
+          title="Archived Books"
+        >
+          <Archive/>
+        </button>
         </div>
+      </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
@@ -273,29 +321,40 @@ export default function Books() {
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
         <span>
-          Page {currentPage} — {displayedBooks.length} book
+          Page {currentPage} of {totalPages} — {displayedBooks.length} book
           {displayedBooks.length !== 1 && "s"} on this page
         </span>
 
         <div className="flex items-center gap-1">
+          {/* Previous Arrow */}
           <button
             className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            «
           </button>
 
-          <span className="px-3 py-1 bg-purple-700 text-white rounded">
-            {currentPage}
-          </span>
+          {/* Numeric Page Buttons */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded hover:bg-gray-200 ${
+                page === currentPage ? "bg-purple-700 text-white" : ""
+              }`}
+            >
+              {page}
+            </button>
+          ))}
 
+          {/* Next Arrow */}
           <button
             className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
-            Next
+            »
           </button>
         </div>
       </div>
@@ -310,3 +369,4 @@ export default function Books() {
     </AppLayout>
   );
 }
+//1

@@ -18,7 +18,6 @@ type Book = {
   book_cover?: string;
   section_id?: number;
   dewey_id?: number;
-  description?: string;
   subject?: string;
   date_purchase?: string;
   book_price?: string;
@@ -356,7 +355,6 @@ export default function BookModal({
         publisher: info.publisher || formData.publisher,
         year: info.publishedDate ? info.publishedDate.slice(0, 4) : formData.year,
         subject: info.categories ? info.categories.join(", ") : formData.subject,
-        description: info.description || formData.description,
         book_cover: info.imageLinks?.thumbnail || formData.book_cover,
         other_info:
           `${info.pageCount ? `${info.pageCount} pages` : ""}${
