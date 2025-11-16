@@ -17,6 +17,7 @@ type Props = {
     subject?: string;
     publisher: string;
     status: string;
+    is_active: number;
     accession_number: string;
     call_number: string;
     year?: string | number;
@@ -96,7 +97,9 @@ export default function BySection({ section, books }: Props) {
         matchesSearch = (book.subject ?? "").toLowerCase().includes(lowerQuery);
       }
 
-      return matchesSearch && matchesYear;
+      const isActive = (book as any).is_active !== 0;
+
+      return matchesSearch && matchesYear && isActive;
     });
   }, [books, searchTerm, searchFilter, startYear, endYear]);
 
@@ -286,35 +289,47 @@ export default function BySection({ section, books }: Props) {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700 cursor-pointer">
-          <span>
-            Page {currentPage} — {displayedBooks.length} book
-            {displayedBooks.length !== 1 && "s"} on this page
-          </span>
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+        <span>
+          Page {currentPage} of {totalPages} — {displayedBooks.length} book
+          {displayedBooks.length !== 1 && "s"} on this page
+        </span>
 
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
+          {/* Previous Arrow */}
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            «
+          </button>
+
+          {/* Numeric Page Buttons */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
-              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded hover:bg-gray-200 ${
+                page === currentPage ? "bg-purple-700 text-white" : ""
+              }`}
             >
-              Previous
+              {page}
             </button>
+          ))}
 
-            <span className="px-3 py-1 bg-purple-700 text-white rounded">
-              {currentPage}
-            </span>
-
-            <button
-              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+          {/* Next Arrow */}
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            »
+          </button>
         </div>
+      </div>
+          
       </div>
     </>
   );

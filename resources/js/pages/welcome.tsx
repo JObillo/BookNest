@@ -11,6 +11,7 @@ type Book = {
   isbn: string;
   publisher: string;
   status: string;
+  is_active: number;
   year?: number | string;
   book_cover?: string;
   section_id: number;
@@ -173,7 +174,8 @@ export default function Welcome() {
       }
 
       const matchesYear = isWithinYearRange(bookYear);
-      return matchesSearch && matchesYear;
+      const isActive = book.status !== "Inactive" && (book as any).is_active !== 0;
+      return matchesSearch && matchesYear && isActive;
     });
 
     const groups: Record<string, Book[]> = {};
