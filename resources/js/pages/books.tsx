@@ -217,7 +217,6 @@ export default function Books() {
                         {book.copies?.length ? book.copies[0].accession_number : "N/A"}
                       </div>
                       <div>Call #: {book.call_number}</div>
-                      <div>DDC: {book.dewey}</div>
                       <div>Year: {book.year || "N/A"}</div>
                       <div>Place: {book.publication_place}</div>
                     </td>

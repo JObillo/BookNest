@@ -179,7 +179,7 @@ export default function BookModal({
     }
 
     if (name === "call_number") {
-      if (value && !/^[A-Za-z\d .\-\/]+$/.test(value)) {
+      if (value && !/^[A-Za-z\d .\-\/']+$/.test(value)) {
         error =
           "Call Number can contain letters, numbers, spaces, dots (.), - or / only.";
       }
@@ -248,6 +248,19 @@ export default function BookModal({
       if (error) validationErrors[field] = error;
     });
 
+    if (!formData.title)
+      validationErrors.title = "title is required.";
+    if (!formData.author)
+      validationErrors.author = "Author is required.";
+    if (!formData.publisher)
+      validationErrors.publisher = "Publisher is required.";
+    if (!formData.call_number)
+      validationErrors.call_number = "Call Number is required.";
+    if (formData.book_copies < 1)
+      validationErrors.book_copies = "At least one book copy is required.";
+    if (accessionNumbers.length !== formData.book_copies ||
+        accessionNumbers.some((num) => !num))
+      validationErrors.accession_number = "All accession numbers are required.";
     if (!formData.section_id)
       validationErrors.section_id = "Section is required.";
     if (!formData.dewey_id)
@@ -567,3 +580,5 @@ export default function BookModal({
     </div>
   );
 }
+
+//no validation

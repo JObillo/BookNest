@@ -47,13 +47,13 @@ class BooksController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        // Check duplicate accession numbers
+        // Check duplicate accession numbers in any book
         $duplicates = BookCopy::whereIn('accession_number', $validated['accession_numbers'])
             ->with('book:id,title')
             ->get();
 
         if ($duplicates->isNotEmpty()) {
-            $messages = $duplicates->map(fn($copy) => 
+            $messages = $duplicates->map(fn($copy) =>
                 "Accession number '{$copy->accession_number}' already exists in book '{$copy->book->title}'."
             )->implode("\n");
 
@@ -88,7 +88,7 @@ class BooksController extends Controller
             'isbn' => $validated['isbn'],
             'publisher' => $validated['publisher'] ?? null,
             'book_copies' => $validated['book_copies'],
-            'copies_available' => $validated['book_copies'],
+            'copies_available' => $validated['book_copies'], // sync copies_available
             'call_number' => $validated['call_number'],
             'year' => $validated['year'] ?? null,
             'publication_place' => $validated['publication_place'] ?? null,
@@ -140,6 +140,19 @@ class BooksController extends Controller
             'book_cover' => 'nullable',
         ]);
 
+        // Friendly accession number validation (ignore current book)
+        $duplicates = BookCopy::whereIn('accession_number', $validated['accession_numbers'])
+            ->where('book_id', '!=', $book->id)
+            ->get();
+
+        if ($duplicates->isNotEmpty()) {
+            $messages = $duplicates->map(function ($copy) {
+                return "Accession number '{$copy->accession_number}' already exists in book '{$copy->book->title}'.";
+            })->implode("\n");
+
+            return back()->withErrors(['accession_numbers' => $messages])->withInput();
+        }
+
         $data = $validated;
 
         // Handle book cover
@@ -165,11 +178,15 @@ class BooksController extends Controller
             }
         }
 
+        // Store old book_copies before update
+        $oldTotalCopies = $book->book_copies;
+
+        // Update book
         $book->update($data);
 
-        // Update or create copies
+        // Sync book copies
         $existingCopies = $book->copies()->get();
-        foreach ($request->accession_numbers as $index => $number) {
+        foreach ($validated['accession_numbers'] as $index => $number) {
             if (isset($existingCopies[$index])) {
                 $existingCopies[$index]->update(['accession_number' => $number]);
             } else {
@@ -180,6 +197,26 @@ class BooksController extends Controller
                 ]);
             }
         }
+
+        // Remove extra copies if book_copies decreased
+        if ($existingCopies->count() > count($validated['accession_numbers'])) {
+            $copiesToDelete = $existingCopies->slice(count($validated['accession_numbers']));
+            foreach ($copiesToDelete as $copy) {
+                $copy->delete();
+            }
+        }
+
+        // Correctly update copies_available
+        $addedCopies = $book->book_copies - $oldTotalCopies;
+        if ($addedCopies > 0) {
+            $book->increment('copies_available', $addedCopies);
+        } elseif ($addedCopies < 0) {
+            $book->decrement('copies_available', abs($addedCopies));
+        }
+
+        $book->update([
+        'status' => $book->copies_available > 1 ? 'Available' : 'Not Available'
+        ]);
 
         return redirect()->route('books.index')->with('success', 'Book updated successfully.');
     }
