@@ -43,6 +43,9 @@ export default function BookShow() {
                 <strong>Section:</strong> {book.section?.section_name || "N/A"}
               </p>
               <p>
+                <strong>Call Number:</strong> {book.call_number || "N/A"}
+              </p>
+              <p>
                 <strong>Dewey:</strong>{" "}
                 {book.dewey_relation?.dewey_classification || "N/A"}
               </p>
@@ -86,6 +89,7 @@ export default function BookShow() {
                     <th className="p-3 text-left border">#</th>
                     <th className="p-3 text-left border">Accession Number</th>
                     <th className="p-3 text-left border">Status</th>
+                    <th className="p-3 text-left border">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,6 +116,13 @@ export default function BookShow() {
                         >
                         {copy.status}
                         </span>
+                      </td>
+                      <td className="p-3 flex gap-2">
+                      <button
+                        className="bg-red-600 hover:bg-red-600 text-sm text-white px-3 py-1 rounded"
+                      >
+                        Archive
+                      </button>
                       </td>
                     </tr>
                   ))}
