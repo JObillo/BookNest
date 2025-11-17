@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Patron;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Validator;
 class PatronController extends Controller
 {
     public function index()
@@ -120,4 +121,66 @@ class PatronController extends Controller
             return redirect()->back()->with('error', 'Failed to delete borrower.');
         }
     }
+
+   public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:csv,xlsx,xls',
+    ]);
+
+    $file = $request->file('file');
+    $spreadsheet = IOFactory::load($file->getPathname());
+    $sheet = $spreadsheet->getActiveSheet();
+    $rows = $sheet->toArray();
+
+    if (count($rows) < 1) {
+        return redirect()->back()->with('error', 'No rows to import.');
+    }
+
+    $successCount = 0;
+    $errors = [];
+
+    foreach ($rows as $index => $row) {
+        // Map CSV columns: school_id, name, year, course, email
+        $data = [
+            'school_id'   => $row[0] ?? null,
+            'name'        => $row[1] ?? null,
+            'year'        => $row[2] ?? null,
+            'course'      => $row[3] ?? null,
+            'email'       => $row[4] ?? null,
+            'patron_type' => 'Student',
+            'department'  => null,
+            'contact_number' => null,
+            'address'     => null,
+        ];
+
+        $validator = Validator::make($data, [
+            'school_id'   => 'required|string|max:255',
+            'name'        => 'required|string',
+            'year'        => 'required',
+            'course'      => 'required|string',
+            'email'       => 'required|email|unique:patrons,email',
+            'patron_type' => 'required|in:Student,Faculty,Guest',
+        ]);
+
+        if ($validator->fails()) {
+            $errors[$index + 1] = $validator->errors()->all();
+            continue;
+        }
+
+        Patron::create($data);
+        $successCount++;
+    }
+
+    $flash = [];
+    if ($successCount > 0) {
+        $flash['success'] = "$successCount borrowers imported successfully.";
+    }
+    if (!empty($errors)) {
+        $flash['error'] = "Some rows failed: " . implode('; ', array_map(fn($e) => implode(', ', $e), $errors));
+    }
+
+    return redirect()->route('borrowers.index')->with($flash);
+}
+
 }

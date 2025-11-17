@@ -207,7 +207,7 @@ export default function ReturnedBooks() {
                   "Due Date & Time",
                   "Status",
                   "Fine Amount",
-                  "Fine Status",
+                  // "Fine Status",
                   "Action",
                 ].map((header) => (
                   <th key={header} className="border p-3 text-left">
@@ -265,7 +265,7 @@ export default function ReturnedBooks() {
                     </td>
 
                     {/* Fine Status */}
-                    <td className="p-3">
+                    {/* <td className="p-3">
                       {record.status === "Issued" ? (
                         "-"
                       ) : (
@@ -277,7 +277,7 @@ export default function ReturnedBooks() {
                           {record.fine_status || "no fine"}
                         </span>
                       )}
-                    </td>
+                    </td> */}
 
                     {/* Action */}
                     <td className="p-3">

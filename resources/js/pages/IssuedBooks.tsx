@@ -204,45 +204,59 @@ const renderPatronInfo = (patron: IssuedBook["patron"]) => {
         </div>
 
         {/* Pagination */}
-        <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
-          <span>
-            Page {currentPage} of {totalPages} — {displayedBooks.length} book
-            {displayedBooks.length !== 1 && "s"} on this page
+<div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+  <span>
+    Page {currentPage} of {totalPages} — {displayedBooks.length} book
+    {displayedBooks.length !== 1 && "s"} on this page
+  </span>
+
+  <div className="flex items-center gap-1">
+    {/* Previous Arrow */}
+    <button
+      className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+      disabled={currentPage === 1}
+    >
+      «
+    </button>
+
+    {/* Numeric Page Buttons */}
+    {Array.from({ length: totalPages }, (_, i) => i + 1)
+      .filter(
+        (page) =>
+          page === 1 ||
+          page === totalPages ||
+          (page >= currentPage - 2 && page <= currentPage + 2)
+      )
+      .map((page, idx, arr) => {
+        const prevPage = arr[idx - 1];
+        return (
+          <span key={page} className="flex">
+            {prevPage && page - prevPage > 1 && (
+              <span className="px-2 py-1">...</span>
+            )}
+            <button
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded hover:bg-gray-200 ${
+                page === currentPage ? "bg-purple-700 text-white" : ""
+              }`}
+            >
+              {page}
+            </button>
           </span>
+        );
+      })}
 
-          <div className="flex items-center gap-1">
-            {/* Previous Arrow */}
-            <button
-              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              «
-            </button>
-
-            {/* Numeric Page Buttons */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 border rounded hover:bg-gray-200 ${
-                  page === currentPage ? "bg-purple-700 text-white" : ""
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            {/* Next Arrow */}
-            <button
-              className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              »
-            </button>
-          </div>
-        </div>
+    {/* Next Arrow */}
+    <button
+      className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+      disabled={currentPage === totalPages}
+    >
+      »
+    </button>
+  </div>
+</div>
       </div>
 
       <IssueBookModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

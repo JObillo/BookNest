@@ -251,7 +251,7 @@ const handlePrintReceipt = (record: FineRecord) => {
                     <div className="font-semibold">{record.patron.name}</div>
                     <div className="text-sm text-gray-600">School ID: {record.patron.school_id}</div>
                     <div className="text-sm text-gray-600">{record.patron.course || "N/A"} | {record.patron.year || "N/A"}</div>
-                    <div className="text-sm text-gray-600">{record.patron.department || "N/A"} ({record.patron.patron_type})</div>
+                    {/* <div className="text-sm text-gray-600">{record.patron.department || "N/A"} ({record.patron.patron_type})</div> */}
                   </td>
                   <td className="p-3">
                     <div className="font-semibold">{record.book.title}</div>

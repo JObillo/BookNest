@@ -26,7 +26,7 @@ export default function IssueBookModal({
   /** SCHOOL ID HANDLER — numeric only and max 5 */
   const handleSchoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, ""); // Only digits
-    if (value.length <= 5) setData("school_id", value);
+    if (value.length <= 8) setData("school_id", value);
   };
 
   /** ISBN HANDLER — auto format to 111-1-11111-111-1 (ISBN-13) */

@@ -13,6 +13,7 @@ use App\Http\Controllers\{
     ReportController,
     SemesterController,
     NotificationController,
+    BookImportController
 };
 use Illuminate\Support\Facades\Log;
 use App\Models\Book;
@@ -68,10 +69,16 @@ Route::get('/book/{book}', [BooksController::class, 'publicShow'])->name('books.
 Route::post('/book-copies/{copy}/archive', [BooksController::class, 'archiveCopy'])
     ->name('bookCopies.archive');
 
+// ✅ CSV Import route (add here)
+Route::post('/books/import', [BookImportController::class, 'import'])->name('books.import');
+
 // -------------------------
 // Borrowers
 // -------------------------
 Route::resource('borrowers', PatronController::class);
+
+Route::post('/borrowers/import', [PatronController::class, 'import'])->name('borrowers.import');
+
 
 // -------------------------
 // Issued Books

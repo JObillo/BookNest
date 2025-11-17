@@ -6,6 +6,7 @@ import { Toaster, toast } from "sonner";
 import { BreadcrumbItem } from "@/types";
 import { Select } from "@headlessui/react";
 import { Archive } from 'lucide-react';
+import ImportCSVModal from "@/components/ImportCSVModal";
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: "Manage Books", href: "/books" },
@@ -48,14 +49,22 @@ type Dewey = {
 };
 
 export default function Books() {
-  const { books, sections, deweys } = usePage<{
+  const { books, sections, deweys, flash } = usePage<{
     books: Book[];
     sections: Section[];
     deweys: Dewey[];
+    flash: {
+      success?: string;
+      errors_import?: string[];
+      duplicate?: string[];
+      imported?: number;
+    };
   }>().props;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  
+  
 
   const openModal = (book: Book | null = null) => {
     setSelectedBook(book);
@@ -134,6 +143,8 @@ export default function Books() {
   const startIndex = (currentPage - 1) * booksPerPage;
   const endIndex = startIndex + booksPerPage;
   const displayedBooks = filteredBooks.slice(startIndex, endIndex);
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -192,27 +203,33 @@ export default function Books() {
             </div>
 
           </div>
-
-        <div className="flex gap-2">
-          {/* Add Book Button */}
-          <button
-            onClick={() => openModal()}
-            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition"
-          >
-            Add Book
-          </button>
-
+        
+        {/* Add Book Button */}
+        <div className="flex gap-1">
+            <button
+              onClick={() => openModal()}
+              className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition"
+            >
+              Add Book
+            </button>
+          {/* Import CSV */}
+              <button
+                onClick={() => setIsCSVModalOpen(true)}
+                className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-blue-700 transition w-full md:w-auto"
+              >
+                Import CSV
+              </button>
           {/* Archived Books Icon */}
-        <button
-          onClick={() => router.get('/books/archived')}
-          className="cursor-pointer bg-gray-500 text-white rounded-lg p-2 shadow-md hover:bg-gray-600 transition flex items-center justify-center"
-          title="Archived Books"
-        >
-          <Archive/>
-        </button>
+          <button
+            onClick={() => router.get('/books/archived')}
+            className="cursor-pointer bg-gray-500 text-white rounded-lg p-2 shadow-md hover:bg-gray-600 transition flex items-center justify-center"
+            title="Archived Books"
+          >
+            <Archive/>
+          </button>
         </div>
       </div>
-
+        
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
@@ -317,28 +334,39 @@ export default function Books() {
           </table>
         </div>
       </div>
+{/* Pagination */}
+<div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+  <span>
+    Page {currentPage} of {totalPages} — {displayedBooks.length} book
+    {displayedBooks.length !== 1 && "s"} on this page
+  </span>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
-        <span>
-          Page {currentPage} of {totalPages} — {displayedBooks.length} book
-          {displayedBooks.length !== 1 && "s"} on this page
-        </span>
+  <div className="flex items-center gap-1">
+    {/* Previous Arrow */}
+    <button
+      className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+      disabled={currentPage === 1}
+    >
+      «
+    </button>
 
-        <div className="flex items-center gap-1">
-          {/* Previous Arrow */}
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            «
-          </button>
-
-          {/* Numeric Page Buttons */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+    {/* Numeric Page Buttons */}
+    {Array.from({ length: totalPages }, (_, i) => i + 1)
+      .filter(
+        (page) =>
+          page === 1 ||
+          page === totalPages ||
+          (page >= currentPage - 2 && page <= currentPage + 2)
+      )
+      .map((page, idx, arr) => {
+        const prevPage = arr[idx - 1];
+        return (
+          <span key={page} className="flex">
+            {prevPage && page - prevPage > 1 && (
+              <span className="px-2 py-1">...</span>
+            )}
             <button
-              key={page}
               onClick={() => setCurrentPage(page)}
               className={`px-3 py-1 border rounded hover:bg-gray-200 ${
                 page === currentPage ? "bg-purple-700 text-white" : ""
@@ -346,18 +374,20 @@ export default function Books() {
             >
               {page}
             </button>
-          ))}
+          </span>
+        );
+      })}
 
-          {/* Next Arrow */}
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            »
-          </button>
-        </div>
-      </div>
+    {/* Next Arrow */}
+    <button
+      className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
+      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+      disabled={currentPage === totalPages}
+    >
+      »
+    </button>
+  </div>
+</div>
 
       <BookModal
         isOpen={isModalOpen}
@@ -365,6 +395,11 @@ export default function Books() {
         book={selectedBook}
         sections={sections}
         deweys={deweys}
+      />
+      <ImportCSVModal
+        isOpen={isCSVModalOpen}
+        closeModal={() => setIsCSVModalOpen(false)}
+        flash={flash}
       />
     </AppLayout>
   );
