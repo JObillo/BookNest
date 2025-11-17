@@ -32,7 +32,7 @@ export default function Deweys() {
 
   const handleDelete = (id: number) => {
     // if (!confirm("Are you sure you want to delete this book?")) return;
-    router.delete(`/dewey/${id}`, {
+    router.delete(`/deweys/${id}`, {
       onSuccess: () => {
         toast.success("Dewey deleted successfully.");
         router.reload();

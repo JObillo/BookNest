@@ -1,18 +1,48 @@
-import { Fragment, useState } from "react";
-import { Dialog, Input, Transition } from "@headlessui/react";
+import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
+import { Input } from "./ui/input";
+import { Loader2 } from "lucide-react";
+
+type Flash = {
+  imported?: number;
+  duplicate?: string[];
+  errors_import?: string[];
+  success?: string;
+};
 
 type Props = {
   isOpen: boolean;
   closeModal: () => void;
+  flash?: Flash;
 };
 
-export default function ImportCSVModal({ isOpen, closeModal }: Props) {
+export default function ImportCSVModal({ isOpen, closeModal, flash }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = async (e: React.FormEvent) => {
+  // ✅ Show toast messages when flash changes
+  useEffect(() => {
+    if (!flash) return;
+
+    if (flash.imported && flash.imported > 0) {
+      toast.success(`Successfully imported ${flash.imported} row(s).`);
+    }
+
+    if (flash.duplicate && flash.duplicate.length > 0) {
+      flash.duplicate.forEach((dup) => {
+        toast.error(`The book "${dup}" is already imported.`);
+      });
+    }
+
+    if (flash.errors_import && flash.errors_import.length > 0) {
+      flash.errors_import.forEach((err) => toast.error(err));
+    }
+  }, [flash]);
+
+  if (!isOpen) return null;
+
+  const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!file) {
@@ -26,87 +56,51 @@ export default function ImportCSVModal({ isOpen, closeModal }: Props) {
     formData.append("file", file);
 
     router.post("/books/import", formData, {
+      preserveScroll: true,
       onFinish: () => setLoading(false),
-      onSuccess: (page) => {
-        const props: any = page.props;
-
-        // Show imported rows count
-        if (props.imported) {
-          toast.success(`${props.imported} row(s) imported successfully.`);
-        }
-
-        // Show detailed row errors
-        if (props.errors && props.errors.length > 0) {
-          props.errors.forEach((err: string) => toast.error(err));
-        }
-
+      onSuccess: () => {
         setFile(null);
         closeModal();
       },
-      preserveScroll: true,
     });
   };
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={closeModal}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-opacity-30" />
-        </Transition.Child>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 overflow-auto">
+      <div className="relative w-full max-w-lg p-8 bg-white rounded-md shadow-xl transition-all">
+        <h2 className="text-lg font-semibold mb-4">Import Books (CSV / Excel)</h2>
 
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6 shadow-lg">
-              <Dialog.Title className="text-lg font-semibold mb-4">
-                Import Books CSV/Excel
-              </Dialog.Title>
+        <form onSubmit={handleUpload} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Select File</label>
+            <Input
+              type="file"
+              accept=".csv, .xlsx, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="border p-2 rounded w-full"
+            />
+          </div>
 
-              <form onSubmit={handleUpload} className="flex flex-col gap-3">
-                <Input
-                  type="file"
-                  accept=".csv, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="border px-2 py-1 rounded"
-                />
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
+            >
+              Cancel
+            </button>
 
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-1 rounded border hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    {loading ? "Importing..." : "Upload"}
-                  </button>
-                </div>
-              </form>
-            </Dialog.Panel>
-          </Transition.Child>
-        </div>
-      </Dialog>
-    </Transition>
+            <button
+              type="submit"
+              disabled={loading}
+              className="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-2"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading ? "Importing..." : "Upload"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

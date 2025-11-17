@@ -75,26 +75,28 @@ export default function Borrowers() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-           className="cursor-pointer bg-green-600 text-white font-medium rounded-lg ml-5 px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
-          >
-            Add Borrower
-          </button>
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg ml-2 px-5 py-2 shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
-          >
-            Import Borrowers
-          </button>
+          <div className="flex flex-col sm:flex-row justify-start items-center mb-4 gap-2">
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+            >
+              Add Borrower
+            </button>
 
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
+            >
+              Import Borrowers
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
-                {["Student ID", "Borrower Info", "Department", "Borrower Type", "Actions"].map(
+                {["Student ID", "Borrower Info", "Course & Year", "Borrower Type", "Actions"].map(
                   (header) => (
                     <th key={header} className="border p-3 text-left">{header}</th>
                   )
@@ -110,7 +112,7 @@ export default function Borrowers() {
                       <div className="font-semibold">Name: {patron.name}</div>
                       {patron.patron_type === "Student" && (
                         <div className="text-sm text-gray-600">
-                          Course: {patron.course} ({patron.year})
+                          Email: {patron.email}
                         </div>
                       )}
                       {patron.patron_type !== "Student" && (
@@ -119,7 +121,11 @@ export default function Borrowers() {
                         </div>
                       )}
                     </td>
-                    <td className="p-3">{patron.department || "—"}</td>
+                    <td className="p-3">
+                      {patron.course && patron.year
+                        ? `${patron.course} — ${patron.year}`
+                        : patron.course || patron.year || "—"}
+                    </td>
                     <td className="p-3">{patron.patron_type}</td>
                     <td className="p-3 flex gap-2">
                       <button

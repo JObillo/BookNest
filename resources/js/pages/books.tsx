@@ -49,14 +49,22 @@ type Dewey = {
 };
 
 export default function Books() {
-  const { books, sections, deweys } = usePage<{
+  const { books, sections, deweys, flash } = usePage<{
     books: Book[];
     sections: Section[];
     deweys: Dewey[];
+    flash: {
+      success?: string;
+      errors_import?: string[];
+      duplicate?: string[];
+      imported?: number;
+    };
   }>().props;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  
+  
 
   const openModal = (book: Book | null = null) => {
     setSelectedBook(book);
@@ -161,19 +169,22 @@ export default function Books() {
             </Select>
           </div>
 
-          <button
-            onClick={() => openModal()}
-            className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
-          >
-            Add Book
-          </button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              onClick={() => openModal()}
+              className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
+            >
+              Add Book
+            </button>
+
+            <button
+              onClick={() => setIsCSVModalOpen(true)}
+              className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-blue-700 transition w-full md:w-auto"
+            >
+              Import CSV
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setIsCSVModalOpen(true)}
-          className="cursor-pointer bg-green-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-green-700 transition w-full md:w-auto"
-        >
-          Import CSV
-        </button>
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
@@ -319,6 +330,7 @@ export default function Books() {
       <ImportCSVModal
         isOpen={isCSVModalOpen}
         closeModal={() => setIsCSVModalOpen(false)}
+        flash={flash}
       />
     </AppLayout>
   );
