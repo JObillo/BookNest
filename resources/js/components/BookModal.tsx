@@ -389,7 +389,7 @@ export default function BookModal({
         </h2>
 
         <div className="mb-3 relative">
-          <label className="block text-sm font-medium">ISBN</label>
+          <label className="block text-sm font-medium">ISBN *</label>
           <div className="relative">
             <Input
               type="text"
@@ -409,10 +409,10 @@ export default function BookModal({
         <form onSubmit={handleSubmit} encType="multipart/form-data">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: "Title", name: "title", required: true },
-              { label: "Author", name: "author", required: true },
-              { label: "Publisher", name: "publisher", required: false },
-              { label: "Call Number", name: "call_number", required: true },
+              { label: "Title *", name: "title", required: true },
+              { label: "Author *", name: "author", required: true },
+              { label: "Publisher *", name: "publisher", required: false },
+              { label: "Call Number *", name: "call_number", required: true },
               { label: "Place of Publication", name: "publication_place", required: false },
             ].map(({ label, name, required }) => (
               <div
@@ -451,7 +451,7 @@ export default function BookModal({
             </div>
 
             <div className="mb-3">
-              <label className="block text-sm font-medium">Book Copies</label>
+              <label className="block text-sm font-medium">Book Copies *</label>
               <Input
                 type="number"
                 name="book_copies"
@@ -464,7 +464,7 @@ export default function BookModal({
 
             {formData.book_copies > 0 && (
               <div className="mb-3 md:col-span-3">
-                <label className="block text-sm font-medium">Accession Numbers</label>
+                <label className="block text-sm font-medium">Accession Numbers *</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {Array.from({ length: formData.book_copies }).map((_, index) => (
                     <Input
@@ -480,7 +480,7 @@ export default function BookModal({
             )}
 
             <div className="mb-3">
-              <label className="block text-sm font-medium">Section</label>
+              <label className="block text-sm font-medium">Section *</label>
               <Select
                 name="section_id"
                 value={formData.section_id?.toString() || ""}
@@ -500,7 +500,7 @@ export default function BookModal({
             </div>
 
             <div className="mb-3">
-              <label className="block text-sm font-medium">Dewey Classification</label>
+              <label className="block text-sm font-medium">Dewey Classification *</label>
               <Select
                 name="dewey_id"
                 value={formData.dewey_id?.toString() || ""}
