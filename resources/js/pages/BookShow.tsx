@@ -124,7 +124,7 @@ export default function BookShow() {
 
       {/* Archive Modal */}
       {showArchiveModal && selectedCopy && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
             <h3 className="text-xl font-semibold mb-4">Archive Book Copy</h3>
 
@@ -148,7 +148,7 @@ export default function BookShow() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowArchiveModal(false)}
-                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                className="w-full md:w-auto py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition"
               >
                 Cancel
               </button>
@@ -160,7 +160,7 @@ export default function BookShow() {
                     onSuccess: () => setShowArchiveModal(false),
                   })
                 }
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="w-full md:w-auto py-2 px-6 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
               >
                 Archive
               </button>

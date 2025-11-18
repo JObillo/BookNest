@@ -256,7 +256,7 @@ export default function Books() {
                         <img
                           src={book.book_cover}
                           alt="Book Cover"
-                          className="w-28 h-40 object-cover rounded shadow"
+                          className="w-45 h-35 object-cover rounded shadow"
                         />
                       ) : (
                         <span className="text-gray-500">No Cover</span>

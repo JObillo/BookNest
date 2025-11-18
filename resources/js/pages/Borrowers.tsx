@@ -87,7 +87,7 @@ export default function Borrowers() {
               onClick={() => setIsImportModalOpen(true)}
               className="cursor-pointer bg-blue-600 text-white font-medium rounded-lg px-5 py-2 shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
             >
-              Import Borrowers
+              Import CSV
             </button>
           </div>
         </div>
