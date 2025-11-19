@@ -2,8 +2,11 @@ import { Head, Link, usePage } from "@inertiajs/react";
 import { useEffect, useState, useMemo } from "react";
 import "../../css/app.css";
 import { Select } from "@headlessui/react";
+import Fuse from "fuse.js";
+import type { FuseResult, FuseResultMatch } from "fuse.js";
+import { Search, X } from "lucide-react";
 
-// TYPES
+
 type Book = {
   id: number;
   title: string;
@@ -51,16 +54,22 @@ export default function Welcome() {
   const [ebooks, setEbooks] = useState<Ebook[]>([]);
   const [loadingEbooks, setLoadingEbooks] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("All");
+  const [tempSearch, setTempSearch] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [startYear, setStartYear] = useState<number | null>(null);
   const [endYear, setEndYear] = useState<number | null>(null);
-    // ADDED: temporary states for typing before pressing Enter
+
   const [tempStartYear, setTempStartYear] = useState<number | null>(null);
   const [tempEndYear, setTempEndYear] = useState<number | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-    // ADDED: when pressing Enter, apply the year filter
+  const handleSearchEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setSearchTerm(tempSearch.trim());
+    }
+  };
+
   const handleYearKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       setStartYear(tempStartYear);
@@ -68,7 +77,6 @@ export default function Welcome() {
     }
   };
 
-  // ADDED: clear both filters
   const clearYearFilter = () => {
     setTempStartYear(null);
     setTempEndYear(null);
@@ -94,6 +102,12 @@ export default function Welcome() {
   };
 
   useEffect(() => {
+    if (tempSearch === "") {
+      setSearchTerm("");
+    }
+  }, [tempSearch]);
+
+  useEffect(() => {
     if (props.books) setBooks(props.books);
     if (props.sections) setSections(props.sections);
   }, [props.books, props.sections]);
@@ -107,7 +121,6 @@ export default function Welcome() {
         setEbooks(data);
         localStorage.setItem("freeEbooks", JSON.stringify(data));
       } catch (err) {
-        console.error("Failed to fetch eBooks:", err);
         const cached = localStorage.getItem("freeEbooks");
         if (cached) setEbooks(JSON.parse(cached));
       }
@@ -122,83 +135,112 @@ export default function Welcome() {
     return Number.isFinite(n) ? n : undefined;
   };
 
-  const isWithinYearRange = (itemYear?: number | string): boolean => {
-    const y = parseYear(itemYear);
-    if (startYear === null && endYear === null) return true;
-    if (y === undefined) return false;
-    if (startYear !== null && y < startYear) return false;
-    if (endYear !== null && y > endYear) return false;
-    return true;
-  };
+  // -------------------------------------------------------------
+  //  FUZZY SEARCH SETUP
+  // -------------------------------------------------------------
+  const fuse = useMemo(() => {
+    return new Fuse(books, {
+      includeScore: true,
+      includeMatches: true,
+      threshold: 0.3,
+      keys: ["title", "author", "subject"],
+    });
+  }, [books]);
 
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, "gi");
-    return text.split(regex).map((part, i) =>
-      part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={i} className="bg-purple-300 text-black rounded px-1">
-          {part}
-        </mark>
-      ) : (
-        part
-      )
-    );
-  };
+  // Store FuseResult<Book> so we can highlight matches
+  const fuzzySearchResults = useMemo(() => {
+    if (!searchTerm.trim()) {
+      // No search => wrap books as FuseResult without matches
+      return books.map((b, index) => ({ item: b, matches: [], refIndex: index } as FuseResult<Book>));
+    }
+    return fuse.search(searchTerm);
+  }, [searchTerm, fuse, books]);
 
-  // Group books by section
+  // Extract books for filtering and grouping
+  const fuzzySearchBooks = useMemo(() => {
+    return fuzzySearchResults.map((r) => r.item);
+  }, [fuzzySearchResults]);
+
+  // -------------------------------------------------------------
+  //  SECTION GROUPING
+  // -------------------------------------------------------------
   const groupedBooks = useMemo(() => {
-    const lowerSearch = searchTerm.toLowerCase();
-    const filteredBooks = books.filter((book) => {
+    const filtered = fuzzySearchBooks.filter((book) => {
       const bookYear = parseYear(book.year);
-      let matchesSearch = false;
+      const matchesYear =
+        (startYear === null || (bookYear && bookYear >= startYear)) &&
+        (endYear === null || (bookYear && bookYear <= endYear));
 
-      if (searchFilter === "All") {
-        matchesSearch =
-          book.title.toLowerCase().includes(lowerSearch) ||
-          String(book.isbn || "").toLowerCase().includes(lowerSearch) ||
-          book.author.toLowerCase().includes(lowerSearch) ||
-          (book.section?.section_name ?? "").toLowerCase().includes(lowerSearch) ||
-          (book.subject ?? "").toLowerCase().includes(lowerSearch);
-      } else if (searchFilter === "Title") {
-        matchesSearch = book.title.toLowerCase().includes(lowerSearch);
-      } else if (searchFilter === "Isbn") {
-        matchesSearch = String(book.isbn || "").toLowerCase().includes(lowerSearch);
-      } else if (searchFilter === "Author") {
-        matchesSearch = book.author.toLowerCase().includes(lowerSearch);
-      } else if (searchFilter === "Section") {
-        matchesSearch = (book.section?.section_name ?? "")
-          .toLowerCase()
-          .includes(lowerSearch);
-      } else if (searchFilter === "Subject") {
-        matchesSearch = (book.subject ?? "").toLowerCase().includes(lowerSearch);
-      }
+      const isActive =
+        book.status !== "Inactive" && (book as any).is_active !== 0;
 
-      const matchesYear = isWithinYearRange(bookYear);
-      const isActive = book.status !== "Inactive" && (book as any).is_active !== 0;
-      return matchesSearch && matchesYear && isActive;
+      return matchesYear && isActive;
     });
 
     const groups: Record<string, Book[]> = {};
-    sections.forEach((section) => (groups[section.section_name] = []));
-    filteredBooks.forEach((book) => {
+    sections.forEach((sec) => (groups[sec.section_name] = []));
+
+    filtered.forEach((book) => {
       const sectionName =
         book.section?.section_name ||
         sections.find((s) => s.id === book.section_id)?.section_name ||
         "Uncategorized";
+
       if (!groups[sectionName]) groups[sectionName] = [];
       groups[sectionName].push(book);
     });
 
     return groups;
-  }, [books, sections, searchTerm, searchFilter, startYear, endYear]);
+  }, [fuzzySearchBooks, startYear, endYear, sections]);
 
+  // -------------------------------------------------------------
+  //  HIGHLIGHT FUNCTION
+  // -------------------------------------------------------------
+  const highlightMatchWithFuse = (
+    text: string,
+    matches: readonly FuseResultMatch[] | undefined,
+    key: string
+  ) => {
+    if (!matches || matches.length === 0) return text;
+
+    // Find matches for this key
+    const match = matches.find((m) => m.key === key);
+    if (!match || !match.indices) return text;
+
+    let result: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    match.indices.forEach(([start, end]: [number, number], i: number) => {
+      if (start > lastIndex) {
+        result.push(text.slice(lastIndex, start));
+      }
+      result.push(
+        <mark key={i} className="bg-purple-300 text-black rounded px-1">
+          {text.slice(start, end + 1)}
+        </mark>
+      );
+      lastIndex = end + 1;
+    });
+
+    if (lastIndex < text.length) {
+      result.push(text.slice(lastIndex));
+    }
+
+    return result;
+  };
+
+  // -------------------------------------------------------------
+  // Free eBooks
+  // -------------------------------------------------------------
   const filteredEbooks = useMemo(() => {
     return ebooks.filter((ebook) => {
       const ebookYear = parseYear(ebook.year);
       const matchesSearch =
         ebook.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ebook.author.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesYear = isWithinYearRange(ebookYear);
+      const matchesYear =
+        (startYear === null || (ebookYear && ebookYear >= startYear)) &&
+        (endYear === null || (ebookYear && ebookYear <= endYear));
       return matchesSearch && matchesYear;
     });
   }, [ebooks, searchTerm, startYear, endYear]);
@@ -233,7 +275,7 @@ export default function Welcome() {
           </p>
         </div>
 
-        {/* Search Filters */}
+        {/* Filters */}
         <div className="flex items-center gap-2 mt-8 flex-wrap sm:flex-nowrap">
           <Select
             value={searchFilter}
@@ -244,23 +286,43 @@ export default function Welcome() {
             <option value="Title">Title</option>
             <option value="Isbn">Isbn</option>
             <option value="Author">Author</option>
-            {/* <option value="Section">Section</option> */}
             <option value="Subject">Subject</option>
           </Select>
 
-          <input
-            type="text"
-            placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-            className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-100"
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
+          {/* SEARCH INPUT */}
+          <div className="relative w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder={`Search by ${searchFilter.toLowerCase()}...`}
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-150 pr-10"
+              value={tempSearch}
+              onChange={(e) => setTempSearch(e.target.value)}
+              onKeyDown={handleSearchEnter}
+            />
 
-          {/* ADDED: Start and End Year inputs */}
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-600 hover:text-gray-900">
+              {tempSearch ? (
+                <X
+                  size={18}
+                  onClick={() => {
+                    setTempSearch("");
+                    setSearchTerm("");
+                  }}
+                />
+              ) : (
+                <Search
+                  size={18}
+                  onClick={() => handleSearch(tempSearch)}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Year filters */}
           <input
             type="number"
             placeholder="Start Year"
-            className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
+            className="border border-black rounded px-2 py-2 w-24 shadow-sm"
             value={tempStartYear ?? ""}
             onChange={(e) => {
               const value = e.target.value;
@@ -269,13 +331,12 @@ export default function Welcome() {
               }
             }}
             onKeyDown={handleYearKeyPress}
-            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
 
           <input
             type="number"
             placeholder="End Year"
-            className="border border-black rounded px-2 py-2 w-24 shadow-sm focus:outline-none focus:ring focus:border-black"
+            className="border border-black rounded px-2 py-2 w-24 shadow-sm"
             value={tempEndYear ?? ""}
             onChange={(e) => {
               const value = e.target.value;
@@ -284,10 +345,8 @@ export default function Welcome() {
               }
             }}
             onKeyDown={handleYearKeyPress}
-            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
 
-          {/* ADDED: Clear button */}
           <button
             onClick={clearYearFilter}
             className="bg-gray-300 text-gray-800 px-3 py-2 rounded hover:bg-gray-400 transition"
@@ -296,7 +355,7 @@ export default function Welcome() {
           </button>
         </div>
 
-        {/* Book Sections */}
+        {/* Sectioned Books */}
         <div className="mt-5 space-y-10">
           {sectionNames.length > 0 ? (
             Object.keys(groupedBooks)
@@ -305,58 +364,74 @@ export default function Welcome() {
                 const sectionId =
                   groupedBooks[sectionName][0]?.section?.id ||
                   groupedBooks[sectionName][0]?.section_id;
+
                 return (
                   <div key={sectionName}>
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="text-lg font-semibold">{sectionName}</h2>
+
                       {groupedBooks[sectionName].length >= 5 && sectionId ? (
-                      <Link
-                        href={route("books.bySection", { section: sectionId })}
-                        className="inline-block bg-purple-800 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-purple-900 hover:bg-purple-900 transform hover:-translate-y-0.5 transition-all duration-200"
-                      >
-                        See all
-                      </Link>
-                                            ) : null}
+                        <Link
+                          href={route("books.bySection", { section: sectionId })}
+                          className="inline-block bg-purple-800 text-white text-xs font-semibold px-3 py-1 rounded-lg hover:bg-purple-900"
+                        >
+                          See all
+                        </Link>
+                      ) : null}
                     </div>
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {groupedBooks[sectionName]
                         ?.slice(0, 5)
-                        .map((book) => (
-                          <Link
-                            href={route("books.publicShow", { book: book.id })}
-                            key={book.id}
-                            className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center 
-                            transform hover:-translate-y-1 hover:scale-105 hover:shadow-lg transition-all duration-300"
-                          >
-                            <img
-                              src={book.book_cover || "/placeholder-book.png"}
-                              alt={book.title}
-                              className="w-50 h-65 object-cover rounded"
-                            />
-                            <div className="mt-2 w-full text-center">
-                                <h3 className="text-sm font-semibold text-gray-900 w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                                  {highlightMatch(book.title, searchTerm)}
+                        .map((book) => {
+                          const resultForBook = fuzzySearchResults.find(
+                            (r) => r.item.id === book.id
+                          );
+                          return (
+                            <Link
+                              href={route("books.publicShow", { book: book.id })}
+                              key={book.id}
+                              className="h-auto bg-white rounded-md border border-gray-300 shadow-sm p-2 flex flex-col items-center hover:scale-105 transition"
+                            >
+                              <img
+                                src={book.book_cover || "/placeholder-book.png"}
+                                alt={book.title}
+                                className="w-50 h-65 object-cover rounded"
+                              />
+
+                              <div className="mt-2 w-full text-center">
+                                <h3 className="text-sm font-semibold text-gray-900 truncate">
+                                  {highlightMatchWithFuse(
+                                    book.title,
+                                    resultForBook?.matches,
+                                    "title"
+                                  )}
                                 </h3>
-                                <p className="text-xs text-gray-600 w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                                  By: {highlightMatch(book.author, searchTerm)}
+                                <p className="text-xs text-gray-600 truncate">
+                                  By: {highlightMatchWithFuse(
+                                    book.author,
+                                    resultForBook?.matches,
+                                    "author"
+                                  )}
                                 </p>
-                              {book.year && (
-                                <p className="text-xs text-gray-500">
-                                  Year: {book.year}
-                                </p>
-                              )}
-                              <span
-                                className={`px-2 py-1 rounded text-white text-sm ${
-                                  book.status === "Available"
-                                    ? "bg-green-600"
-                                    : "bg-red-600"
-                                }`}
-                              >
-                                {book.status}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
+                                {book.year && (
+                                  <p className="text-xs text-gray-500">
+                                    Year: {book.year}
+                                  </p>
+                                )}
+                                <span
+                                  className={`px-2 py-1 rounded text-white text-sm ${
+                                    book.status === "Available"
+                                      ? "bg-green-600"
+                                      : "bg-red-600"
+                                  }`}
+                                >
+                                  {book.status}
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
                     </div>
                   </div>
                 );
@@ -366,7 +441,7 @@ export default function Welcome() {
           )}
         </div>
 
-        {/* Free eBooks Section */}
+        {/* Free eBooks */}
         <div className="mt-12">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Free eBooks</h2>
@@ -389,6 +464,7 @@ export default function Welcome() {
                     alt={ebook.title}
                     className="w-40 h-56 object-cover rounded"
                   />
+
                   <div className="mt-2 w-full text-center">
                     <h3 className="text-sm font-semibold truncate">{ebook.title}</h3>
                     <p className="text-s text-gray-600">By: {ebook.author}</p>
@@ -399,7 +475,7 @@ export default function Welcome() {
                     href={ebook.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition text-sm"
+                    className="mt-3 bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm"
                   >
                     Download
                   </a>
@@ -411,38 +487,7 @@ export default function Welcome() {
           )}
         </div>
       </div>
-
-      {/* Help Modal */}
-      {isHelpOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full animate-fadeIn relative">
-            <button
-              onClick={() => setIsHelpOpen(false)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
-            >
-              &times;
-            </button>
-            <h2 className="text-xl font-bold mb-4 text-purple-800">
-              📖 How to Use the System
-            </h2>
-            <ol className="list-decimal list-inside space-y-2 text-gray-700">
-              <li>Use the <strong>Search bar</strong> to find books by title, author, or section.</li>
-              <li>Apply <strong>Year filters</strong> to narrow results by publication year.</li>
-              <li>Click a book cover to <strong>view details</strong> (author, publisher, section, status).</li>
-              <li>For eBooks, click <strong>Download</strong> to read online for free.</li>
-            </ol>
-
-            <h2 className="text-xl font-bold mt-6 mb-4 text-purple-800">🏫 How to Borrow a Book</h2>
-            <ol className="list-decimal list-inside space-y-2 text-gray-700">
-              <li>Search and locate the book you want in this OPAC system.</li>
-              <li>Go to the <strong>PhilCST Library counter</strong> with the book title or ID.</li>
-              <li>Present your <strong>student ID</strong> to the librarian.</li>
-              <li>The librarian will check availability and issue the book to you.</li>
-              <li>Return the book on or before the due date to avoid penalties.</li>
-            </ol>
-          </div>
-        </div>
-      )}
     </>
   );
 }
+//2

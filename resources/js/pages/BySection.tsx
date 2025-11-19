@@ -3,6 +3,9 @@ import { Select } from '@headlessui/react';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect, useMemo } from "react";
 import { FaHome } from 'react-icons/fa';
+import Fuse from "fuse.js";
+import type { FuseResult, FuseResultMatch } from "fuse.js";
+import { Search, X } from "lucide-react";
 
 type Props = {
   section: {
@@ -27,17 +30,24 @@ type Props = {
 };
 
 export default function BySection({ section, books }: Props) {
-  const [searchTerm, setSearchTerm] = useState<string>(''); // UPDATED: renamed for consistency
-  const [searchFilter, setSearchFilter] = useState<string>('All'); // UPDATED: renamed for consistency
+  const [tempSearch, setTempSearch] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>(''); 
+  const [searchFilter, setSearchFilter] = useState<string>('All'); 
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ADDED: Year filtering states
   const [startYear, setStartYear] = useState<number | null>(null);
   const [endYear, setEndYear] = useState<number | null>(null);
   const [tempStartYear, setTempStartYear] = useState<number | null>(null);
   const [tempEndYear, setTempEndYear] = useState<number | null>(null);
 
-  // ADDED: Apply year filter on Enter
+  // Apply search when Enter is pressed
+  const handleSearchEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setSearchTerm(tempSearch.trim());
+    }
+  };
+
+  // Apply year filter on Enter
   const handleYearKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       setStartYear(tempStartYear);
@@ -45,7 +55,6 @@ export default function BySection({ section, books }: Props) {
     }
   };
 
-  // ADDED: Clear all filters
   const clearYearFilter = () => {
     setTempStartYear(null);
     setTempEndYear(null);
@@ -54,97 +63,115 @@ export default function BySection({ section, books }: Props) {
   };
 
   useEffect(() => {
+    if (tempSearch === "") {
+      setSearchTerm("");
+    }
+  }, [tempSearch]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, searchFilter, startYear, endYear]);
 
-  // ADDED: Helper functions (same as Welcome.tsx)
   const parseYear = (y?: number | string): number | undefined => {
     if (!y) return undefined;
     const n = typeof y === "number" ? y : parseInt(String(y), 10);
     return Number.isFinite(n) ? n : undefined;
   };
 
-  const isWithinYearRange = (itemYear?: number | string): boolean => {
-    const y = parseYear(itemYear);
-    if (startYear === null && endYear === null) return true;
-    if (y === undefined) return false;
-    if (startYear !== null && y < startYear) return false;
-    if (endYear !== null && y > endYear) return false;
-    return true;
+  const fuse = useMemo(() => {
+    return new Fuse(books, {
+      includeScore: true,
+      includeMatches: true,
+      threshold: 0.3,
+      keys: ["title", "author", "subject"],
+    });
+  }, [books]);
+
+  const fuzzySearchResults = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return books.map((b, index) => ({ item: b, matches: [], refIndex: index } as FuseResult<typeof b>));
+    }
+    return fuse.search(searchTerm);
+  }, [searchTerm, fuse, books]);
+
+  const filteredFuzzyBooks = useMemo(() => {
+    return fuzzySearchResults
+      .map(r => r.item)
+      .filter(book => {
+        const y = parseYear(book.year);
+        const matchesYear =
+          (startYear === null || (y && y >= startYear)) &&
+          (endYear === null || (y && y <= endYear));
+        return matchesYear && book.is_active !== 0;
+      });
+  }, [fuzzySearchResults, startYear, endYear]);
+
+  const highlightMatchWithFuse = (
+    text: string,
+    matches: readonly FuseResultMatch[] | undefined,
+    key: string
+  ) => {
+    if (!matches || matches.length === 0) return text;
+    const match = matches.find((m) => m.key === key);
+    if (!match || !match.indices) return text;
+
+    let result: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    match.indices.forEach(([start, end], i) => {
+      if (start > lastIndex) result.push(text.slice(lastIndex, start));
+      result.push(
+        <mark key={i} className="bg-purple-300 text-black rounded px-1">
+          {text.slice(start, end + 1)}
+        </mark>
+      );
+      lastIndex = end + 1;
+    });
+
+    if (lastIndex < text.length) result.push(text.slice(lastIndex));
+    return result;
   };
 
-  // UPDATED: Filtering logic similar to Welcome.tsx
-  const filteredBooks = useMemo(() => {
-    const lowerQuery = searchTerm.trim().toLowerCase();
-
-    return books.filter((book) => {
-      const matchesYear = isWithinYearRange(book.year);
-      let matchesSearch = false;
-
-      if (searchFilter === "All") {
-        matchesSearch =
-          book.title.toLowerCase().includes(lowerQuery) ||
-          book.isbn.toLowerCase().includes(lowerQuery) ||
-          book.author.toLowerCase().includes(lowerQuery) ||
-          (book.subject ?? "").toLowerCase().includes(lowerQuery);
-      } else if (searchFilter === "Title") {
-        matchesSearch = book.title.toLowerCase().includes(lowerQuery);
-      } else if (searchFilter === "Isbn") {
-        matchesSearch = book.isbn.toLowerCase().includes(lowerQuery);
-      } else if (searchFilter === "Author") {
-        matchesSearch = book.author.toLowerCase().includes(lowerQuery);
-      } else if (searchFilter === "Subject") {
-        matchesSearch = (book.subject ?? "").toLowerCase().includes(lowerQuery);
-      }
-
-      const isActive = (book as any).is_active !== 0;
-
-      return matchesSearch && matchesYear && isActive;
-    });
-  }, [books, searchTerm, searchFilter, startYear, endYear]);
-
-  // Pagination logic remains the same
   const booksPerPage = 5;
-  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+  const totalPages = Math.ceil(filteredFuzzyBooks.length / booksPerPage);
   const startIndex = (currentPage - 1) * booksPerPage;
   const endIndex = startIndex + booksPerPage;
-  const displayedBooks = filteredBooks.slice(startIndex, endIndex);
+  const displayedBooks = filteredFuzzyBooks.slice(startIndex, endIndex);
 
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages || 1);
     }
-  }, [filteredBooks, totalPages, currentPage]);
+  }, [filteredFuzzyBooks, totalPages, currentPage]);
 
   return (
     <>
       <Head title={`Books in ${section.section_name}`} />
-      <div className="p-6">
+      <div className="flex flex-col min-h-screen bg-gray-100 text-gray-900 p-4 sm:p-6">
         {/* Header */}
         <header className="fixed top-0 left-0 z-50 w-full flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 bg-white shadow-md">
           <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
         </header>
 
-        {/* Title Section */}
-        <div className="mt-20 text-center">
-          <h1 className="lilitaOneFont royalPurple text-2xl sm:text-3xl font-bold">
+        {/* Welcome Text */}
+        <div className="text-center mt-24">
+          <h1 className="lilitaOneFont text-purple-900 text-2xl sm:text-3xl font-bold">
             Welcome to Online Public Access Catalog
           </h1>
-          <p className="lilitaOneFont royalPurple text-md sm:text-lg font-semibold">
+          <p className="lilitaOneFont text-purple-900 text-md sm:text-lg font-semibold">
             PhilCST Library: Your Gateway to Knowledge and Discovery
           </p>
         </div>
 
         {/* Section Name */}
-        <div className="mt-8 px-2 sm:px-6">
+        <div className="mt-20 px-2 sm:px-6">
           <h1 className="font-bold text-2xl royalPurple text-left">
             Books in {section.section_name}
           </h1>
         </div>
 
-        {/* UPDATED: Search + Filter controls (same style as Welcome.tsx) */}
+        {/* Search + Filters */}
         <div className="flex flex-col sm:flex-row items-center justify-start gap-3 mt-4 px-2 sm:px-6 flex-wrap sm:flex-nowrap">
-          {/* Home Button */}
           <Link
             href={route("home")}
             className="px-4 py-2 bg-purple-900 text-white inline-flex items-center gap-2 font-bold rounded-lg hover:bg-purple-900 transform hover:scale-105 transition"
@@ -153,7 +180,7 @@ export default function BySection({ section, books }: Props) {
             <FaHome /> Home
           </Link>
 
-          {/* Search Filter Dropdown */}
+          {/* SEARCH INPUT */}
           <Select
             value={searchFilter}
             onChange={(e: any) => setSearchFilter(e.target.value)}
@@ -166,16 +193,25 @@ export default function BySection({ section, books }: Props) {
             <option value="Subject">Subject</option>
           </Select>
 
-          {/* Search Input */}
-          <input
-            type="text"
-            placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-            className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-100"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="relative w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder={`Search by ${searchFilter.toLowerCase()}...`}
+              className="border border-black rounded px-2 py-2 shadow-sm focus:outline-none focus:ring focus:border-black w-150 pr-10"
+              value={tempSearch}
+              onChange={(e) => setTempSearch(e.target.value)}
+              onKeyDown={handleSearchEnter}
+            />
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-600 hover:text-gray-900">
+              {tempSearch ? (
+                <X size={18} onClick={() => { setTempSearch(""); setSearchTerm(""); }} />
+              ) : (
+                <Search size={18} onClick={() => setSearchTerm(tempSearch.trim())} />
+              )}
+            </div>
+          </div>
 
-          {/* ADDED: Start and End Year inputs */}
+          {/* Year filters */}
           <input
             type="number"
             placeholder="Start Year"
@@ -188,7 +224,6 @@ export default function BySection({ section, books }: Props) {
               }
             }}
             onKeyDown={handleYearKeyPress}
-            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
 
           <input
@@ -203,10 +238,8 @@ export default function BySection({ section, books }: Props) {
               }
             }}
             onKeyDown={handleYearKeyPress}
-            onWheel={(e) => (e.target as HTMLInputElement).blur()}
           />
 
-          {/* ADDED: Clear Button */}
           <button
             onClick={clearYearFilter}
             className="bg-gray-300 text-gray-800 px-3 py-2 rounded hover:bg-gray-400 transition"
@@ -215,121 +248,77 @@ export default function BySection({ section, books }: Props) {
           </button>
         </div>
 
-        {/* Table Section (unchanged except year filter works now) */}
+        {/* Table */}
         <div className="mt-6 w-full px-2 sm:px-6 overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
               <tr className="bg-purple-900 text-white border-b">
                 {["Book Cover", "Book", "Author", "Publisher", "Catalog Info", "Status"].map(
                   (header, index) => (
-                    <th
-                      key={header}
-                      className={`border p-3 text-left ${
-                        index === 0 || index === 3 ? "hidden lg:table-cell" : ""
-                      }`}
-                    >
-                      {header}
-                    </th>
+                    <th key={header} className={`border p-3 text-left ${index === 0 || index === 3 ? "hidden lg:table-cell" : ""}`}>{header}</th>
                   )
                 )}
               </tr>
             </thead>
             <tbody>
               {displayedBooks.length ? (
-                displayedBooks.map((book) => (
-                  <tr key={book.id} className="border-b hover:bg-gray-100">
-                    <td className="p-3 hidden lg:table-cell">
-                      <Link href={route("books.publicShow", { book: book.id })}>
-                        {book.book_cover ? (
-                          <img
-                            src={book.book_cover}
-                            alt="Book Cover"
-                            className="w-20 h-28 object-cover rounded shadow"
-                          />
-                        ) : (
-                          <span className="text-gray-500">No Cover</span>
-                        )}
-                      </Link>
-                    </td>
+                displayedBooks.map((book) => {
+                  const resultForBook = fuzzySearchResults.find(r => r.item.id === book.id);
+                  return (
+                    <tr key={book.id} className="border-b hover:bg-gray-100">
+                      <td className="p-3 hidden lg:table-cell">
+                        <Link href={route("books.publicShow", { book: book.id })}>
+                          {book.book_cover ? (
+                            <img src={book.book_cover} alt="Book Cover" className="w-20 h-28 object-cover rounded shadow" />
+                          ) : <span className="text-gray-500">No Cover</span>}
+                        </Link>
+                      </td>
 
-                    <td className="p-3">
-                      <Link href={route("books.publicShow", { book: book.id })}>
-                        <div className="font-semibold">{book.title}</div>
-                        <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
-                      </Link>
-                    </td>
+                      <td className="p-3">
+                        <Link href={route("books.publicShow", { book: book.id })}>
+                          <div className="font-semibold">
+                            {highlightMatchWithFuse(book.title, resultForBook?.matches, "title")}
+                          </div>
+                          <div className="text-sm text-gray-600">ISBN: {book.isbn}</div>
+                        </Link>
+                      </td>
 
-                    <td className="p-3">{book.author}</td>
-                    <td className="p-3 hidden lg:table-cell">{book.publisher}</td>
+                      <td className="p-3">{highlightMatchWithFuse(book.author, resultForBook?.matches, "author")}</td>
+                      <td className="p-3 hidden lg:table-cell">{highlightMatchWithFuse(book.subject || "", resultForBook?.matches, "subject")}</td>
 
-                    <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
-                      <div>Accession #: {book.accession_number}</div>
-                      <div>Call #: {book.call_number}</div>
-                      <div>Year: {book.year?.toString() || "N/A"}</div>
-                      <div>Place: {book.publication_place}</div>
-                    </td>
+                      <td className="p-3 text-sm text-gray-800 hidden lg:table-cell">
+                        <div>Accession #: {book.accession_number}</div>
+                        <div>Call #: {book.call_number}</div>
+                        <div>Year: {book.year?.toString() || "N/A"}</div>
+                        <div>Place: {book.publication_place}</div>
+                      </td>
 
-                    <td
-                      className={`p-3 font-medium ${
-                        book.status === "Available" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {book.status}
-                    </td>
-                  </tr>
-                ))
+                      <td className={`p-3 font-medium ${book.status === "Available" ? "text-green-600" : "text-red-600"}`}>
+                        {book.status}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center p-4 text-gray-500">
-                    No books found.
-                  </td>
+                  <td colSpan={6} className="text-center p-4 text-gray-500">No books found.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
-        <span>
-          Page {currentPage} of {totalPages} — {displayedBooks.length} book
-          {displayedBooks.length !== 1 && "s"} on this page
-        </span>
-
-        <div className="flex items-center gap-1">
-          {/* Previous Arrow */}
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            «
-          </button>
-
-          {/* Numeric Page Buttons */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 border rounded hover:bg-gray-200 ${
-                page === currentPage ? "bg-purple-700 text-white" : ""
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          {/* Next Arrow */}
-          <button
-            className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            »
-          </button>
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4 px-4 py-3 text-sm text-gray-700">
+          <span>Page {currentPage} of {totalPages}</span>
+          <div className="flex items-center gap-1">
+            <button className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>«</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button key={page} onClick={() => setCurrentPage(page)} className={`px-3 py-1 border rounded hover:bg-gray-200 ${page === currentPage ? "bg-purple-700 text-white" : ""}`}>{page}</button>
+            ))}
+            <button className="px-3 py-1 border rounded hover:bg-gray-200 disabled:opacity-50" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>»</button>
+          </div>
         </div>
-      </div>
-          
       </div>
     </>
   );
