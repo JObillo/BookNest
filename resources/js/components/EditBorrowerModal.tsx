@@ -11,7 +11,7 @@ type Patron = {
   course?: string | null;
   year?: string | null;
   department?: string | null;
-  patron_type: "Student" | "Faculty" | "Guest";
+  patron_type: "Student" | "Faculty" | "Guest" | "Staff";
   contact_number?: string | null;
   address?: string | null;
 };
@@ -117,13 +117,13 @@ export default function EditBorrowerModal({ isOpen, onClose, patron }: Props) {
           />
 
           {/* Department for Student & Faculty */}
-          {(formData.patron_type === "Student" || formData.patron_type === "Faculty") && (
+          {["Student", "Faculty"].includes(formData.patron_type) && (
             <Select
               name="department"
               value={formData.department || ""}
               onChange={handleChange}
               className="border p-2 w-full rounded"
-              required
+              required={formData.patron_type === "Student" || formData.patron_type === "Faculty"}
             >
               <option value="">Select Department</option>
               {departments.map((dept) => (

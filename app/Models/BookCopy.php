@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BookCopy extends Model
 {
+    protected $table = 'book_copies_test'; // <-- Add this line
     protected $fillable = ['book_id', 'accession_number', 'status'];
 
     // Optional: use constants for cleaner reference

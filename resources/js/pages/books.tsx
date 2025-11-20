@@ -336,7 +336,7 @@ export default function Books() {
                         {highlightMatchWithFuse(book.author, resultForBook?.matches, "author")}
                       </td>
 
-                      <td className="p-3 hidden lg:table-cell">{book.publisher}</td>
+                      <td className="p-3 hidden lg:table-cell">{book.publisher_info?.name ?? book.publisher ?? "Unknown"}</td>
 
                       <td className="p-3 text-sm text-gray-800 hidden md:table-cell">
                         <div>

@@ -19,7 +19,7 @@ export type Patron = {
   course: string | null;
   year: string | null;
   department: string | null;
-  patron_type: "Student" | "Faculty" | "Guest";
+  patron_type: "Student" | "Faculty" | "Guest" | "Staff";
   contact_number?: string | null;
   address?: string | null;
 };
@@ -116,8 +116,14 @@ export default function Borrowers() {
                         </div>
                       )}
                       {patron.patron_type !== "Student" && (
-                        <div className="text-sm text-gray-600 text-gray-500">
-                          {patron.patron_type === "Faculty" ? "Faculty Member" : "Guest Borrower"}
+                        <div className="text-sm text-gray-600">
+                          {patron.patron_type === "Faculty"
+                            ? "Faculty Member"
+                            : patron.patron_type === "Guest"
+                            ? "Guest Borrower"
+                            : patron.patron_type === "Staff"
+                            ? "Staff Member"
+                            : ""}
                         </div>
                       )}
                     </td>

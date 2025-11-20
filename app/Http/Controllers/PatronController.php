@@ -24,7 +24,7 @@ class PatronController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($request) {
-                    if (in_array($request->patron_type, ['Student', 'Faculty']) && !preg_match('/^\d{5}$/', $value)) {
+                    if (in_array($request->patron_type, ['Student', 'Faculty', 'Staff']) && !preg_match('/^\d{5}$/', $value)) {
                         $fail('School ID must be 6 digits.');
                     }
                     if ($request->patron_type === 'Guest' && !preg_match('/^G-\d+$/', $value)) {
@@ -49,7 +49,7 @@ class PatronController extends Controller
                 }
             },
             'address' => 'nullable|string|max:255',
-            'patron_type' => 'required|in:Student,Faculty,Guest',
+            'patron_type' => 'required|in:Student,Faculty,Guest,Staff',
         ]);
 
         if ($validated['patron_type'] === 'Guest') {
@@ -88,7 +88,9 @@ class PatronController extends Controller
                 if ($request->patron_type === 'Student' && empty($value)) $fail('Year is required.');
             },
             'department' => function ($attribute, $value, $fail) use ($request) {
-                if ($request->patron_type === 'Faculty' && empty($value)) $fail('Department is required.');
+                if (in_array($request->patron_type, ['Faculty', 'Staff']) && empty($value)) {
+                    $fail('Department is required.');
+                }
             },
             'contact_number' => function ($attribute, $value, $fail) use ($request) {
                 if ($request->patron_type === 'Guest' && !preg_match('/^\d+$/', $value)) {
