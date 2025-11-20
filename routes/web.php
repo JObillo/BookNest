@@ -69,7 +69,7 @@ Route::get('/book/{book}', [BooksController::class, 'publicShow'])->name('books.
 Route::post('/book-copies/{copy}/archive', [BooksController::class, 'archiveCopy'])
     ->name('bookCopies.archive');
 
-// ✅ CSV Import route (add here)
+// CSV Import route (add here)
 Route::post('/books/import', [BookImportController::class, 'import'])->name('books.import');
 
 // -------------------------

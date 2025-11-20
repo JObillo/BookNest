@@ -35,6 +35,9 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    // Route::get('register', [RegisteredUserController::class, 'create'])
+    //     ->name('register');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

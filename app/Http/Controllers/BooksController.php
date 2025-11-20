@@ -243,31 +243,30 @@ class BooksController extends Controller
     // --------------------------
     // Archive a single copy
     // --------------------------
-public function archiveCopy(Request $request, BookCopy $copy)
-{
-    $request->validate([
-        'status' => 'required|in:Lost,Old,Damaged'
-    ]);
+    public function archiveCopy(Request $request, BookCopy $copy)
+    {
+        $request->validate([
+            'status' => 'required|in:Lost,Old,Damaged'
+        ]);
 
-    $book = $copy->book;
+        $book = $copy->book;
 
-    // Update the copy status
-    $copy->update(['status' => $request->status]);
+        // Update the copy status
+        $copy->update(['status' => $request->status]);
 
-    // Decrease total copies and available copies manually
-    $book->book_copies = max($book->book_copies - 1, 0);
-    $book->copies_available = max($book->copies_available - 1, 0);
+        // Decrease total copies and available copies manually
+        $book->book_copies = max($book->book_copies - 1, 0);
+        $book->copies_available = max($book->copies_available - 1, 0);
 
-    // Update status and is_active based on current book_copies
-    $book->status = $book->book_copies > 0 ? 'Available' : 'Not Available';
-    $book->is_active = $book->book_copies > 0 ? 1 : 0;
+        // Update status and is_active based on current book_copies
+        $book->status = $book->book_copies > 0 ? 'Available' : 'Not Available';
+        $book->is_active = $book->book_copies > 0 ? 1 : 0;
 
-    // Save all changes
-    $book->save();
+        // Save all changes
+        $book->save();
 
-    return back()->with('success', 'Copy archived successfully.');
-}
-
+        return back()->with('success', 'Copy archived successfully.');
+    }
 
     // --------------------------
     // List all archived books
