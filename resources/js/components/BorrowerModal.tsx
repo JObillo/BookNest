@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
+import { Select } from "@headlessui/react";
 
 type Patron = {
   school_id: string | null;
@@ -32,7 +33,7 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
     address: "",
   });
 
-  const patronTypes = ["Student", "Faculty", "Guest"];
+  const patronTypes = ["Student", "Faculty", "Guest", "Staff"];
   const courses = ["BSIT", "BSCS", "BSCpE", "BSED", "BEED", "BSBA", "BSHM", "BSCRIM"];
   const years = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
   const departments = [
@@ -80,9 +81,11 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
     if (!/^[a-zA-Z\s.'-]+$/.test(formData.name)) errors.push("Name contains invalid characters.");
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.push("Email is invalid.");
 
-    if (formData.patron_type === "Student" || formData.patron_type === "Faculty") {
-      if (!/^\d{5}$/.test(formData.school_id || "")) errors.push("School ID must be exactly 5 digits.");
-    } else if (formData.patron_type === "Guest") {
+    if (["Student", "Faculty", "Staff"].includes(formData.patron_type)) {
+  if (!/^\d{5}$/.test(formData.school_id || "")) {
+    errors.push("School ID must be exactly 5 digits.");
+  }
+} else if (formData.patron_type === "Guest") {
       if (!/^G-\d+$/.test(formData.school_id || "")) errors.push("Guest ID must be in format G-xxxxx.");
       if (!/^\d+$/.test(formData.contact_number || "")) errors.push("Contact Number must contain numbers only.");
     }
@@ -93,7 +96,8 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
       if (!formData.year) errors.push("Year is required.");
     }
 
-    if (formData.patron_type === "Faculty" && !formData.department) errors.push("Department is required.");
+    if (formData.patron_type === "Faculty" && !formData.department)
+      errors.push("Department is required.");
 
     if (errors.length) {
       toast.error(errors.join(" "));
@@ -131,7 +135,7 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
         <h2 className="text-xl font-bold mb-4">Add Borrower</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Borrower Type */}
-          <select
+          <Select
             name="patron_type"
             value={formData.patron_type}
             onChange={handleChange}
@@ -144,7 +148,7 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                 {type}
               </option>
             ))}
-          </select>
+          </Select>
 
           {formData.patron_type && (
             <>
@@ -178,8 +182,8 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
               />
 
               {/* Department for Student & Faculty */}
-              {(formData.patron_type === "Student" || formData.patron_type === "Faculty") && (
-                <select
+              {["Student", "Faculty"].includes(formData.patron_type) && (
+                <Select
                   name="department"
                   value={formData.department || ""}
                   onChange={handleChange}
@@ -192,13 +196,13 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                       {dept}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
 
               {/* Student-specific fields */}
               {formData.patron_type === "Student" && (
                 <>
-                  <select
+                  <Select
                     name="course"
                     value={formData.course || ""}
                     onChange={handleChange}
@@ -211,8 +215,8 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                         {course}
                       </option>
                     ))}
-                  </select>
-                  <select
+                  </Select>
+                  <Select
                     name="year"
                     value={formData.year || ""}
                     onChange={handleChange}
@@ -225,7 +229,7 @@ export default function BorrowerModal({ isOpen, onClose }: Props) {
                         {year}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </>
               )}
 

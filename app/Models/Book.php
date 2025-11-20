@@ -9,7 +9,7 @@ class Book extends Model
 {
     use HasFactory;
 
-    protected $table = 'books';
+    protected $table = 'books_test';
     protected $fillable = [
     'title',
     'author',
@@ -36,7 +36,7 @@ class Book extends Model
 
 public function copies()
 {
-    return $this->hasMany(\App\Models\BookCopy::class);
+    return $this->hasMany(\App\Models\BookCopy::class, 'book_id', 'id');
 }
 
 
@@ -72,6 +72,12 @@ public function copies()
 
     return url($path);
 }
+
+public function publisherName()
+{
+    return $this->belongsTo(Bookpub::class, 'publisher', 'cd');
+}
+
 }
 
 //wokring code
