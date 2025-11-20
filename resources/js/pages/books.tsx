@@ -314,9 +314,11 @@ export default function Books() {
                                         <tr key={`${book.id}-${index}`} className="border-b hover:bg-gray-100">
                                             <td className="hidden p-3 sm:table-cell">
                                                 {book.book_cover ? (
-                                                    <img src={book.book_cover} alt="Book Cover" className="h-35 w-45 rounded object-cover shadow" />
+                                                    <img src={book.book_cover} alt={book.title} className="h-40 w-30 rounded object-cover" />
                                                 ) : (
-                                                    <span className="text-gray-500">No Cover</span>
+                                                    <div className="flex h-40 w-30 items-center justify-center rounded bg-gray-200 text-gray-500">
+                                                        No Book Cover
+                                                    </div>
                                                 )}
                                             </td>
 

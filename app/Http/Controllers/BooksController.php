@@ -16,19 +16,36 @@ class BooksController extends Controller
     // --------------------------
     // List all active books
     // --------------------------
-    public function index()
-    {
-        $books = Book::with(['section', 'deweyRelation', 'copies'])
-            ->where('is_active', true)
-            ->latest()
-            ->get();
+public function index()
+{
+    $books = Book::with(['section', 'deweyRelation', 'copies'])
+        ->latest()
+        ->get()
+        ->map(function ($book) {
+            $copies = $book->copies;
 
-        return Inertia::render('Books', [
-            'books' => $books,
-            'sections' => Section::select('id', 'section_name')->get(),
-            'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
-        ]);
-    }
+            // If only 1 copy, show it as Reserve and book as Not Available
+            if ($copies->count() === 1) {
+                $copies[0]->status = 'Reserve';
+                $book->status = 'Not Available';
+            }
+
+            // Count available copies for books with multiple copies
+            else {
+                $availableCount = $copies->where('status', 'Available')->count();
+                $book->status = $availableCount > 0 ? 'Available' : 'Not Available';
+            }
+
+            return $book;
+        });
+
+    return Inertia::render('Books', [
+        'books' => $books,
+        'sections' => Section::select('id', 'section_name')->get(),
+        'deweys' => Dewey::select('id', 'dewey_number', 'dewey_classification')->get(),
+    ]);
+}
+
 
     // --------------------------
     // Add new book

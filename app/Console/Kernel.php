@@ -9,6 +9,7 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         \App\Console\Commands\SendOverdueEmails::class,
+        \App\Console\Commands\FixSingleCopyBooks::class,
     ];
 
     protected function schedule(Schedule $schedule): void

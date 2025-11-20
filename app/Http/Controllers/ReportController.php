@@ -56,32 +56,33 @@ public function mostBorrowed(Request $request)
     $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
     $query = IssuedBook::select(
-            'issued_books.book_id',
-            'book_copies.accession_number',
-            DB::raw('COUNT(*) as borrow_count')
-        )
-        ->join('book_copies', 'issued_books.book_id', '=', 'book_copies.book_id')
-        ->when($category !== 'All', fn($q) => $q->where('book_copies.section_id', $category))
-        ->when($semester !== 'All' && $startDate && $endDate, fn($q) =>
-            $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
-        )
-        ->groupBy('issued_books.book_id', 'book_copies.accession_number')
-        ->havingRaw('COUNT(*) > 1')
-        ->orderByDesc('borrow_count')
-        ->limit($limit)
-        ->with('book') // Eloquent relationship to fetch book info
-        ->get();
+        'issued_books.book_id',
+        DB::raw('COUNT(*) as borrow_count')
+    )
+    ->when($category !== 'All', fn($q) =>
+        $q->whereHas('book', fn($b) => $b->where('section_id', $category))
+    )
+    ->when($semester !== 'All' && $startDate && $endDate, fn($q) =>
+        $q->whereBetween('issued_books.issued_date', [$startDate, $endDate])
+    )
+    ->groupBy('issued_books.book_id')
+    ->havingRaw('COUNT(*) > 1')
+    ->orderByDesc('borrow_count')
+    ->limit($limit)
+    ->with('book') 
+    ->get();
 
     // Map results to front-end structure
     $books = $query->map(function ($item) {
-        return [
-            'book' => $item->book,
-            'borrow_count' => $item->borrow_count,
-            'copy' => [
-                'accession_number' => $item->accession_number,
-            ],
-        ];
-    });
+    return [
+        'book' => $item->book,
+        'borrow_count' => $item->borrow_count,
+        'copy' => [
+            'accession_number' => $item->book->copies->first()->accession_number ?? null,
+        ],
+    ];
+});
+
 
     return Inertia::render('Reports/MostBorrowed', [
         'books' => $books,
@@ -104,15 +105,13 @@ public function leastBorrowed(Request $request)
     $semesterId = $request->input('semester_id');
     $category = $request->input('category', 'All');
 
-    // Get all semesters
     $semesters = $this->getSemesters();
     $semester = $this->resolveSemester($semesterId);
 
     $startDate = $semester !== 'All' ? $semester?->start_date : null;
     $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
-    // Query books with borrow count and accession numbers from book_copies
-    $query = Book::select([
+    $query = Book::select(
             'books.id',
             'books.title',
             'books.author',
@@ -122,18 +121,19 @@ public function leastBorrowed(Request $request)
             'books.publication_place',
             'books.book_cover',
             'books.section_id',
-            'book_copies.accession_number',
             DB::raw('COUNT(issued_books.id) as borrow_count')
-        ])
+        )
         ->leftJoin('issued_books', function ($join) use ($startDate, $endDate) {
             $join->on('books.id', '=', 'issued_books.book_id');
+
             if ($startDate && $endDate) {
                 $join->whereBetween('issued_books.issued_date', [$startDate, $endDate]);
             }
         })
-        ->leftJoin('book_copies', 'books.id', '=', 'book_copies.book_id')
-        ->when($category !== 'All', fn($q) => $q->where('books.section_id', $category))
-        ->groupBy(
+        ->when($category !== 'All', fn($q) =>
+            $q->where('books.section_id', $category)
+        )
+    ->groupBy(
             'books.id',
             'books.title',
             'books.author',
@@ -142,22 +142,23 @@ public function leastBorrowed(Request $request)
             'books.year',
             'books.publication_place',
             'books.book_cover',
-            'books.section_id',
-            'book_copies.accession_number'
+            'books.section_id'
         )
-        ->havingRaw('COUNT(issued_books.id) <= 1')
+        // ->havingRaw('COUNT(issued_books.id) <= 1')
         ->orderBy('borrow_count', 'asc')
         ->limit($limit)
+        ->with(['copies' => fn($c) => $c->limit(1)])
         ->get();
 
-    // Map results for front-end
-    $books = $query->map(fn($book) => [
-        'book' => $book,
-        'borrow_count' => $book->borrow_count,
-        'copy' => [
-            'accession_number' => $book->accession_number,
-        ],
-    ]);
+    $books = $query->map(function ($book) {
+        return [
+            'book' => $book,
+            'borrow_count' => $book->borrow_count,
+            'copy' => [
+                'accession_number' => $book->copies->first()->accession_number ?? null,
+            ],
+        ];
+    });
 
     return Inertia::render('Reports/LeastBorrowed', [
         'books' => $books,
@@ -170,6 +171,7 @@ public function leastBorrowed(Request $request)
         ],
     ]);
 }
+
 
     // ------------------------------
     // Top Borrowers
