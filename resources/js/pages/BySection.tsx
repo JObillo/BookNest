@@ -313,8 +313,10 @@ export default function BySection({ section, books }: Props) {
                 {/* Pagination */}
                 <div className="mt-4 flex items-center justify-between px-4 py-3 text-sm text-gray-700">
                     <span>
-                        Page {currentPage} of {totalPages}
+                        Page {currentPage} of {totalPages} — {displayedBooks.length} book
+                        {displayedBooks.length !== 1 && 's'} on this page
                     </span>
+
                     <div className="flex items-center gap-1">
                         <button
                             className="rounded border px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
@@ -323,15 +325,26 @@ export default function BySection({ section, books }: Props) {
                         >
                             «
                         </button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`rounded border px-3 py-1 hover:bg-gray-200 ${page === currentPage ? 'bg-purple-700 text-white' : ''}`}
-                            >
-                                {page}
-                            </button>
-                        ))}
+
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                            .filter((page) => page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2))
+                            .map((page, idx, arr) => {
+                                const prevPage = arr[idx - 1];
+                                return (
+                                    <span key={page} className="flex">
+                                        {prevPage && page - prevPage > 1 && <span className="px-2 py-1">...</span>}
+                                        <button
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`rounded border px-3 py-1 hover:bg-gray-200 ${
+                                                page === currentPage ? 'bg-purple-700 text-white' : ''
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    </span>
+                                );
+                            })}
+
                         <button
                             className="rounded border px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
                             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}

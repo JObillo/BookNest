@@ -362,11 +362,13 @@ export default function Welcome() {
                                                         key={book.id}
                                                         className="flex h-auto flex-col items-center rounded-md border border-gray-300 bg-white p-2 shadow-sm transition hover:scale-105"
                                                     >
-                                                        <img
-                                                            src={book.book_cover || '/placeholder-book.png'}
-                                                            alt={book.title}
-                                                            className="h-65 w-50 rounded object-cover"
-                                                        />
+                                                        {book.book_cover ? (
+                                                            <img src={book.book_cover} alt={book.title} className="h-65 w-50 rounded object-cover" />
+                                                        ) : (
+                                                            <div className="flex h-65 w-50 items-center justify-center rounded bg-gray-200 text-gray-500">
+                                                                No Book Cover
+                                                            </div>
+                                                        )}
 
                                                         <div className="mt-2 w-full text-center">
                                                             <h3 className="truncate text-sm font-semibold text-gray-900">
