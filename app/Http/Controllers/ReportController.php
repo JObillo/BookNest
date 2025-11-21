@@ -112,43 +112,41 @@ public function leastBorrowed(Request $request)
     $endDate   = $semester !== 'All' ? $semester?->end_date : null;
 
     $query = Book::select(
-            'books.id',
-            'books.title',
-            'books.author',
-            'books.publisher',
-            'books.call_number',
-            'books.year',
-            'books.publication_place',
-            'books.book_cover',
-            'books.section_id',
-            DB::raw('COUNT(issued_books.id) as borrow_count')
-        )
-        ->leftJoin('issued_books', function ($join) use ($startDate, $endDate) {
-            $join->on('books.id', '=', 'issued_books.book_id');
+        'books.id',
+        'books.title',
+        'books.author',
+        'books.publisher',
+        'books.call_number',
+        'books.year',
+        'books.publication_place',
+        'books.book_cover',
+        'books.section_id',
+        DB::raw('COUNT(issued_books.id) as borrow_count')
+    )
+    ->leftJoin('issued_books', function ($join) use ($startDate, $endDate) {
+        $join->on('books.id', '=', 'issued_books.book_id');
 
-            if ($startDate && $endDate) {
-                $join->whereBetween('issued_books.issued_date', [$startDate, $endDate]);
-            }
-        })
-        ->when($category !== 'All', fn($q) =>
-            $q->where('books.section_id', $category)
-        )
+        if ($startDate && $endDate) {
+            $join->whereBetween('issued_books.issued_date', [$startDate, $endDate]);
+        }
+    })
+    ->when($category !== 'All', fn($q) =>
+        $q->where('books.section_id', $category)
+    )
     ->groupBy(
-            'books.id',
-            'books.title',
-            'books.author',
-            'books.publisher',
-            'books.call_number',
-            'books.year',
-            'books.publication_place',
-            'books.book_cover',
-            'books.section_id'
-        )
-        // ->havingRaw('COUNT(issued_books.id) <= 1')
-        ->orderBy('borrow_count', 'asc')
-        ->limit($limit)
-        ->with(['copies' => fn($c) => $c->limit(1)])
-        ->get();
+        'books.id',
+        'books.title',
+        'books.author',
+        'books.publisher',
+        'books.call_number',
+        'books.year',
+        'books.publication_place',
+        'books.book_cover',
+        'books.section_id'
+    )
+    ->orderBy('borrow_count', 'asc')
+    ->with(['copies' => fn($c) => $c->limit(1)])
+    ->get(); // fetch all, let frontend paginate
 
     $books = $query->map(function ($book) {
         return [

@@ -188,7 +188,7 @@ export default function ReturnedBooks() {
         {/* Search Bar */}
         <div>
           <input
-            className="border border-black rounded px-2 py-2 w-120"
+            className="border border-black rounded px-2 py-2 w-100"
             placeholder="Search by Name or School ID"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -199,22 +199,15 @@ export default function ReturnedBooks() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
-              <tr className="bg-purple-900 text-white border-b">
-                {[
-                  "Borrower Info",
-                  "Book",
-                  "Issued Date & Time",
-                  "Due Date & Time",
-                  "Status",
-                  "Fine Amount",
-                  // "Fine Status",
-                  "Action",
-                ].map((header) => (
-                  <th key={header} className="border p-3 text-left">
-                    {header}
-                  </th>
-                ))}
-              </tr>
+              <tr className="border-b bg-purple-900 text-white">
+              <th className="border p-3 text-left">Borrower Info</th>
+              <th className="border p-3 text-left">Book</th>
+              <th className="hidden border p-3 text-left md:table-cell">Issued Date & Time</th>
+              <th className="hidden border p-3 text-left md:table-cell">Due Date & Time</th>
+              <th className="border p-3 text-left">Status</th>
+              <th className="hidden border p-3 text-left md:table-cell">Fine Amount</th>
+              <th className="border p-3 text-left">Action</th>
+            </tr>
             </thead>
             <tbody>
               {displayedBooks.length > 0 ? (
@@ -237,10 +230,10 @@ export default function ReturnedBooks() {
                     </td>
 
                     {/* Issued Date */}
-                    <td className="p-3">{formatDateTime(record.issued_date)}</td>
+                    <td className="hidden border p-3 text-left md:table-cell">{formatDateTime(record.issued_date)}</td>
 
                     {/* Due Date */}
-                    <td className="p-3">{formatDateTime(record.due_date)}</td>
+                    <td className="hidden border p-3 text-left md:table-cell">{formatDateTime(record.due_date)}</td>
 
                     {/* Status */}
                     <td className="p-3">
@@ -258,7 +251,7 @@ export default function ReturnedBooks() {
                     </td>
 
                     {/* Fine Amount */}
-                    <td className="p-3">
+                    <td className="hidden border p-3 text-left md:table-cell">
                       {record.status === "Issued"
                         ? "-"
                         : `₱${record.fine_amount?.toFixed(2) ?? "0.00"}`}

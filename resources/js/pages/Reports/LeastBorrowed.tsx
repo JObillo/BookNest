@@ -68,7 +68,7 @@ export default function LeastBorrowed() {
         return (a.borrow_count || 0) - (b.borrow_count || 0); // ascending order
     });
 
-    const booksPerPage = limit;
+    const booksPerPage = 5; // always 5 per page display
     const totalPages = Math.ceil(sortedBooks.length / booksPerPage);
     const startIndex = (currentPage - 1) * booksPerPage;
     const endIndex = startIndex + booksPerPage;
@@ -86,7 +86,7 @@ export default function LeastBorrowed() {
             {/* Filters */}
             <div className="mt-10 flex gap-4">
                 {/* Limit */}
-                <label>
+                {/* <label>
                     Limit
                     <select
                         value={limit}
@@ -102,7 +102,7 @@ export default function LeastBorrowed() {
                         <option value={50}>Top 50</option>
                         <option value={100}>Top 100</option>
                     </select>
-                </label>
+                </label> */}
 
                 {/* Category */}
                 <label>

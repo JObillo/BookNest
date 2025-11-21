@@ -253,7 +253,7 @@ export default function Books() {
                         </Select>
 
                         {/* Incomplete Filter */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                             <input
                                 type="checkbox"
                                 id="incompleteFilter"
@@ -268,7 +268,7 @@ export default function Books() {
                     </div>
 
                     {/* Buttons */}
-                    <div className="flex gap-1">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:w-auto">
                         <button
                             onClick={() => openModal()}
                             className="cursor-pointer rounded-lg bg-green-600 px-5 py-2 font-medium text-white shadow-md transition hover:bg-green-700"

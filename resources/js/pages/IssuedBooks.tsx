@@ -153,10 +153,13 @@ const renderPatronInfo = (patron: IssuedBook["patron"]) => {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse bg-white text-black shadow-sm rounded-lg">
             <thead>
-              <tr className="bg-purple-900 text-white border-b">
-                {["Borrower Info", "Book", "Accession No", "Issued Date", "Due Date", "Status"].map(header => (
-                  <th key={header} className="border p-3 text-left">{header}</th>
-                ))}
+              <tr className="border-b bg-purple-900 text-white">
+                <th className="border p-3 text-left">Borrower Info</th>
+                <th className="border p-3 text-left">Book</th>
+                <th className="hidden border p-3 text-left md:table-cell">Accession No</th>
+                <th className="hidden border p-3 text-left md:table-cell">Issued Date</th>
+                <th className="hidden border p-3 text-left md:table-cell">Due Date</th>
+                <th className="border p-3 text-left">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -174,10 +177,10 @@ const renderPatronInfo = (patron: IssuedBook["patron"]) => {
                       <div className="font-semibold">{record.book.title}</div>
                       <div className="text-sm text-gray-600">ISBN: {record.book.isbn}</div>
                     </td>
-                    <td className="p-3">{record.copy?.accession_number || "N/A"}</td>
+                    <td className="hidden border p-3 text-left md:table-cell">{record.copy?.accession_number || "N/A"}</td>
 
-                    <td className="p-3">{formatDateTime(record.issued_date)}</td>
-                    <td className="p-3">{formatDateTime(record.due_date)}</td>
+                    <td className="hidden border p-3 text-left md:table-cell">{formatDateTime(record.issued_date)}</td>
+                    <td className="hidden border p-3 text-left md:table-cell">{formatDateTime(record.due_date)}</td>
 
                     <td className="p-3">
                       <span

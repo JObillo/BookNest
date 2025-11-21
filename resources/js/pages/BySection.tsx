@@ -142,9 +142,10 @@ export default function BySection({ section, books }: Props) {
             <Head title={`Books in ${section.section_name}`} />
             <div className="flex min-h-screen flex-col bg-gray-100 p-4 text-gray-900 sm:p-6">
                 {/* Header */}
-                <header className="fixed top-0 left-0 z-50 flex w-full flex-col items-center justify-between bg-white px-4 py-4 shadow-md sm:flex-row sm:px-8">
-                    <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
-                </header>
+                <header className="fixed top-0 left-0 z-50 flex w-full items-center justify-between bg-white px-4 py-4 shadow-md sm:px-8">
+    <img src="/philcstlogo.png" alt="Library Logo" className="h-10" />
+</header>
+
 
                 {/* Welcome Text */}
                 <div className="mt-24 text-center">
@@ -160,96 +161,104 @@ export default function BySection({ section, books }: Props) {
                 </div>
 
                 {/* Search + Filters */}
-                <div className="mt-4 flex flex-col flex-wrap items-center justify-start gap-3 px-2 sm:flex-row sm:flex-nowrap sm:px-6">
-                    <Link
-                        href={route('home')}
-                        className="inline-flex transform items-center gap-2 rounded-lg bg-purple-900 px-4 py-2 font-bold text-white transition hover:scale-105 hover:bg-purple-900"
-                        title="Back to Home"
-                    >
-                        <FaHome /> Home
-                    </Link>
+<div className="mt-4 flex flex-col sm:flex-row flex-wrap justify-start gap-3 px-2 ">
+    {/* Home Link */}
+    <Link
+    href={route('home')}
+    className="inline-flex items-center gap-2 rounded-lg bg-purple-900 px-3 py-2 font-bold text-white transition hover:scale-105 hover:bg-purple-900 sm:px-4 sm:py-2"
+    title="Back to Home"
+>
+    <FaHome /> Home
+</Link>
 
-                    {/* SEARCH INPUT */}
-                    <Select
-                        value={searchFilter}
-                        onChange={(e: any) => setSearchFilter(e.target.value)}
-                        className="w-32 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
-                    >
-                        <option value="All">All</option>
-                        <option value="Title">Title</option>
-                        <option value="Isbn">Isbn</option>
-                        <option value="Author">Author</option>
-                        <option value="Subject">Subject</option>
-                    </Select>
 
-                    <div className="relative w-full sm:w-auto">
-                        <input
-                            type="text"
-                            placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-                            className="w-150 rounded border border-black px-2 py-2 pr-10 shadow-sm focus:border-black focus:ring focus:outline-none"
-                            value={tempSearch}
-                            onChange={(e) => setTempSearch(e.target.value)}
-                            onKeyDown={handleSearchEnter}
-                        />
-                        <div className="absolute top-1/2 right-2 -translate-y-1/2 transform cursor-pointer text-gray-600 hover:text-gray-900">
-                            {tempSearch ? (
-                                <X
-                                    size={18}
-                                    onClick={() => {
-                                        setTempSearch('');
-                                        setSearchTerm('');
-                                    }}
-                                />
-                            ) : (
-                                <Search size={18} onClick={() => setSearchTerm(tempSearch.trim())} />
-                            )}
-                        </div>
-                    </div>
+    {/* Filter + Search Input in one line */}
+    <div className="flex flex-1 gap-2 w-full sm:w-auto">
+        {/* Search Filter Dropdown */}
+        <Select
+            value={searchFilter}
+            onChange={(e: any) => setSearchFilter(e.target.value)}
+            className="w-32 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
+        >
+            <option value="All">All</option>
+            <option value="Title">Title</option>
+            <option value="Isbn">Isbn</option>
+            <option value="Author">Author</option>
+            <option value="Subject">Subject</option>
+        </Select>
 
-                    {/* Year filters */}
-                    <input
-                        type="number"
-                        placeholder="Start Year"
-                        className="w-24 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
-                        value={tempStartYear ?? ''}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || /^\d{0,4}$/.test(value)) {
-                                setTempStartYear(value === '' ? null : parseInt(value, 10));
-                            }
+        {/* Search Input */}
+        <div className="relative flex-1">
+            <input
+                type="text"
+                placeholder={`Search by ${searchFilter.toLowerCase()}...`}
+                className="w-full rounded border border-black px-2 py-2 pr-10 shadow-sm focus:border-black focus:ring focus:outline-none"
+                value={tempSearch}
+                onChange={(e) => setTempSearch(e.target.value)}
+                onKeyDown={handleSearchEnter}
+            />
+            <div className="absolute top-1/2 right-2 -translate-y-1/2 transform cursor-pointer text-gray-600 hover:text-gray-900">
+                {tempSearch ? (
+                    <X
+                        size={18}
+                        onClick={() => {
+                            setTempSearch('');
+                            setSearchTerm('');
                         }}
-                        onKeyDown={handleYearKeyPress}
                     />
+                ) : (
+                    <Search size={18} onClick={() => setSearchTerm(tempSearch.trim())} />
+                )}
+            </div>
+        </div>
+    </div>
 
-                    <input
-                        type="number"
-                        placeholder="End Year"
-                        className="w-24 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
-                        value={tempEndYear ?? ''}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || /^\d{0,4}$/.test(value)) {
-                                setTempEndYear(value === '' ? null : parseInt(value, 10));
-                            }
-                        }}
-                        onKeyDown={handleYearKeyPress}
-                    />
+    {/* Year Filters + Clear Button */}
+    <div className="flex gap-2">
+        <input
+            type="number"
+            placeholder="Start Year"
+            className="w-24 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
+            value={tempStartYear ?? ''}
+            onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || /^\d{0,4}$/.test(value)) setTempStartYear(value === '' ? null : parseInt(value, 10));
+            }}
+            onKeyDown={handleYearKeyPress}
+        />
+        <input
+            type="number"
+            placeholder="End Year"
+            className="w-24 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
+            value={tempEndYear ?? ''}
+            onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || /^\d{0,4}$/.test(value)) setTempEndYear(value === '' ? null : parseInt(value, 10));
+            }}
+            onKeyDown={handleYearKeyPress}
+        />
+        <button
+            onClick={clearYearFilter}
+            className="rounded bg-gray-300 px-3 py-2 text-gray-800 transition hover:bg-gray-400"
+        >
+            Clear
+        </button>
+    </div>
+</div>
 
-                    <button onClick={clearYearFilter} className="rounded bg-gray-300 px-3 py-2 text-gray-800 transition hover:bg-gray-400">
-                        Clear
-                    </button>
-                </div>
+
 
                 {/* Table */}
                 <div className="mt-6 w-full overflow-x-auto px-2 sm:px-6">
                     <table className="w-full border-collapse rounded-lg bg-white text-black shadow-sm">
                         <thead>
                             <tr className="border-b bg-purple-900 text-white">
-                                {['Book Cover', 'Book', 'Author', 'Publisher', 'Catalog Info', 'Status'].map((header, index) => (
-                                    <th key={header} className={`border p-3 text-left ${index === 0 || index === 3 ? 'hidden lg:table-cell' : ''}`}>
-                                        {header}
-                                    </th>
-                                ))}
+                                <th className="border p-3 text-left">Book Cover</th>
+                                <th className="border p-3 text-left">Book</th>
+                                <th className="border p-3 text-left">Author</th>
+                                {/* <th className="hidden border p-3 text-left lg:table-cell">Publisher</th> */}
+                                <th className="hidden border p-3 text-left lg:table-cell">Catalog Info</th>
+                                <th className="border p-3 text-left">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -258,7 +267,7 @@ export default function BySection({ section, books }: Props) {
                                     const resultForBook = fuzzySearchResults.find((r) => r.item.id === book.id);
                                     return (
                                         <tr key={book.id} className="border-b hover:bg-gray-100">
-                                            <td className="hidden p-3 lg:table-cell">
+                                            <td className="p-3">
                                                 <Link href={route('books.publicShow', { book: book.id })}>
                                                     {book.book_cover ? (
                                                         <img
@@ -282,9 +291,9 @@ export default function BySection({ section, books }: Props) {
                                             </td>
 
                                             <td className="p-3">{highlightMatchWithFuse(book.author, resultForBook?.matches, 'author')}</td>
-                                            <td className="hidden p-3 lg:table-cell">
+                                            {/* <td className="p-3">
                                                 {highlightMatchWithFuse(book.subject || '', resultForBook?.matches, 'subject')}
-                                            </td>
+                                            </td> */}
 
                                             <td className="hidden p-3 text-sm text-gray-800 lg:table-cell">
                                                 <div>Accession #: {book.accession_number}</div>
