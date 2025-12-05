@@ -5,7 +5,6 @@ FROM node:18 AS frontend
 
 WORKDIR /app
 
-# Copy only frontend-related files
 COPY package*.json vite.config.* ./
 RUN npm install
 
@@ -20,9 +19,8 @@ RUN npm run build
 # -------------------------------
 FROM php:8.2-fpm
 
-# Install system dependencies & PHP extensions needed for Laravel
 RUN apt-get update && apt-get install -y \
-    git curl unzip libonig-dev libzip-dev zip \
+    git curl unzip libzip-dev libonig-dev zip \
     && docker-php-ext-install pdo pdo_mysql mbstring zip
 
 # Install Composer
@@ -30,31 +28,22 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy backend files ONLY
-COPY app ./app
-COPY bootstrap ./bootstrap
-COPY config ./config
-COPY database ./database
-COPY public ./public
-COPY resources ./resources
-COPY routes ./routes
-COPY artisan ./
-COPY composer.json composer.lock ./
-COPY storage ./storage
+# Copy the ENTIRE backend (NOT piece by piece)
+COPY . .
 
-# Copy frontend build output
+# Copy frontend build
 COPY --from=frontend /app/public/build ./public/build
 
-# Install PHP dependencies
+# Install PHP dependencies (NOW it will work)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Laravel cache commands
+# Clear caches
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 9000
 CMD ["php-fpm"]
