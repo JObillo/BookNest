@@ -132,9 +132,7 @@ export default function Welcome() {
         return Number.isFinite(n) ? n : undefined;
     };
 
-    // -------------------------------------------------------------
-    //  FUZZY SEARCH SETUP
-    // -------------------------------------------------------------
+    // FUZZY SEARCH SETUP
     const fuse = useMemo(() => {
         return new Fuse(books, {
             includeScore: true,
@@ -144,23 +142,18 @@ export default function Welcome() {
         });
     }, [books]);
 
-    // Store FuseResult<Book> so we can highlight matches
     const fuzzySearchResults = useMemo(() => {
         if (!searchTerm.trim()) {
-            // No search => wrap books as FuseResult without matches
             return books.map((b, index) => ({ item: b, matches: [], refIndex: index }) as FuseResult<Book>);
         }
         return fuse.search(searchTerm);
     }, [searchTerm, fuse, books]);
 
-    // Extract books for filtering and grouping
     const fuzzySearchBooks = useMemo(() => {
         return fuzzySearchResults.map((r) => r.item);
     }, [fuzzySearchResults]);
 
-    // -------------------------------------------------------------
-    //  SECTION GROUPING
-    // -------------------------------------------------------------
+    // SECTION GROUPING
     const groupedBooks = useMemo(() => {
         const filtered = fuzzySearchBooks.filter((book) => {
             const bookYear = parseYear(book.year);
@@ -185,13 +178,10 @@ export default function Welcome() {
         return groups;
     }, [fuzzySearchBooks, startYear, endYear, sections]);
 
-    // -------------------------------------------------------------
-    //  HIGHLIGHT FUNCTION
-    // -------------------------------------------------------------
+    // HIGHLIGHT FUNCTION
     const highlightMatchWithFuse = (text: string, matches: readonly FuseResultMatch[] | undefined, key: string) => {
         if (!matches || matches.length === 0) return text;
 
-        // Find matches for this key
         const match = matches.find((m) => m.key === key);
         if (!match || !match.indices) return text;
 
@@ -217,9 +207,7 @@ export default function Welcome() {
         return result;
     };
 
-    // -------------------------------------------------------------
-    // Free eBooks
-    // -------------------------------------------------------------
+    // Free eBooks filter
     const filteredEbooks = useMemo(() => {
         return ebooks.filter((ebook) => {
             const ebookYear = parseYear(ebook.year);
@@ -237,10 +225,10 @@ export default function Welcome() {
         <>
             <Head title="PhilCST Library" />
 
-            <div className="flex min-h-screen flex-col bg-gray-100 p-4 text-gray-900 sm:p-6">
+            <div className="flex min-h-screen flex-col bg-gray-100 p-4 text-gray-900 sm:p-6 overflow-x-hidden">
                 {/* Header */}
-                <header className="fixed top-0 left-0 z-50 flex w-full items-center justify-between bg-white px-6 py-4 shadow-md">
-                    <img src="philcstlogo.png" alt="Library Logo" className="h-10" />
+                <header className="fixed top-0 left-0 z-50 flex w-full flex-wrap items-center justify-between bg-white px-4 py-3 shadow-md sm:px-6">
+                    <img src="philcstlogo.png" alt="Library Logo" className="h-10 mb-2 sm:mb-0" />
                     <div className="flex items-center gap-4">
                         <Link href={route('login')} className="text-sm text-gray-700 hover:text-purple-700 sm:text-base">
                             Login
@@ -249,19 +237,21 @@ export default function Welcome() {
                 </header>
 
                 {/* Welcome Text */}
-                <div className="mt-24 text-center">
-                    <h1 className="lilitaOneFont text-2xl font-bold text-purple-900 sm:text-3xl">Welcome to Online Public Access Catalog</h1>
+                <div className="mt-28 text-center px-2 sm:px-0">
+                    <h1 className="lilitaOneFont text-2xl font-bold text-purple-900 sm:text-3xl">
+                        Welcome to Online Public Access Catalog
+                    </h1>
                     <p className="lilitaOneFont text-md font-semibold text-purple-900 sm:text-lg">
                         PhilCST Library: Your Gateway to Knowledge and Discovery
                     </p>
                 </div>
 
                 {/* Filters */}
-                <div className="mt-8 flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
                     <Select
                         value={searchFilter}
                         onChange={(e: any) => setSearchFilter(e.target.value)}
-                        className="w-32 rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none"
+                        className="w-full max-w-xs rounded border border-black px-2 py-2 shadow-sm focus:border-black focus:ring focus:outline-none sm:w-32"
                     >
                         <option value="All">All</option>
                         <option value="Title">Title</option>
@@ -269,19 +259,17 @@ export default function Welcome() {
                         <option value="Author">Author</option>
                         <option value="Subject">Subject</option>
                     </Select>
-
-                    {/* SEARCH INPUT */}
-                    <div className="relative w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto flex-1 max-w-xl">
                         <input
                             type="text"
                             placeholder={`Search by ${searchFilter.toLowerCase()}...`}
-                            className="w-150 rounded border border-black px-2 py-2 pr-10 shadow-sm focus:border-black focus:ring focus:outline-none"
+                            className="w-full rounded border border-black px-2 py-2 pr-10 shadow-sm focus:border-black focus:ring focus:outline-none"
                             value={tempSearch}
                             onChange={(e) => setTempSearch(e.target.value)}
                             onKeyDown={handleSearchEnter}
                         />
 
-                        <div className="absolute top-1/2 right-2 -translate-y-1/2 transform cursor-pointer text-gray-600 hover:text-gray-900">
+                        <div className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-gray-600 hover:text-gray-900">
                             {tempSearch ? (
                                 <X
                                     size={18}
@@ -296,38 +284,42 @@ export default function Welcome() {
                         </div>
                     </div>
 
-                    {/* Year filters */}
-                    <input
-                        type="number"
-                        placeholder="Start Year"
-                        className="w-24 rounded border border-black px-2 py-2 shadow-sm"
-                        value={tempStartYear ?? ''}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || /^\d{0,4}$/.test(value)) {
-                                setTempStartYear(value === '' ? null : parseInt(value, 10));
-                            }
-                        }}
-                        onKeyDown={handleYearKeyPress}
-                    />
+                    <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                        <input
+                            type="number"
+                            placeholder="Start Year"
+                            className="w-full sm:w-24 rounded border border-black px-2 py-2 shadow-sm"
+                            value={tempStartYear ?? ''}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || /^\d{0,4}$/.test(value)) {
+                                    setTempStartYear(value === '' ? null : parseInt(value, 10));
+                                }
+                            }}
+                            onKeyDown={handleYearKeyPress}
+                        />
 
-                    <input
-                        type="number"
-                        placeholder="End Year"
-                        className="w-24 rounded border border-black px-2 py-2 shadow-sm"
-                        value={tempEndYear ?? ''}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || /^\d{0,4}$/.test(value)) {
-                                setTempEndYear(value === '' ? null : parseInt(value, 10));
-                            }
-                        }}
-                        onKeyDown={handleYearKeyPress}
-                    />
+                        <input
+                            type="number"
+                            placeholder="End Year"
+                            className="w-full sm:w-24 rounded border border-black px-2 py-2 shadow-sm"
+                            value={tempEndYear ?? ''}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || /^\d{0,4}$/.test(value)) {
+                                    setTempEndYear(value === '' ? null : parseInt(value, 10));
+                                }
+                            }}
+                            onKeyDown={handleYearKeyPress}
+                        />
 
-                    <button onClick={clearYearFilter} className="rounded bg-gray-300 px-3 py-2 text-gray-800 transition hover:bg-gray-400">
-                        Clear
-                    </button>
+                        <button
+                            onClick={clearYearFilter}
+                            className="w-full sm:w-auto rounded bg-gray-300 px-3 py-2 text-gray-800 transition hover:bg-gray-400"
+                        >
+                            Clear
+                        </button>
+                    </div>
                 </div>
 
                 {/* Sectioned Books */}
@@ -340,7 +332,7 @@ export default function Welcome() {
 
                                 return (
                                     <div key={sectionName}>
-                                        <div className="mb-2 flex items-center justify-between">
+                                        <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
                                             <h2 className="text-lg font-semibold">{sectionName}</h2>
 
                                             {groupedBooks[sectionName].length >= 5 && sectionId ? (
@@ -363,9 +355,9 @@ export default function Welcome() {
                                                         className="flex h-auto flex-col items-center rounded-md border border-gray-300 bg-white p-2 shadow-sm transition hover:scale-105"
                                                     >
                                                         {book.book_cover ? (
-                                                            <img src={book.book_cover} alt={book.title} className="h-65 w-50 rounded object-cover" />
+                                                            <img src={book.book_cover} alt={book.title} className="h-52 w-36 sm:h-65 sm:w-50 rounded object-cover" />
                                                         ) : (
-                                                            <div className="flex h-65 w-50 items-center justify-center rounded bg-gray-200 text-gray-500">
+                                                            <div className="flex h-52 w-36 sm:h-65 sm:w-50 items-center justify-center rounded bg-gray-200 text-gray-500">
                                                                 No Book Cover
                                                             </div>
                                                         )}
@@ -400,7 +392,7 @@ export default function Welcome() {
 
                 {/* Free eBooks */}
                 <div className="mt-12">
-                    <div className="mb-4 flex items-center justify-between">
+                    <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
                         <h2 className="text-xl font-semibold">Free eBooks</h2>
                         <Link href={route('ebooks.index')} className="text-blue-500 hover:underline">
                             See All
@@ -416,11 +408,11 @@ export default function Welcome() {
                                     key={ebook.id}
                                     className="flex h-auto flex-col items-center rounded-md border border-gray-300 bg-white p-2 shadow-sm transition hover:shadow-md"
                                 >
-                                    <img src={ebook.cover || '/placeholder-book.png'} alt={ebook.title} className="h-56 w-40 rounded object-cover" />
+                                    <img src={ebook.cover || '/placeholder-book.png'} alt={ebook.title} className="h-48 w-32 sm:h-56 sm:w-40 rounded object-cover" />
 
                                     <div className="mt-2 w-full text-center">
                                         <h3 className="truncate text-sm font-semibold">{ebook.title}</h3>
-                                        <p className="text-s text-gray-600">By: {ebook.author}</p>
+                                        <p className="text-xs text-gray-600">By: {ebook.author}</p>
                                         <span className="text-xs text-gray-500">Published: {ebook.year}</span>
                                     </div>
 
@@ -443,4 +435,3 @@ export default function Welcome() {
         </>
     );
 }
-//2
