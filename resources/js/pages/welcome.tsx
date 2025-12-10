@@ -320,6 +320,13 @@ export default function Welcome() {
                             Clear
                         </button>
                     </div>
+                    <button
+                        onClick={() => setIsHelpOpen(!isHelpOpen)}
+                        className={`flying-book ${isHelpOpen ? "flying-book-open" : "flying-book-closed"} text-5xl`}
+                        title="How to Use the Library"
+                    >
+                        📖
+                    </button>
                 </div>
 
                 {/* Sectioned Books */}
@@ -432,6 +439,52 @@ export default function Welcome() {
                     )}
                 </div>
             </div>
+            {/* Help Modal */}
+                {isHelpOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full animate-fadeIn relative">
+                    <button
+                        onClick={() => setIsHelpOpen(false)}
+                        className="absolute top-2 right-2 text-gray-600 hover:text-black text-xl"
+                    >
+                        &times;
+                    </button>
+
+                    <h2 className="text-xl font-bold mb-4 text-purple-800">
+                        📘 How to Borrow Books
+                    </h2>
+
+                    <ul className="space-y-2 text-gray-700">
+                        <li>• Check book availability using the OPAC.</li>
+                        <li>• Copy the Call Number, Author, and Title.</li>
+                        <li>• Give the call slip to the librarian for assistance.</li>
+                        <li>• If locating the book yourself, check the OPAC number on the book spine.</li>
+                        <li>• For photocopying, write your name in the logbook and submit the book at the charging desk.</li>
+                        <li className="font-semibold text-purple-700">• Books may be borrowed for **one day only**.</li>
+                    </ul>
+
+                    <h2 className="text-xl font-bold mt-6 mb-4 text-purple-800">
+                        📗 How to Return Books
+                    </h2>
+
+                    <ul className="space-y-2 text-gray-700">
+                        <li>• Return the book to the librarian on duty with your Library ID.</li>
+                        <li>• Lost books must be reported immediately and settled within 10 days.</li>
+                        <li>• If the book is overdue, pay the corresponding fine at the Accounting Office.</li>
+                    </ul>
+
+                    <h2 className="text-xl font-bold mt-6 mb-4 text-purple-800">
+                        🕒 Library Operating Hours
+                    </h2>
+
+                    <ul className="space-y-1 text-gray-700">
+                        <li>• <strong>Mon–Fri:</strong> 8:00 AM – 6:00 PM</li>
+                        <li>• <strong>Saturday:</strong> 8:00 AM – 5:00 PM</li>
+                        <li className="text-sm text-gray-500">No lunch break.</li>
+                    </ul>
+                    </div>
+                </div>
+                )}
         </>
     );
 }
