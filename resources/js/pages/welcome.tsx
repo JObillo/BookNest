@@ -457,10 +457,9 @@ export default function Welcome() {
                     <ul className="space-y-2 text-gray-700">
                         <li>• Check book availability using the OPAC.</li>
                         <li>• Copy the Call Number, Author, and Title.</li>
-                        <li>• Give the call slip to the librarian for assistance.</li>
-                        <li>• If locating the book yourself, check the OPAC number on the book spine.</li>
+                        <li>• Give the your copy to the librarian for assistance.</li>
                         <li>• For photocopying, write your name in the logbook and submit the book at the charging desk.</li>
-                        <li className="font-semibold text-purple-700">• Books may be borrowed for **one day only**.</li>
+                        <li>• Books may be borrowed for <strong>ONE DAY ONLY</strong>.</li>
                     </ul>
 
                     <h2 className="text-xl font-bold mt-6 mb-4 text-purple-800">
@@ -480,7 +479,6 @@ export default function Welcome() {
                     <ul className="space-y-1 text-gray-700">
                         <li>• <strong>Mon–Fri:</strong> 8:00 AM – 6:00 PM</li>
                         <li>• <strong>Saturday:</strong> 8:00 AM – 5:00 PM</li>
-                        <li className="text-sm text-gray-500">No lunch break.</li>
                     </ul>
                     </div>
                 </div>
