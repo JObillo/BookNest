@@ -10,6 +10,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\SearchLog;
 use Illuminate\Http\Request;
+use App\Models\BookCopy; // ← add this at the top
 
 class DashboardController extends Controller
 {
@@ -19,7 +20,7 @@ class DashboardController extends Controller
         $issuedBookIds = IssuedBook::where('status', 'issued')->pluck('book_id');
 
         $stats = [
-            'total_books' => Book::count(),
+            'total_books' => BookCopy::count(),
 
             // Available books are those not currently issued
             'available_books' => Book::whereNotIn('id', $issuedBookIds)->count(),

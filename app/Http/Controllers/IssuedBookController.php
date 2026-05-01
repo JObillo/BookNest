@@ -71,7 +71,7 @@ class IssuedBookController extends Controller
     {
         $request->validate([
             'school_id'        => 'required|exists:patrons,school_id',
-            'isbn'             => 'required|exists:books,isbn',
+            'isbn'             => 'exists:books,isbn',
             'accession_number' => 'required|exists:book_copies,accession_number',
             'due_date'         => 'required|date|after:now',
         ]);
@@ -130,7 +130,7 @@ class IssuedBookController extends Controller
             }
         }
 
-        $book->status = $book->copies_available <= 1 ? 'Not Available' : 'Available';
+        $book->status = $book->copies_available <= 1 ? 'Reserve' : 'Available';
         $book->save();
 
         return redirect()
@@ -186,7 +186,7 @@ class IssuedBookController extends Controller
         }
 
         // Update book status based on copies available
-        $book->status = $book->copies_available > 0 ? 'Available' : 'Not Available';
+        $book->status = $book->copies_available > 0 ? 'Available' : 'Reserve';
         $book->save();
 
         return response()->json(['message' => 'Book returned successfully!']);

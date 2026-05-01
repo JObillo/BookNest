@@ -165,6 +165,8 @@ Route::post('/managesemester', [ReportController::class, 'storeSemester'])->name
 Route::put('/managesemester/{semester}', [ReportController::class, 'updateSemester'])->name('reports.semester.update');
 Route::delete('/managesemester/{semester}', [ReportController::class, 'deleteSemester'])->name('reports.semester.delete');
 
+Route::get('/books/title/{title}', [BooksController::class, 'findByTitle']);
+
 // -------------------------
 // Extra Route Files
 // -------------------------

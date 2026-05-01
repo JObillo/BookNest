@@ -129,24 +129,24 @@ export default function BookModal({ isOpen, closeModal, book, sections = [], dew
         }
     }, [isOpen, book]);
 
-    const formatIsbn = (value: string) => {
-        const digits = value.replace(/\D/g, '');
-        if (digits.length <= 3) return digits;
-        if (digits.length <= 4) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-        if (digits.length <= 9) return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4)}`;
-        if (digits.length <= 12) return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 9)}-${digits.slice(9)}`;
-        return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 9)}-${digits.slice(9, 12)}-${digits.slice(12, 13)}`;
-    };
+    // const formatIsbn = (value: string) => {
+    //     const digits = value.replace(/\D/g, '');
+    //     if (digits.length <= 3) return digits;
+    //     if (digits.length <= 4) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    //     if (digits.length <= 9) return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4)}`;
+    //     if (digits.length <= 12) return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 9)}-${digits.slice(9)}`;
+    //     return `${digits.slice(0, 3)}-${digits.slice(3, 4)}-${digits.slice(4, 9)}-${digits.slice(9, 12)}-${digits.slice(12, 13)}`;
+    // };
 
     const validateField = (name: string, value: string) => {
         let error = '';
 
-        if (name === 'isbn') {
-            const digitsOnly = value.replace(/\D/g, '');
-            if (digitsOnly.length !== 10 && digitsOnly.length !== 13) {
-                error = 'ISBN must be either 10 or 13 digits.';
-            }
-        }
+        // if (name === 'isbn') {
+        //     const digitsOnly = value.replace(/\D/g, '');
+        //     if (digitsOnly.length !== 10 && digitsOnly.length !== 13) {
+        //         error = 'ISBN must be either 10 or 13 digits.';
+        //     }
+        // }
 
         if (name === 'accession_number') {
             if (value && !/^\d+$/.test(value)) {
@@ -166,9 +166,10 @@ export default function BookModal({ isOpen, closeModal, book, sections = [], dew
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        let newValue = value;
+        // let newValue = value;
 
-        if (name === 'isbn') newValue = formatIsbn(value);
+        // if (name === 'isbn') newValue = formatIsbn(value);
+        const newValue = value;
 
         setFormData((prevData) => ({
             ...prevData,
@@ -216,7 +217,7 @@ export default function BookModal({ isOpen, closeModal, book, sections = [], dew
         e.preventDefault();
 
         const validationErrors: { [key: string]: string } = {};
-        ['isbn', 'accession_number', 'call_number'].forEach((field) => {
+        [ 'accession_number', 'call_number'].forEach((field) => {
             const error = validateField(field, (formData as any)[field] || '');
             if (error) validationErrors[field] = error;
         });
@@ -293,11 +294,13 @@ export default function BookModal({ isOpen, closeModal, book, sections = [], dew
     const fetchBookByISBN = async (isbn: string) => {
         if (!isbn) return;
 
-        const cleanIsbn = isbn.replace(/\D/g, '');
-        if (cleanIsbn.length !== 10 && cleanIsbn.length !== 13) {
-            toast.error('Please enter a valid ISBN (10 or 13 digits).');
-            return;
-        }
+        // const cleanIsbn = isbn.replace(/\D/g, '');
+        // if (cleanIsbn.length !== 10 && cleanIsbn.length !== 13) {
+        //     toast.error('Please enter a valid ISBN (10 or 13 digits).');
+        //     return;
+        // }
+        const cleanIsbn = isbn.replace(/[^a-zA-Z0-9]/g, '');
+            if (!cleanIsbn) return;
 
         setIsFetching(true);
         try {
@@ -347,7 +350,7 @@ export default function BookModal({ isOpen, closeModal, book, sections = [], dew
                 <h2 className="mb-4 text-lg font-semibold">{book ? 'Edit Book' : 'Add Book'}</h2>
 
                 <div className="relative mb-3">
-                    <label className="block text-sm font-medium">ISBN *</label>
+                    <label className="block text-sm font-medium">ISBN </label>
                     <div className="relative">
                         <Input
                             type="text"

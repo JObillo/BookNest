@@ -27,7 +27,7 @@ public function index()
             // If only 1 copy, show it as Reserve and book as Not Available
             if ($copies->count() === 1) {
                 $copies[0]->status = 'Reserve';
-                $book->status = 'Not Available';
+                $book->status = 'Reserve';
             }
 
             // Count available copies for books with multiple copies
@@ -55,7 +55,7 @@ public function index()
         $validated = $request->validate([
             'title' => 'required|string',
             'author' => 'required|string',
-            'isbn' => 'required|string|unique:books,isbn',
+            'isbn' => 'nullable|string|',
             'publisher' => 'nullable|string',
             'book_copies' => 'required|integer|min:1',
             'call_number' => 'required|string',
@@ -123,7 +123,7 @@ public function index()
             'date_purchase' => $validated['date_purchase'] ?? null,
             'book_price' => $validated['book_price'] ?? null,
             'other_info' => $validated['other_info'] ?? null,
-            'status' => 'Available',
+            'status' => $validated['book_copies'] == 1 ? 'Reserve' : 'Available',
             'book_cover' => $bookCoverPath,
             'is_active' => true,
         ]);
@@ -133,7 +133,7 @@ public function index()
             BookCopy::create([
                 'book_id' => $book->id,
                 'accession_number' => $number,
-                'status' => 'Available',
+                'status' => $validated['book_copies'] == 1 ? 'Reserve' : 'Available',
             ]);
         }
 
@@ -143,14 +143,14 @@ public function index()
     // --------------------------
     // Update book
     // --------------------------
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
         $book = Book::findOrFail($id);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:255|unique:books,isbn,' . $book->id,
+            'isbn' => 'nullable|string|max:255',
             'publisher' => 'nullable|string|max:255',
             'book_copies' => 'required|integer|min:1',
             'call_number' => 'required|string|max:255',
@@ -237,7 +237,7 @@ public function index()
         $availableCount = $book->copies()->where('status', 'Available')->count();
         $book->update([
             'copies_available' => $availableCount,
-            'status' => $availableCount > 0 ? 'Available' : 'Not Available',
+            'status' => $availableCount > 0 ? 'Available' : 'Reserve',
             'is_active' => $availableCount > 0,
         ]);
 
@@ -276,7 +276,7 @@ public function index()
         $book->copies_available = max($book->copies_available - 1, 0);
 
         // Update status and is_active based on current book_copies
-        $book->status = $book->book_copies > 0 ? 'Available' : 'Not Available';
+        $book->status = $book->book_copies > 0 ? 'Available' : 'Reserve';
         $book->is_active = $book->book_copies > 0 ? 1 : 0;
 
         // Save all changes
@@ -304,7 +304,7 @@ public function index()
     // --------------------------
     // Show book detail (admin)
     // --------------------------
-    public function show($id)
+    public function show(int $id)
     {
         $book = Book::with(['section', 'deweyRelation', 'copies'])->findOrFail($id);
 
@@ -353,4 +353,17 @@ public function index()
             'books' => $books,
         ]);
     }
+
+    public function findByTitle(string $title)
+        {
+            $book = Book::where('title', 'LIKE', '%' . $title . '%')
+                ->with('copies')
+                ->first();
+
+            if (!$book) {
+                return response()->json(['message' => 'Book not found'], 404);
+            }
+
+            return response()->json($book);
+        }
 }

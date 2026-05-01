@@ -14,14 +14,15 @@ export default function IssueBookModal({
   const [book, setBook] = useState<any>(null);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [loadingField, setLoadingField] = useState<"school_id" | "isbn" | null>(null);
-  const [notFound, setNotFound] = useState({ school_id: false, isbn: false });
+ const [notFound, setNotFound] = useState({ school_id: false, isbn: false, title: false });
 
-  const { data, setData, post, processing, reset, errors } = useForm({
+const { data, setData, post, processing, reset, errors } = useForm({
     school_id: "",
     isbn: "",
+    title: "",
     accession_number: "",
     due_date: "",
-  });
+});
 
   /** SCHOOL ID HANDLER — numeric only and max 5 */
   const handleSchoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,24 +82,35 @@ const fetchPatron = async () => {
 
 
   /** Fetch book by ISBN */
-  const fetchBook = async () => {
+const fetchBook = async () => {
     const isbn = data.isbn.trim();
-    if (!isbn) return;
+    const title = data.title.trim();
+    if (!isbn && !title) return;
+
     setLoadingField("isbn");
-    setNotFound((prev) => ({ ...prev, isbn: false }));
+    setNotFound((prev) => ({ ...prev, isbn: false, title: false }));
 
     try {
-      const res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
-      setBook(res.data);
-      setDuplicateWarning(false);
+        let res;
+        if (isbn) {
+            res = await axios.get(`/books/isbn/${encodeURIComponent(isbn)}`);
+        } else {
+            res = await axios.get(`/books/title/${encodeURIComponent(title)}`);
+        }
+        setBook(res.data);
+        setDuplicateWarning(false);
     } catch (err) {
-      console.error("Error fetching book:", err);
-      setBook(null);
-      setNotFound((prev) => ({ ...prev, isbn: true }));
+        console.error("Error fetching book:", err);
+        setBook(null);
+        if (isbn) {
+            setNotFound((prev) => ({ ...prev, isbn: true }));
+        } else {
+            setNotFound((prev) => ({ ...prev, title: true }));
+        }
     } finally {
-      setLoadingField(null);
+        setLoadingField(null);
     }
-  };
+};
 
   /** Check for duplicate issue */
   const checkDuplicateIssue = async () => {
@@ -126,10 +138,11 @@ const fetchPatron = async () => {
 
     post("/issuedbooks", {
       preserveScroll: true,
-      onSuccess: () => {
+     onSuccess: () => {
         reset();
         setPatron(null);
         setBook(null);
+        setData("title", "");
         setDuplicateWarning(false);
         onClose();
         router.reload({ only: ["issuedbooks"] });
@@ -224,24 +237,40 @@ const fetchPatron = async () => {
           )}
 
           {/* ISBN */}
-          <div>
-            <label>ISBN (13 or 10):</label>
-            <Input
+         <div>
+    <label>ISBN:</label>
+          <Input
               type="text"
               inputMode="numeric"
               value={data.isbn}
               onChange={handleIsbnChange}
               onBlur={fetchBook}
               className="w-full p-2 border rounded tracking-widest"
-              required
-            />
-            {loadingField === "isbn" && (
+          />
+          {loadingField === "isbn" && (
               <p className="text-blue-600 text-sm mt-1 animate-pulse">Fetching book info...</p>
-            )}
-            {notFound.isbn && (
+          )}
+          {notFound.isbn && (
               <p className="text-red-600 text-sm mt-1">❌ No book found for this ISBN.</p>
-            )}
+          )}
+      </div>
+
+      {/* Title — shown only when ISBN is empty */}
+      {!data.isbn && (
+          <div>
+              <label>Book Title (if no ISBN):</label>
+              <Input
+                  type="text"
+                  value={data.title}
+                  onChange={(e) => setData("title", e.target.value)}
+                  onBlur={fetchBook}
+                  className="w-full p-2 border rounded"
+              />
+              {notFound.title && (
+                  <p className="text-red-600 text-sm mt-1">❌ No book found for this title.</p>
+              )}
           </div>
+      )}
 
           {book && (
             <div className="text-sm p-2 bg-gray-100 rounded">
@@ -254,10 +283,10 @@ const fetchPatron = async () => {
               <p><strong>Copies Available:</strong> {book.copies_available}</p>
               <p><strong>Status:</strong> {book.status}</p>
 
-              {book.copies_available <= 1 && (
-                <p className="text-red-600 font-semibold mt-2">
-                  ⚠️ This book is reserved. It cannot be issued.
-                </p>
+              {book.status === 'Reserve' && (
+                  <p className="text-red-600 font-semibold mt-2">
+                      ⚠️ This book is reserved. It cannot be issued.
+                  </p>
               )}
             </div>
           )}
@@ -300,7 +329,7 @@ const fetchPatron = async () => {
             </button>
             <button
               type="submit"
-              disabled={processing || (book && book.copies_available <= 1)}
+              disabled={processing || (book && book.status === 'Reserve')}
               className="w-full md:w-auto py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
             >
               {processing ? "Issuing..." : "Issue Book"}
